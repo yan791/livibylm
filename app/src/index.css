@@ -763,6 +763,53 @@ img {
   opacity: 0;
 }
 
+/* convite para rolar: uma linha fina com um traço descendo, na faixa abaixo da moldura */
+.ap-rolar {
+  position: absolute;
+  left: calc(33 * var(--u));
+  bottom: calc(16 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+.ap-rolar-linha {
+  position: relative;
+  width: 1px;
+  height: max(24px, calc(30 * var(--u)));
+  overflow: hidden;
+  background: rgb(79 15 16 / 0.16);
+}
+
+.ap-rolar-linha::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--vinho);
+  transform: translateY(-100%);
+  animation: convite-rolar 2.4s var(--ease) infinite;
+}
+
+@keyframes convite-rolar {
+  0% {
+    transform: translateY(-100%);
+  }
+  55%,
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+html[data-movimento='reduzido'] .ap-rolar-linha::after {
+  animation: none;
+  transform: none;
+}
+
 /* primeiro look: mesmo tamanho e lugar do cartão dos looks, para a passagem ser contínua */
 .ap-look {
   --h: 78svh;
@@ -3279,6 +3326,18 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
     top: 20px;
     width: 46px;
     height: 46px;
+  }
+
+  /* no celular a modelo ocupa o centro e a esquerda da faixa: o convite vai para a direita */
+  .ap-rolar {
+    left: auto;
+    right: 26px;
+    bottom: 15px;
+    flex-direction: row-reverse;
+  }
+
+  .ap-rolar-extra {
+    display: none;
   }
 
   .vr {

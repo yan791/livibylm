@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
 import { navegar, type Rota } from '../lib/rota'
 import { rolarPara, pausarRolagem } from '../lib/scroll'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { cn } from '../lib/cn'
 import { Logo } from './Logo'
 import { BotaoSacola } from './Sacola'
@@ -14,6 +15,8 @@ const ease = [0.22, 1, 0.36, 1] as const
 export const abrirMenu = () => window.dispatchEvent(new CustomEvent('livi:menu'))
 
 export function irPara(href: string, rota: Rota) {
+  // "Coleções" vai direto para o catálogo, começando pela coleção atual
+  if (href === '#colecoes') return mostrarCatalogo(site.abertura.colecao)
   if (rota.nome === 'inicio') {
     rolarPara(href === '#inicio' ? 0 : href)
     history.replaceState(null, '', href === '#inicio' ? '/' : '/' + href)

@@ -10,7 +10,7 @@ import { motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
 import { acharColecao, colecoes } from '../dados/colecoes'
 import { gsap } from '../lib/scroll'
-import { navegar } from '../lib/rota'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { TextEffect } from '../components/core/text-effect'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
@@ -44,7 +44,7 @@ export function Apresentacao() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + H() * 1.3,
+            end: () => '+=' + H() * 1.1,
             pin: true,
             scrub: 1,
             anticipatePin: 1,
@@ -103,8 +103,7 @@ export function Apresentacao() {
   const abrirColecao = (e: React.MouseEvent) => {
     e.preventDefault()
     const img = (e.currentTarget.closest('.ap-cartao') as HTMLElement | null)?.querySelector('img')
-    if (img) img.style.viewTransitionName = 'peca'
-    navegar(`/colecao/${colecaoAbertura.slug}`)
+    mostrarCatalogo(colecaoAbertura.slug, img)
   }
 
   const a = site.abertura
@@ -238,6 +237,20 @@ export function Apresentacao() {
                 Ver coleção <SetaDiagonal className="seta" />
               </a>
             </Ima>
+          </motion.div>
+
+          {/* convite discreto para rolar: some junto com a interface quando a rolagem começa */}
+          <motion.div
+            className="ap-rolar"
+            aria-hidden="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2, ease, delay: 2.2 }}
+          >
+            <span className="ap-rolar-linha" />
+            <span>
+              Role<span className="ap-rolar-extra"> para descobrir</span>
+            </span>
           </motion.div>
         </div>
       </div>

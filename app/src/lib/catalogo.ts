@@ -6,6 +6,7 @@
 */
 import { useSyncExternalStore } from 'react'
 import { pausarRolagem } from './scroll'
+import { comTransicao } from './rota'
 
 export type EstadoCatalogo = { colecao: string; peca: string | null }
 
@@ -47,6 +48,18 @@ export function abrirCatalogo(colecao: string, peca: string | null = null) {
   if (estado) marcar({ colecao, peca: null }, passos, true)
   else marcar({ colecao, peca: null }, 1)
   if (peca) verPeca(peca)
+}
+
+/**
+  Abre com passagem suave (View Transitions): a foto tocada, se houver, "voa"
+  até a primeira peça da vitrine; sem foto, a página se dissolve no catálogo.
+*/
+export function mostrarCatalogo(colecao: string, foto?: HTMLImageElement | null) {
+  if (foto) foto.style.viewTransitionName = 'peca'
+  comTransicao(() => {
+    if (foto) foto.style.viewTransitionName = ''
+    abrirCatalogo(colecao)
+  }, 'catalogo')
 }
 
 /** da vitrine para a peça empilha um passo; de uma peça para outra só troca */

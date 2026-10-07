@@ -1,6 +1,7 @@
 import { site, linkWhatsApp } from '../dados/site'
 import { colecoes } from '../dados/colecoes'
-import { navegar, type Rota } from '../lib/rota'
+import { type Rota } from '../lib/rota'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { irPara } from './Cabecalho'
 import { Logo } from './Logo'
 import { Instagram, SetaDiagonal, WhatsApp } from './icones'
@@ -35,7 +36,7 @@ export function Rodape({ rota }: { rota: Rota }) {
             href={`/colecao/${c.slug}`}
             onClick={(e) => {
               e.preventDefault()
-              navegar(`/colecao/${c.slug}`)
+              mostrarCatalogo(c.slug)
             }}
           >
             {c.nome}

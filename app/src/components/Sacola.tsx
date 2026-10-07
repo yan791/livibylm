@@ -15,7 +15,8 @@ import {
   useSacola,
   type ItemSacola,
 } from '../lib/sacola'
-import { navegar } from '../lib/rota'
+import { abrirCatalogo, mostrarCatalogo } from '../lib/catalogo'
+import { site } from '../dados/site'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { Fechar, IconeCabide, SetaDiagonal, WhatsApp } from './icones'
@@ -151,7 +152,7 @@ export function GavetaSacola() {
                   className="pilula"
                   onClick={() => {
                     setAberta(false)
-                    navegar('/#colecoes')
+                    mostrarCatalogo(site.abertura.colecao)
                   }}
                 >
                   Ver coleções <SetaDiagonal className="seta" />
@@ -176,7 +177,7 @@ export function GavetaSacola() {
                           style={{ background: i.fundo }}
                           onClick={() => {
                             setAberta(false)
-                            navegar(`/colecao/${i.colecao}/${i.peca.slug}`)
+                            abrirCatalogo(i.colecao, i.peca.slug)
                           }}
                           aria-label={`Ver ${i.peca.nome}`}
                         >

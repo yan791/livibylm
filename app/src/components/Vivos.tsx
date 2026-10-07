@@ -6,7 +6,7 @@
 import { Fragment, useRef } from 'react'
 import { motion, useInView, type Variants } from 'motion/react'
 import { colecoes } from '../dados/colecoes'
-import { navegar } from '../lib/rota'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { cn } from '../lib/cn'
 import { Magnetic } from './core/magnetic'
 import { InfiniteSlider } from './core/infinite-slider'
@@ -95,7 +95,7 @@ export function FaixaColecoes({ escura = false, reverso = false }: { escura?: bo
             className="faixa-item"
             onClick={(e) => {
               e.preventDefault()
-              navegar(`/colecao/${c.slug}`)
+              mostrarCatalogo(c.slug)
             }}
           >
             <span className="faixa-nome">{c.nome}</span>

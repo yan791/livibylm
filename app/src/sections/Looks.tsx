@@ -6,8 +6,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { colecoes } from '../dados/colecoes'
 import { gsap, ScrollTrigger } from '../lib/scroll'
-import { comTransicao } from '../lib/rota'
-import { abrirCatalogo } from '../lib/catalogo'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { movimentoReduzido } from '../lib/midia'
 import { alturaCartao, PROPORCAO } from '../lib/cartao'
 import { SetaDiagonal } from '../components/icones'
@@ -105,7 +104,7 @@ export function Looks() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + el.clientHeight * 3.8,
+            end: () => '+=' + el.clientHeight * 2.6,
             pin: true,
             scrub: 1,
             invalidateOnRefresh: true,
@@ -135,11 +134,7 @@ export function Looks() {
       alvo.querySelector('img') ??
       document.querySelector<HTMLImageElement>(`.lk-cartao[data-slug="${slug}"] img`) ??
       document.querySelector<HTMLImageElement>(`.lk-bloco[data-slug="${slug}"] img`)
-    if (img) img.style.viewTransitionName = 'peca'
-    comTransicao(() => {
-      if (img) img.style.viewTransitionName = ''
-      abrirCatalogo(slug)
-    }, 'catalogo')
+    mostrarCatalogo(slug, img)
   }
 
   return (
