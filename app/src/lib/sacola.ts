@@ -49,14 +49,14 @@ export function alternarNaSacola(item: ItemSacola) {
   if (naSacola(item.peca)) salvar(itens.filter((i) => i.peca !== item.peca))
   else {
     salvar([...itens, item])
-    window.dispatchEvent(new CustomEvent('livi:sacola-adicionou'))
+    window.dispatchEvent(new CustomEvent('livi:sacola-adicionou', { detail: item }))
   }
 }
 
 export function adicionarNaSacola(item: ItemSacola) {
   if (naSacola(item.peca)) salvar(itens.map((i) => (i.peca === item.peca ? { ...i, ...item } : i)))
   else salvar([...itens, item])
-  window.dispatchEvent(new CustomEvent('livi:sacola-adicionou'))
+  window.dispatchEvent(new CustomEvent('livi:sacola-adicionou', { detail: item }))
 }
 
 export const removerDaSacola = (peca: string) => salvar(itens.filter((i) => i.peca !== peca))

@@ -7,6 +7,7 @@ import { motion } from 'motion/react'
 import { linkWhatsApp, site } from '../dados/site'
 import { Espaco, Ph } from '../components/Espaco'
 import { Ima, TituloVivo } from '../components/Vivos'
+import { TextoTroca } from '../components/Modernos'
 import {
   IconeAgulha,
   IconeConversa,
@@ -64,12 +65,12 @@ export function Diferenciais() {
         <div className="dif-acoes">
           <Ima>
             <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
-              <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
+              <WhatsApp className="ico" /> <TextoTroca>Falar no WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
             </a>
           </Ima>
           <Ima>
             <a className="pilula" href={site.instagram} target="_blank" rel="noreferrer">
-              <Instagram className="ico" /> {site.instagramArroba}
+              <Instagram className="ico" /> <TextoTroca>{site.instagramArroba}</TextoTroca>
             </a>
           </Ima>
         </div>
@@ -187,7 +188,7 @@ export function ComoComprar() {
           <p>Ficou com alguma dúvida? A conversa é direta, com quem conhece cada peça.</p>
           <Ima>
             <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
-              <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
+              <WhatsApp className="ico" /> <TextoTroca>Falar no WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
             </a>
           </Ima>
         </motion.div>

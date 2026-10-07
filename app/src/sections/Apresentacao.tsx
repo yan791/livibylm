@@ -1,29 +1,29 @@
 /*
-  ATO 1: a abertura (Referência 1).
-  Ao rolar, o palco fica fixo um instante: a moldura cresce, as palavras
-  saem pelas laterais, a modelo dá um passo para trás e o primeiro look da
-  coleção (Lúmina) chega ao centro, exatamente onde os looks começam.
-  Camadas: cores de fundo > brilho > palavras > moldura > fotos > interface.
+  ATO 1: a abertura, como capa de revista.
+  Estúdio terracota (o próprio fundo da foto), o nome da coleção gigante
+  atrás da modelo, selo girando e detalhes de editorial. Ao rolar, a moldura
+  cresce, o título sobe, a modelo dá um passo para trás e o primeiro look
+  (Lúmina) chega ao centro, exatamente onde os looks começam.
+  Camadas: estúdio > cor de passagem > brilho > título > moldura > modelo > interface.
 */
 import { useLayoutEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
-import { acharColecao, colecoes } from '../dados/colecoes'
+import { colecoes } from '../dados/colecoes'
 import { gsap } from '../lib/scroll'
-import { navegar } from '../lib/rota'
 import { TextEffect } from '../components/core/text-effect'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
-import { IconeAgulha, Menu, SetaDiagonal } from '../components/icones'
+import { Menu, SetaDiagonal } from '../components/icones'
+import { SpinningText } from '../components/core/spinning-text'
 import { PROPORCAO } from '../lib/cartao'
-import { Ima } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
+import { atrasoAbertura } from '../components/Modernos'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
 export function Apresentacao() {
   const palco = useRef<HTMLDivElement>(null)
-  const colecaoAbertura = acharColecao(site.abertura.colecao)!
   const primeira = colecoes[0]
 
   useLayoutEffect(() => {
@@ -63,8 +63,8 @@ export function Apresentacao() {
           },
           0,
         )
-        tl.to(q('.ap-palavra.esq'), { xPercent: -70, opacity: 0, duration: 0.6, ease: 'power2.in' }, 0)
-        tl.to(q('.ap-palavra.dir'), { xPercent: 70, opacity: 0, duration: 0.6, ease: 'power2.in' }, 0)
+        tl.to(q('.ap-palavra.esq'), { xPercent: -60, opacity: 0, duration: 0.5, ease: 'power2.in' }, 0)
+        tl.to(q('.ap-palavra.dir'), { yPercent: -45, opacity: 0, duration: 0.65, ease: 'power2.in' }, 0)
         tl.to(q('.ap-ui'), { opacity: 0, y: 30, duration: 0.35, ease: 'power1.in' }, 0)
         tl.to(q('.ap-brilho'), { opacity: 0, duration: 0.5 }, 0)
         tl.to(
@@ -86,6 +86,10 @@ export function Apresentacao() {
     const palavras = Array.from(el.querySelectorAll<HTMLElement>('.ap-palavra'))
     const mover = (ev: PointerEvent) => {
       if (ev.pointerType !== 'mouse') return
+      // parallax das camadas: cada uma anda um pouco, em direções diferentes
+      const r0 = el.getBoundingClientRect()
+      el.style.setProperty('--ax', ((ev.clientX - r0.left) / r0.width - 0.5).toFixed(3))
+      el.style.setProperty('--ay', ((ev.clientY - r0.top) / r0.height - 0.5).toFixed(3))
       for (const p of palavras) {
         const r = p.getBoundingClientRect()
         p.style.setProperty('--mx', `${ev.clientX - r.left}px`)
@@ -100,35 +104,39 @@ export function Apresentacao() {
     }
   }, [])
 
-  const abrirColecao = (e: React.MouseEvent) => {
-    e.preventDefault()
-    const img = (e.currentTarget.closest('.ap-cartao') as HTMLElement | null)?.querySelector('img')
-    if (img) img.style.viewTransitionName = 'peca'
-    navegar(`/colecao/${colecaoAbertura.slug}`)
-  }
-
   const a = site.abertura
+  const d0 = atrasoAbertura()
 
   return (
     <section className="ap" id="inicio" aria-label="Abertura">
       <div className="ap-palco" ref={palco}>
+        <div className="ap-estudio" aria-hidden="true" />
         <div className="ap-cor" aria-hidden="true" style={{ background: primeira.fundo }} />
         <div className="ap-brilho" aria-hidden="true" />
 
         <h1 className="ap-palavras">
           <span className="sr-only">
-            {a.esquerda} {a.direita}, Livi by LM
+            Livi by LM, {a.esquerda} {a.direita}
           </span>
-          {[
-            ['esq', a.esquerda, 0.35],
-            ['dir', a.direita, 0.55],
-          ].map(([lado, texto, atraso]) => (
+          <motion.span
+            className="ap-palavra esq"
+            aria-hidden="true"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease, delay: 0.3 + d0 }}
+          >
+            <em>
+              {a.esquerda} {a.direita}
+            </em>
+            <span className="ap-edicao">{a.edicao}</span>
+          </motion.span>
+          {[['dir', a.marca, 0.45]].map(([lado, texto, atraso]) => (
             <span key={lado as string} className={`ap-palavra ${lado}`} aria-hidden="true">
               <TextEffect
                 as="span"
                 per="char"
                 preset="fade-in-blur"
-                delay={atraso as number}
+                delay={(atraso as number) + d0}
                 speedReveal={0.45}
                 speedSegment={0.32}
                 className="ap-palavra-base grao"
@@ -139,7 +147,7 @@ export function Apresentacao() {
                 className="ap-palavra-luz"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.2, delay: 1.8 }}
+                transition={{ duration: 1.2, delay: 1.8 + d0 }}
               >
                 {texto as string}
               </motion.span>
@@ -152,7 +160,7 @@ export function Apresentacao() {
           aria-hidden="true"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.4, ease }}
+          transition={{ duration: 1.4, ease, delay: d0 }}
         />
 
         <div className="ap-fotos" aria-hidden="true">
@@ -165,7 +173,7 @@ export function Apresentacao() {
               className="ap-hero-entrada"
               initial={{ opacity: 0, y: 46 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.5, ease, delay: 0.15 }}
+              transition={{ duration: 1.5, ease, delay: 0.15 + d0 }}
             >
               <img className="ap-hero-recorte" src={a.recorte} alt="" draggable={false} fetchPriority="high" />
             </motion.div>
@@ -177,10 +185,10 @@ export function Apresentacao() {
             className="ap-topo"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease, delay: 0.2 }}
+            transition={{ duration: 0.9, ease, delay: 0.2 + d0 }}
           >
             <a href="/" className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
-              <Logo />
+              <Logo claro />
             </a>
             <nav className="ap-menu" aria-label="Menu principal">
               {site.menu.map((m, i) => (
@@ -207,38 +215,46 @@ export function Apresentacao() {
             </button>
           </motion.header>
 
+          <motion.p
+            className="ap-lateral"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2, delay: 1 + d0 }}
+          >
+            Moda feminina autoral <i>·</i> {a.esquerda} {a.direita}
+          </motion.p>
+
           <motion.div
             className="ap-intro"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 0.9 }}
+            transition={{ duration: 1, ease, delay: 0.9 + d0 }}
           >
-            <IconeAgulha className="ap-intro-icone" />
+            <span className="ap-intro-linha" aria-hidden="true" />
             <h2>{a.titulo}</h2>
             <p>{a.apoio}</p>
           </motion.div>
 
-          <motion.div
-            className="ap-cartao"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 1.05 }}
+          <motion.a
+            href="/#colecoes"
+            className="ap-selo"
+            aria-label="Ver as coleções"
+            initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1.2, ease, delay: 1.1 + d0 }}
+            onClick={(e) => {
+              e.preventDefault()
+              irPara('#colecoes', { nome: 'inicio' })
+            }}
           >
-            <a
-              href={`/colecao/${colecaoAbertura.slug}`}
-              className="ap-cartao-peca"
-              onClick={abrirColecao}
-              aria-label={`Ver a coleção ${colecaoAbertura.nome}`}
-            >
-              <img src={colecaoAbertura.capa} alt="" draggable={false} />
-              <span className="ap-cartao-nome">{colecaoAbertura.nome}</span>
-            </a>
-            <Ima>
-              <a href={`/colecao/${colecaoAbertura.slug}`} className="pilula" onClick={abrirColecao}>
-                Ver coleção <SetaDiagonal className="seta" />
-              </a>
-            </Ima>
-          </motion.div>
+            <SpinningText className="ap-selo-texto" duration={20} radius={10.6} fontSize={0.62}>
+              {a.selo}
+            </SpinningText>
+            <span className="ap-selo-centro">
+              <SetaDiagonal className="seta" />
+            </span>
+          </motion.a>
+
         </div>
       </div>
     </section>

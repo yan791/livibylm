@@ -25,6 +25,7 @@ import { cn } from '../lib/cn'
 import { BotaoDesejo } from './Sacola'
 import { Espaco } from './Espaco'
 import { SetaDiagonal, WhatsApp } from './icones'
+import { Tamanhos, TextoTroca } from './Modernos'
 
 function FotoOuEspaco({ peca, classe }: { peca: Peca; classe: string }) {
   const { uniqueId } = useMorphingDialog()
@@ -53,23 +54,15 @@ function Acoes({ colecao, peca, aoDestacar }: { colecao: Colecao; peca: Peca; ao
   const cor = peca.cores[0]
   return (
     <>
-      <div className={cn('vr-tamanhos', aviso && !tamanho && 'aviso')} role="radiogroup" aria-label="Tamanho">
-        {peca.tamanhos.map((t) => (
-          <button
-            key={t}
-            type="button"
-            role="radio"
-            aria-checked={tamanho === t}
-            className={cn(tamanho === t && 'ativo')}
-            onClick={() => {
-              setTamanho(t)
-              setAviso(false)
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      <Tamanhos
+        className={cn('vr-tamanhos pequeno', aviso && !tamanho && 'aviso')}
+        opcoes={peca.tamanhos}
+        valor={tamanho}
+        aoEscolher={(t) => {
+          setTamanho(t)
+          setAviso(false)
+        }}
+      />
       {aviso && !tamanho && <p className="vr-aviso">Escolha um tamanho para continuar.</p>}
       <div className="vr-acoes">
         <button
@@ -80,14 +73,14 @@ function Acoes({ colecao, peca, aoDestacar }: { colecao: Colecao; peca: Peca; ao
             window.open(linkWhatsApp(mensagemPeca(peca.nome, cor.nome, tamanho)), '_blank', 'noopener')
           }}
         >
-          <WhatsApp className="ico" /> Quero essa peça
+          <WhatsApp className="ico" /> <TextoTroca>Quero essa peça</TextoTroca>
         </button>
         <button
           type="button"
           className="pilula"
           onClick={() => adicionarNaSacola({ colecao: colecao.slug, peca: peca.slug, cor: cor.nome, tamanho })}
         >
-          Guardar na sacola
+          <TextoTroca>Guardar na sacola</TextoTroca>
         </button>
       </div>
       <button

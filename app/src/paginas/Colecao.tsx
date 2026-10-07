@@ -14,11 +14,11 @@ import { Espaco, Ph } from '../components/Espaco'
 import { Rodape } from '../components/Rodape'
 import { Fechar, IconeFita, SetaDiagonal, SetaEsquerda, WhatsApp } from '../components/icones'
 import { FotoTecido } from '../components/FotoTecido'
-import { PontosLook } from '../components/PontosLook'
 import { BotaoDesejo } from '../components/Sacola'
 import { CartaoPeca } from '../components/VisualizacaoRapida'
 import { FaixaColecoes, TituloVivo } from '../components/Vivos'
 import { PROPORCAO } from '../lib/cartao'
+import { Tamanhos, TextoTroca } from '../components/Modernos'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -87,7 +87,6 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
                     carregamento="eager"
                     imgStyle={{ viewTransitionName: 'peca' } as React.CSSProperties}
                   />
-                  {peca.fotos[0] === colecao.capa && <PontosLook colecao={colecao} />}
                 </div>
               ) : (
                 <Espaco rotulo="Espaço para foto da peça" />
@@ -148,23 +147,15 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
                 <IconeFita className="ico" /> Tabela de medidas
               </button>
             </p>
-            <div className="pc-tamanhos" role="radiogroup" aria-label="Tamanho">
-              {peca.tamanhos.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="radio"
-                  aria-checked={tamanho === t}
-                  className={cn(tamanho === t && 'ativo')}
-                  onClick={() => {
-                    setTamanho(t)
-                    setAvisoTamanho(false)
-                  }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <Tamanhos
+              className="pc-tamanhos"
+              opcoes={peca.tamanhos}
+              valor={tamanho}
+              aoEscolher={(t) => {
+                setTamanho(t)
+                setAvisoTamanho(false)
+              }}
+            />
             <p className="pc-modelo">
               A modelo tem <Ph>{peca.modelo.altura}</Ph> e veste <Ph>{peca.modelo.veste}</Ph>.
             </p>
@@ -173,7 +164,7 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
 
           <div className="pc-botoes">
             <button type="button" className="pilula cheia pc-quero" onClick={querer}>
-              <WhatsApp className="ico" /> Quero essa peça <SetaDiagonal className="seta" />
+              <WhatsApp className="ico" /> <TextoTroca>Quero essa peça</TextoTroca> <SetaDiagonal className="seta" />
             </button>
             <BotaoDesejo className="pc-desejo" item={{ colecao: colecao.slug, peca: peca.slug, cor: cor.nome, tamanho }} />
           </div>

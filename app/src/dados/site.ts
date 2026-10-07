@@ -13,17 +13,21 @@ export const site = {
   /** arquivo do logo. Enquanto for null, aparece um espaço reservado. */
   logo: null as string | null,
 
-  /** palavras gigantes da abertura: troque a cada coleção */
+  /** abertura: o nome da marca gigante, como o título de uma revista, e a coleção em destaque */
   abertura: {
+    marca: 'LIVI',
     esquerda: 'Coleção',
     direita: 'Velvet',
     colecao: 'velvet',
     /** foto da abertura: recorte (sem fundo) e a mesma foto com fundo, para o zoom */
-    recorte: '/img/hero/modelo-recorte.webp',
-    foto: '/img/hero/modelo-foto.webp',
+    recorte: '/img/hero/modelo2-recorte.webp',
+    foto: '/img/hero/modelo2-foto.webp',
     /** proporção da foto (largura / altura) e cor do fundo dela */
-    proporcao: 986 / 1532,
-    fundoFoto: '#7e6655',
+    proporcao: 1126 / 1666,
+    fundoFoto: '#9a501f',
+    /** número da coleção na "capa" e o texto do selo que gira */
+    edicao: 'Nº 02',
+    selo: 'Moda autoral · by LM · Role para ver as coleções · ',
     titulo: 'Cada peça, uma assinatura.',
     apoio:
       'Modelagens autorais e caimento fluido, pensados para acompanhar o seu movimento. Atendimento próximo, pelo WhatsApp.',

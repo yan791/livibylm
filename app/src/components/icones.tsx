@@ -152,3 +152,13 @@ export function IconeFita(props: P) {
     </svg>
   )
 }
+
+export function IconeSacola(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M5 8.5h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3Z" />
+      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+      <path d="M12 17.6s-2.6-1.5-2.6-3.2c0-.9.7-1.5 1.4-1.5.5 0 .9.3 1.2.7.3-.4.7-.7 1.2-.7.7 0 1.4.6 1.4 1.5 0 1.7-2.6 3.2-2.6 3.2Z" />
+    </svg>
+  )
+}

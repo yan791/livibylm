@@ -9,6 +9,7 @@ import { Looks } from './sections/Looks'
 import { Atelie, ComoComprar, Diferenciais, Sobre } from './sections/Depois'
 import { FaixaColecoes } from './components/Vivos'
 import { GavetaSacola } from './components/Sacola'
+import { Cortina, GraoFilme, Ilha, usePreenchimentoPilulas } from './components/Modernos'
 import { PaginaColecao } from './paginas/Colecao'
 import { movimentoReduzido } from './lib/midia'
 
@@ -22,11 +23,15 @@ export default function App() {
     iniciarRolagem()
     ScrollTrigger.config({ ignoreMobileResize: true })
   }, [])
+  usePreenchimentoPilulas()
 
   return (
     <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'never'}>
       <Cabecalho rota={rota} />
       <GavetaSacola />
+      <Ilha />
+      <Cortina />
+      <GraoFilme />
       {rota.nome === 'colecao' ? <PaginaColecao key={rota.colecao} rota={rota} /> : <Home rota={rota} />}
     </MotionConfig>
   )

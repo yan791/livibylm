@@ -34,8 +34,6 @@ export type Colecao = {
   clima: string
   descricao: string
   capa: string
-  /** "Compre o look": pontos sobre a foto da capa (x e y de 0 a 1) que levam a cada peça */
-  pontos?: { x: number; y: number; peca: string }[]
   pecas: Peca[]
 }
 
@@ -52,7 +50,6 @@ export const colecoes: Colecao[] = [
     clima: 'Luz e linhas longas.',
     descricao: 'Peças claras, de brilho suave, pensadas para a luz do fim de tarde.',
     capa: '/img/colecoes/lumina.webp',
-    pontos: [{ x: 0.47, y: 0.52, peca: 'vestido-lumina' }],
     pecas: [
       {
         slug: 'vestido-lumina',
@@ -109,7 +106,6 @@ export const colecoes: Colecao[] = [
     clima: 'Terra, calor e drapeado.',
     descricao: 'Tons de terra e chocolate, com drapeados que acompanham o corpo.',
     capa: '/img/colecoes/velvet.webp',
-    pontos: [{ x: 0.55, y: 0.44, peca: 'vestido-velvet' }],
     pecas: [
       {
         slug: 'vestido-velvet',
@@ -166,10 +162,6 @@ export const colecoes: Colecao[] = [
     clima: 'Contraste, sombra e caimento.',
     descricao: 'Preto e vinho em peças de linhas limpas, feitas para a noite.',
     capa: '/img/colecoes/carmim.webp',
-    pontos: [
-      { x: 0.5, y: 0.4, peca: 'conjunto-carmim' },
-      { x: 0.58, y: 0.84, peca: 'saia-carmim' },
-    ],
     pecas: [
       {
         slug: 'conjunto-carmim',
@@ -226,7 +218,6 @@ export const colecoes: Colecao[] = [
     clima: 'Estrutura e presença.',
     descricao: 'Modelagens ajustadas, de recortes precisos, para quem gosta de presença.',
     capa: '/img/colecoes/confianca.webp',
-    pontos: [{ x: 0.5, y: 0.56, peca: 'vestido-confianca' }],
     pecas: [
       {
         slug: 'vestido-confianca',

@@ -6,6 +6,7 @@ import { rolarPara, pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { Logo } from './Logo'
 import { BotaoSacola } from './Sacola'
+import { TextoTroca } from './Modernos'
 import { Fechar, Instagram, Menu, SetaDiagonal, WhatsApp } from './icones'
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -122,7 +123,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
               transition={{ duration: 0.6, delay: 0.45 }}
             >
               <a href={linkWhatsApp()} target="_blank" rel="noreferrer" className="pilula cheia">
-                Atendimento pelo WhatsApp <SetaDiagonal className="seta" />
+                <TextoTroca>Atendimento pelo WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
               </a>
               <a href={site.instagram} target="_blank" rel="noreferrer" className="menu-insta">
                 <Instagram className="ico" /> {site.instagramArroba}

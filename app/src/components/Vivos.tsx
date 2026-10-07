@@ -3,8 +3,8 @@
   (motion-primitives Magnetic) e a faixa infinita com os nomes das coleções
   (motion-primitives InfiniteSlider).
 */
-import { Fragment, useRef } from 'react'
-import { motion, useInView, type Variants } from 'motion/react'
+import { Fragment, useRef, useState } from 'react'
+import { AnimatePresence, motion, useInView, useMotionValue, useSpring, type Variants } from 'motion/react'
 import { colecoes } from '../dados/colecoes'
 import { navegar } from '../lib/rota'
 import { cn } from '../lib/cn'
@@ -85,14 +85,46 @@ export function Ima({ children, forca = 0.22 }: { children: React.ReactNode; for
 
 /** faixa contínua com os nomes das coleções */
 export function FaixaColecoes({ escura = false, reverso = false }: { escura?: boolean; reverso?: boolean }) {
+  // a foto da coleção aparece e segue o mouse enquanto ele passa pelo nome
+  const [foto, setFoto] = useState<string | null>(null)
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const x = useSpring(mx, { stiffness: 220, damping: 26, mass: 0.6 })
+  const y = useSpring(my, { stiffness: 220, damping: 26, mass: 0.6 })
   return (
-    <section className={cn('faixa', escura && 'escura')} aria-label="Coleções Livi">
+    <section
+      className={cn('faixa', escura && 'escura')}
+      aria-label="Coleções Livi"
+      onPointerMove={(e) => {
+        if (e.pointerType !== 'mouse') return
+        mx.set(e.clientX)
+        my.set(e.clientY)
+      }}
+      onPointerLeave={() => setFoto(null)}
+    >
+      <AnimatePresence>
+        {foto && (
+          <motion.img
+            key={foto}
+            src={foto}
+            alt=""
+            className="faixa-foto"
+            style={{ x, y }}
+            initial={{ opacity: 0, scale: 0.7, rotate: -6 }}
+            animate={{ opacity: 1, scale: 1, rotate: -3 }}
+            exit={{ opacity: 0, scale: 0.85, rotate: 2 }}
+            transition={{ duration: 0.45, ease }}
+          />
+        )}
+      </AnimatePresence>
       <InfiniteSlider gap={0} speed={38} speedOnHover={14} reverse={reverso}>
         {colecoes.map((c) => (
           <a
             key={c.slug}
             href={`/colecao/${c.slug}`}
             className="faixa-item"
+            onPointerEnter={(e) => e.pointerType === 'mouse' && setFoto(c.capa)}
+            onPointerLeave={() => setFoto(null)}
             onClick={(e) => {
               e.preventDefault()
               navegar(`/colecao/${c.slug}`)
