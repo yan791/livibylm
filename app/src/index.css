@@ -446,6 +446,7 @@ img {
   min-height: 520px;
   overflow: hidden;
   background: var(--creme);
+  transition: background-color 1.2s var(--ease);
 }
 
 .ap-cor,
@@ -548,9 +549,119 @@ img {
   height: 100%;
 }
 
+/* as fotos da abertura se revezam: a ativa aparece e assenta, as outras somem */
 .ap-hero-recorte {
   object-fit: cover;
   user-select: none;
+  opacity: 0;
+  scale: 1.03;
+  transition:
+    opacity 1.2s var(--ease),
+    scale 1.8s var(--ease);
+}
+
+.ap-hero-recorte.ativa {
+  opacity: 1;
+  scale: 1;
+}
+
+/* foto com fundo de estúdio: as bordas se dissolvem na cor da abertura */
+.ap-hero-recorte.com-fundo {
+  object-position: 50% 0;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 24%, #000 76%, transparent),
+    linear-gradient(to bottom, transparent, #000 16%);
+  mask-image:
+    linear-gradient(to right, transparent, #000 24%, #000 76%, transparent),
+    linear-gradient(to bottom, transparent, #000 16%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* com a modelo recortada as palavras ficam atrás dela; com foto de fundo, à frente,
+   senão a borda da foto cobre o fim de "Coleção" */
+.ap-palco[data-foto='com-fundo'] .ap-palavras {
+  z-index: 1;
+}
+
+.ap-ui {
+  z-index: 2;
+}
+
+/* foto escura: os textos e traços da abertura clareiam junto com o fundo */
+.ap-palavras,
+.ap-moldura,
+.ap-logo .logo-provisorio,
+.ap-whats,
+.ap-sacola,
+.ap-menu-botao,
+.ap-intro,
+.ap-intro h2,
+.ap-intro-icone,
+.ap-rolar {
+  transition:
+    color 1s var(--ease),
+    border-color 1s var(--ease),
+    background-color 1s var(--ease);
+}
+
+.ap-palco[data-tema='escuro'] .ap-palavras,
+.ap-palco[data-tema='escuro'] .logo-provisorio,
+.ap-palco[data-tema='escuro'] .ap-whats,
+.ap-palco[data-tema='escuro'] .ap-sacola,
+.ap-palco[data-tema='escuro'] .ap-intro h2,
+.ap-palco[data-tema='escuro'] .ap-intro-icone {
+  color: var(--rose-claro);
+}
+
+.ap-palco[data-tema='escuro'] .ap-palavra-luz {
+  color: var(--creme);
+}
+
+.ap-palco[data-tema='escuro'] .ap-moldura {
+  border-color: rgb(230 205 191 / 0.28);
+}
+
+.ap-palco[data-tema='escuro'] .ap-menu a {
+  color: rgb(230 205 191 / 0.55);
+}
+
+.ap-palco[data-tema='escuro'] .ap-menu a:hover,
+.ap-palco[data-tema='escuro'] .ap-menu a.ativo {
+  color: var(--rose-claro);
+}
+
+.ap-palco[data-tema='escuro'] .ap-intro {
+  color: var(--creme);
+}
+
+.ap-palco[data-tema='escuro'] .sacola-contador {
+  background: var(--rose-claro);
+  color: var(--vinho);
+}
+
+.ap-palco[data-tema='escuro'] .ap-cartao .pilula,
+.ap-palco[data-tema='escuro'] .ap-menu-botao {
+  border-color: rgb(230 205 191 / 0.6);
+  color: var(--rose-claro);
+  background: rgb(54 14 0 / 0.35);
+}
+
+.ap-palco[data-tema='escuro'] .ap-cartao .pilula:hover {
+  background: var(--rose-claro);
+  color: var(--vinho);
+}
+
+.ap-palco[data-tema='escuro'] .ap-rolar {
+  color: var(--rose);
+}
+
+.ap-palco[data-tema='escuro'] .ap-rolar-linha {
+  background: rgb(230 205 191 / 0.22);
+}
+
+.ap-palco[data-tema='escuro'] .ap-rolar-linha::after {
+  background: var(--rose-claro);
 }
 
 .ap-ui {
@@ -992,6 +1103,66 @@ html[data-movimento='reduzido'] .ap-rolar-linha::after {
 
 .lk-lista {
   display: none;
+}
+
+/* convite para continuar rolando: uma linha com um traço descendo e uma seta discreta */
+.guia-rolar {
+  position: absolute;
+  left: 50%;
+  bottom: 2.4svh;
+  translate: -50% 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--vinho);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.guia-rolar.escuro,
+.lk-palco[data-tema='escuro'] .guia-rolar {
+  color: var(--rose-claro);
+}
+
+.guia-rolar-linha {
+  position: relative;
+  width: 1px;
+  height: 44px;
+  overflow: hidden;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.guia-rolar-linha::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  transform: translateY(-100%);
+  animation: convite-rolar 2.4s var(--ease) infinite;
+}
+
+.guia-rolar-seta {
+  width: 12px;
+  height: 7px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: convite-seta 2.4s var(--ease) infinite;
+}
+
+@keyframes convite-seta {
+  0%,
+  35%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(-2px);
+  }
+  58% {
+    opacity: 1;
+    transform: translateY(2px);
+  }
 }
 
 /* ============================================================
@@ -3600,7 +3771,8 @@ html[data-movimento='reduzido'] .lk-cores,
 html[data-movimento='reduzido'] .lk-nome,
 html[data-movimento='reduzido'] .lk-cartao,
 html[data-movimento='reduzido'] .lk-info,
-html[data-movimento='reduzido'] .lk-rotulo {
+html[data-movimento='reduzido'] .lk-rotulo,
+html[data-movimento='reduzido'] .guia-rolar {
   display: none;
 }
 

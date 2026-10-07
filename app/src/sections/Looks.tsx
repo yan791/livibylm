@@ -12,6 +12,7 @@ import { alturaCartao, PROPORCAO } from '../lib/cartao'
 import { SetaDiagonal } from '../components/icones'
 import { FotoTecido } from '../components/FotoTecido'
 import { PontosLook } from '../components/PontosLook'
+import { GuiaRolar } from '../components/Vivos'
 
 const FUNDO_FINAL = '#ece5de'
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
@@ -37,6 +38,7 @@ export function Looks() {
         const rotulos = q('.lk-rotulo') as HTMLElement[]
         const cores = q('.lk-cor') as HTMLElement[]
         const corFinal = q('.lk-cor-final')[0] as HTMLElement
+        const guia = q('.guia-rolar')[0] as HTMLElement
         const ars = colecoes.map((c) => PROPORCAO[c.slug])
         const n = colecoes.length
         const estado = { pos: 0, fim: 0, intro: 0 }
@@ -94,6 +96,7 @@ export function Looks() {
           })
           cores.forEach((c, i) => (c.style.opacity = String(i === 0 ? 1 : Math.min(1, Math.max(0, p - (i - 1))))))
           corFinal.style.opacity = String(e)
+          guia.style.opacity = String((1 - estado.intro) * (1 - e))
           const tema = colecoes[Math.round(p)].tema
           el.dataset.tema = e > 0.5 ? 'claro' : tema
         }
@@ -182,6 +185,10 @@ export function Looks() {
             </span>
           </a>
         ))}
+
+        {/* continua o convite que surge no fim da abertura; dá lugar ao nome e às
+            informações do look assim que a rolagem segue */}
+        <GuiaRolar />
 
         {/* celular e movimento reduzido: um look por bloco */}
         <div className="lk-lista">

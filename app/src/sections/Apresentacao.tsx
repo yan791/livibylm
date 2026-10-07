@@ -4,27 +4,85 @@
   saem pelas laterais, a modelo dá um passo para trás e o primeiro look da
   coleção (Lúmina) chega ao centro, exatamente onde os looks começam.
   Camadas: cores de fundo > brilho > palavras > moldura > fotos > interface.
+  Parada no topo, a abertura reveza as fotos das coleções: a foto, o nome
+  gigante, o cartão e a cor de fundo mudam juntos.
 */
-import { useLayoutEffect, useRef } from 'react'
-import { motion } from 'motion/react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
 import { acharColecao, colecoes } from '../dados/colecoes'
 import { gsap } from '../lib/scroll'
 import { mostrarCatalogo } from '../lib/catalogo'
+import { cn } from '../lib/cn'
 import { TextEffect } from '../components/core/text-effect'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
 import { IconeAgulha, Menu, SetaDiagonal } from '../components/icones'
 import { PROPORCAO } from '../lib/cartao'
-import { Ima } from '../components/Vivos'
+import { GuiaRolar, Ima } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
+/** palavra gigante: as letras surgem uma a uma e o brilho de veludo chega depois */
+function Palavra({ texto, atraso, atrasoLuz }: { texto: string; atraso: number; atrasoLuz: number }) {
+  return (
+    <>
+      <TextEffect
+        as="span"
+        per="char"
+        preset="fade-in-blur"
+        delay={atraso}
+        speedReveal={0.45}
+        speedSegment={0.32}
+        className="ap-palavra-base grao"
+      >
+        {texto}
+      </TextEffect>
+      <motion.span
+        className="ap-palavra-luz"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, delay: atrasoLuz }}
+      >
+        {texto}
+      </motion.span>
+    </>
+  )
+}
+
 export function Apresentacao() {
   const palco = useRef<HTMLDivElement>(null)
-  const colecaoAbertura = acharColecao(site.abertura.colecao)!
+  const cartao = useRef<HTMLDivElement>(null)
+  const a = site.abertura
+  const [indice, setIndice] = useState(0)
+  const [trocou, setTrocou] = useState(false)
+  const foto = a.fotos[indice]
+  const colecaoAtual = acharColecao(foto.colecao)!
   const primeira = colecoes[0]
+
+  // as fotos se revezam sozinhas enquanto a visitante está parada no topo
+  useEffect(() => {
+    if (a.fotos.length < 2) return
+    let sobreOCartao = false
+    const area = cartao.current
+    const entrar = () => (sobreOCartao = true)
+    const sair = () => (sobreOCartao = false)
+    area?.addEventListener('pointerenter', entrar)
+    area?.addEventListener('pointerleave', sair)
+    const id = window.setInterval(() => {
+      const noTopo = window.scrollY < 40
+      const livre = !document.hidden && !document.documentElement.classList.contains('lenis-stopped')
+      if (!noTopo || !livre || sobreOCartao) return
+      setTrocou(true)
+      setIndice((i) => (i + 1) % a.fotos.length)
+    }, a.intervalo * 1000)
+    return () => {
+      window.clearInterval(id)
+      area?.removeEventListener('pointerenter', entrar)
+      area?.removeEventListener('pointerleave', sair)
+    }
+  }, [a.fotos.length, a.intervalo])
 
   useLayoutEffect(() => {
     const el = palco.current
@@ -79,6 +137,8 @@ export function Apresentacao() {
           { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: 'power2.out', immediateRender: true },
           0.5,
         )
+        // o look chegou sozinho ao centro: o convite para continuar rolando aparece embaixo
+        tl.fromTo(q('.guia-rolar'), { opacity: 0 }, { opacity: 1, duration: 0.25, immediateRender: true }, 0.85)
       },
     )
 
@@ -102,48 +162,42 @@ export function Apresentacao() {
 
   const abrirColecao = (e: React.MouseEvent) => {
     e.preventDefault()
-    const img = (e.currentTarget.closest('.ap-cartao') as HTMLElement | null)?.querySelector('img')
-    mostrarCatalogo(colecaoAbertura.slug, img)
+    mostrarCatalogo(colecaoAtual.slug, cartao.current?.querySelector('.ap-cartao-peca img'))
   }
-
-  const a = site.abertura
 
   return (
     <section className="ap" id="inicio" aria-label="Abertura">
-      <div className="ap-palco" ref={palco}>
+      <div
+        className="ap-palco"
+        ref={palco}
+        data-tema={foto.tema ?? 'claro'}
+        data-foto={foto.recorte ? 'recorte' : 'com-fundo'}
+        style={{ backgroundColor: foto.fundo }}
+      >
         <div className="ap-cor" aria-hidden="true" style={{ background: primeira.fundo }} />
         <div className="ap-brilho" aria-hidden="true" />
 
         <h1 className="ap-palavras">
           <span className="sr-only">
-            {a.esquerda} {a.direita}, Livi by LM
+            {a.esquerda} {colecaoAtual.nome}, Livi by LM
           </span>
-          {[
-            ['esq', a.esquerda, 0.35],
-            ['dir', a.direita, 0.55],
-          ].map(([lado, texto, atraso]) => (
-            <span key={lado as string} className={`ap-palavra ${lado}`} aria-hidden="true">
-              <TextEffect
-                as="span"
-                per="char"
-                preset="fade-in-blur"
-                delay={atraso as number}
-                speedReveal={0.45}
-                speedSegment={0.32}
-                className="ap-palavra-base grao"
-              >
-                {texto as string}
-              </TextEffect>
+          <span className="ap-palavra esq" aria-hidden="true">
+            <Palavra texto={a.esquerda} atraso={0.35} atrasoLuz={1.8} />
+          </span>
+          <span className="ap-palavra dir" aria-hidden="true">
+            {/* só a opacidade anima aqui: transform ou filter tirariam o brilho do lugar */}
+            <AnimatePresence mode="wait">
               <motion.span
-                className="ap-palavra-luz"
-                initial={{ opacity: 0 }}
+                key={colecaoAtual.slug}
+                initial={false}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 1.2, delay: 1.8 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.45, ease }}
               >
-                {texto as string}
+                <Palavra texto={colecaoAtual.nome} atraso={trocou ? 0.05 : 0.55} atrasoLuz={trocou ? 0.9 : 1.8} />
               </motion.span>
-            </span>
-          ))}
+            </AnimatePresence>
+          </span>
         </h1>
 
         <motion.div
@@ -166,10 +220,21 @@ export function Apresentacao() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 1.5, ease, delay: 0.15 }}
             >
-              <img className="ap-hero-recorte" src={a.recorte} alt="" draggable={false} fetchPriority="high" />
+              {a.fotos.map((f, i) => (
+                <img
+                  key={f.src}
+                  className={cn('ap-hero-recorte', !f.recorte && 'com-fundo', i === indice && 'ativa')}
+                  src={f.src}
+                  alt=""
+                  draggable={false}
+                  fetchPriority={i === 0 ? 'high' : 'low'}
+                />
+              ))}
             </motion.div>
           </div>
         </div>
+
+        <GuiaRolar escuro={primeira.tema === 'escuro'} />
 
         <div className="ap-ui">
           <motion.header
@@ -218,22 +283,45 @@ export function Apresentacao() {
           </motion.div>
 
           <motion.div
+            ref={cartao}
             className="ap-cartao"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease, delay: 1.05 }}
           >
             <a
-              href={`/colecao/${colecaoAbertura.slug}`}
+              href={`/colecao/${colecaoAtual.slug}`}
               className="ap-cartao-peca"
               onClick={abrirColecao}
-              aria-label={`Ver a coleção ${colecaoAbertura.nome}`}
+              aria-label={`Ver a coleção ${colecaoAtual.nome}`}
             >
-              <img src={colecaoAbertura.capa} alt="" draggable={false} />
-              <span className="ap-cartao-nome">{colecaoAbertura.nome}</span>
+              <AnimatePresence initial={false}>
+                <motion.img
+                  key={colecaoAtual.slug}
+                  src={colecaoAtual.capa}
+                  alt=""
+                  draggable={false}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.9, ease }}
+                />
+              </AnimatePresence>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={colecaoAtual.slug}
+                  className="ap-cartao-nome"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4, ease }}
+                >
+                  {colecaoAtual.nome}
+                </motion.span>
+              </AnimatePresence>
             </a>
             <Ima>
-              <a href={`/colecao/${colecaoAbertura.slug}`} className="pilula" onClick={abrirColecao}>
+              <a href={`/colecao/${colecaoAtual.slug}`} className="pilula" onClick={abrirColecao}>
                 Ver coleção <SetaDiagonal className="seta" />
               </a>
             </Ima>

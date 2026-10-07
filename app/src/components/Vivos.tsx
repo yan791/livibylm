@@ -83,6 +83,18 @@ export function Ima({ children, forca = 0.22 }: { children: React.ReactNode; for
   )
 }
 
+/** convite visual para continuar rolando: uma linha com um traço descendo e uma seta discreta */
+export function GuiaRolar({ escuro = false }: { escuro?: boolean }) {
+  return (
+    <div className={cn('guia-rolar', escuro && 'escuro')} aria-hidden="true">
+      <span className="guia-rolar-linha" />
+      <svg className="guia-rolar-seta" viewBox="0 0 12 7">
+        <path d="M1 1 L6 6 L11 1" />
+      </svg>
+    </div>
+  )
+}
+
 /** faixa contínua com os nomes das coleções */
 export function FaixaColecoes({ escura = false, reverso = false }: { escura?: boolean; reverso?: boolean }) {
   return (
