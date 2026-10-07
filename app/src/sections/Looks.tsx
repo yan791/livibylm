@@ -188,7 +188,7 @@ export function Looks() {
 
         {/* continua o convite que surge no fim da abertura; dá lugar ao nome e às
             informações do look assim que a rolagem segue */}
-        <GuiaRolar />
+        <GuiaRolar ar={PROPORCAO[colecoes[0].slug]} />
 
         {/* celular e movimento reduzido: um look por bloco */}
         <div className="lk-lista">

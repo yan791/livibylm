@@ -234,7 +234,7 @@ export function Apresentacao() {
           </div>
         </div>
 
-        <GuiaRolar escuro={primeira.tema === 'escuro'} />
+        <GuiaRolar ar={PROPORCAO[primeira.slug]} escuro={primeira.tema === 'escuro'} />
 
         <div className="ap-ui">
           <motion.header

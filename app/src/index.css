@@ -1105,18 +1105,33 @@ html[data-movimento='reduzido'] .ap-rolar-linha::after {
   display: none;
 }
 
-/* convite para continuar rolando: uma linha com um traço descendo e uma seta discreta */
+/* convite para continuar rolando: dos dois lados do look, uma linha com um traço descendo e uma seta */
 .guia-rolar {
+  /* altura do look (a mesma de .lk-cartao e .ap-look) e distância das setas até a foto */
+  --h: 78svh;
+  --afastamento: clamp(28px, 4vw, 64px);
   position: absolute;
-  left: 50%;
-  bottom: 2.4svh;
-  translate: -50% 0;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
+  inset: 0;
   color: var(--vinho);
   opacity: 0;
   pointer-events: none;
+}
+
+.guia-rolar-lado {
+  position: absolute;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.guia-rolar-lado.esq {
+  left: calc(50% - var(--h) * var(--ar) / 2 - var(--afastamento));
+}
+
+.guia-rolar-lado.dir {
+  left: calc(50% + var(--h) * var(--ar) / 2 + var(--afastamento));
 }
 
 .guia-rolar.escuro,
@@ -1127,7 +1142,7 @@ html[data-movimento='reduzido'] .ap-rolar-linha::after {
 .guia-rolar-linha {
   position: relative;
   width: 1px;
-  height: 44px;
+  height: 56px;
   overflow: hidden;
   background: color-mix(in srgb, currentColor 22%, transparent);
 }
@@ -3567,6 +3582,10 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
     border-radius: 14px;
   }
 
+  .guia-rolar {
+    --h: 62svh;
+  }
+
   .lk-nome {
     font-size: 24vw;
   }
@@ -3742,6 +3761,20 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
 
   .pc-tamanhos button {
     min-width: 48px;
+  }
+}
+
+/* celular em pé: o look ocupa quase toda a largura e não sobra lado; o convite fica embaixo */
+@media (max-aspect-ratio: 3/5) {
+  .guia-rolar-lado.dir {
+    display: none;
+  }
+
+  .guia-rolar-lado.esq {
+    top: auto;
+    bottom: 2.4svh;
+    left: 50%;
+    translate: -50% 0;
   }
 }
 

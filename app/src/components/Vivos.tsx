@@ -83,14 +83,22 @@ export function Ima({ children, forca = 0.22 }: { children: React.ReactNode; for
   )
 }
 
-/** convite visual para continuar rolando: uma linha com um traço descendo e uma seta discreta */
-export function GuiaRolar({ escuro = false }: { escuro?: boolean }) {
+/**
+  Convite visual para continuar rolando: dos dois lados do look centralizado,
+  uma linha com um traço descendo e uma seta discreta. `ar` é a proporção do
+  look, para as setas ficarem rente à foto.
+*/
+export function GuiaRolar({ ar, escuro = false }: { ar: number; escuro?: boolean }) {
   return (
-    <div className={cn('guia-rolar', escuro && 'escuro')} aria-hidden="true">
-      <span className="guia-rolar-linha" />
-      <svg className="guia-rolar-seta" viewBox="0 0 12 7">
-        <path d="M1 1 L6 6 L11 1" />
-      </svg>
+    <div className={cn('guia-rolar', escuro && 'escuro')} style={{ '--ar': ar } as React.CSSProperties} aria-hidden="true">
+      {['esq', 'dir'].map((lado) => (
+        <span key={lado} className={cn('guia-rolar-lado', lado)}>
+          <span className="guia-rolar-linha" />
+          <svg className="guia-rolar-seta" viewBox="0 0 12 7">
+            <path d="M1 1 L6 6 L11 1" />
+          </svg>
+        </span>
+      ))}
     </div>
   )
 }
