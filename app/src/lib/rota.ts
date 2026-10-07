@@ -14,6 +14,9 @@ export type Rota =
 const ouvintes = new Set<() => void>()
 const emitir = () => ouvintes.forEach((f) => f())
 
+/** página atual, para o "voltar" ignorar passos que não trocam de página (ex.: o catálogo) */
+let paginaAtual = typeof location === 'undefined' ? '/' : location.pathname
+
 let antesDeTrocar: (() => void) | null = null
 /** chamado logo antes de uma troca de página (ex.: guardar a rolagem da home) */
 export function aoSairDaPagina(fn: (() => void) | null) {
@@ -64,6 +67,7 @@ export function navegar(url: string, o: { substituir?: boolean; tipo?: string; s
   if (!mesmaPagina) antesDeTrocar?.()
   const aplicar = () => {
     history[o.substituir ? 'replaceState' : 'pushState'](null, '', url)
+    paginaAtual = location.pathname
     emitir()
   }
   if (o.semTransicao) {
@@ -75,6 +79,8 @@ export function navegar(url: string, o: { substituir?: boolean; tipo?: string; s
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
+    if (location.pathname === paginaAtual) return
+    paginaAtual = location.pathname
     antesDeTrocar?.()
     comTransicao(emitir, 'voltar')
   })

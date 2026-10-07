@@ -10,6 +10,8 @@ import { movimentoReduzido } from './midia'
 gsap.registerPlugin(ScrollTrigger)
 
 let lenis: Lenis | null = null
+/** quem pediu para parar a rolagem (menu, sacola, catálogo...). Só volta quando todos soltam. */
+const travas = new Set<string>()
 
 export function iniciarRolagem() {
   if (lenis || movimentoReduzido()) return lenis
@@ -17,6 +19,7 @@ export function iniciarRolagem() {
   lenis.on('scroll', ScrollTrigger.update)
   gsap.ticker.add((t) => lenis?.raf(t * 1000))
   gsap.ticker.lagSmoothing(0)
+  if (travas.size) lenis.stop()
   return lenis
 }
 
@@ -32,9 +35,11 @@ export function rolarPara(alvo: string | number | HTMLElement, o: { imediato?: b
   window.scrollTo({ top: typeof alvo === 'number' ? y : y + scrollY + (o.deslocamento ?? 0), behavior: o.imediato ? 'auto' : 'smooth' })
 }
 
-export function pausarRolagem(p: boolean) {
+export function pausarRolagem(p: boolean, quem = 'geral') {
+  if (p) travas.add(quem)
+  else travas.delete(quem)
   if (!lenis) return
-  if (p) lenis.stop()
+  if (travas.size) lenis.stop()
   else lenis.start()
 }
 

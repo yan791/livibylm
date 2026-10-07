@@ -123,6 +123,7 @@ export function GavetaSacola() {
           />
           <motion.aside
             className="gaveta"
+            data-lenis-prevent
             role="dialog"
             aria-modal="true"
             aria-label="Sacola de desejos"

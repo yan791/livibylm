@@ -6,7 +6,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import { colecoes } from '../dados/colecoes'
 import { gsap, ScrollTrigger } from '../lib/scroll'
-import { navegar } from '../lib/rota'
+import { comTransicao } from '../lib/rota'
+import { abrirCatalogo } from '../lib/catalogo'
 import { movimentoReduzido } from '../lib/midia'
 import { alturaCartao, PROPORCAO } from '../lib/cartao'
 import { SetaDiagonal } from '../components/icones'
@@ -126,7 +127,7 @@ export function Looks() {
     return () => mm.revert()
   }, [])
 
-  // a foto clicada "voa" até a página da coleção (View Transitions)
+  // a foto tocada "voa" até a primeira peça do catálogo da coleção (View Transitions)
   const abrir = (slug: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     const alvo = e.currentTarget as HTMLElement
@@ -135,7 +136,10 @@ export function Looks() {
       document.querySelector<HTMLImageElement>(`.lk-cartao[data-slug="${slug}"] img`) ??
       document.querySelector<HTMLImageElement>(`.lk-bloco[data-slug="${slug}"] img`)
     if (img) img.style.viewTransitionName = 'peca'
-    navegar(`/colecao/${slug}`)
+    comTransicao(() => {
+      if (img) img.style.viewTransitionName = ''
+      abrirCatalogo(slug)
+    }, 'catalogo')
   }
 
   return (

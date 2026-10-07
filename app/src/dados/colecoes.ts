@@ -18,7 +18,10 @@ export type Peca = {
   tecido: string
   cores: Cor[]
   tamanhos: string[]
-  /** fotos da peça vestida. A primeira aparece em destaque. Vazio = espaço para foto. */
+  /**
+   * fotos da peça vestida, de 1 a 3 (ex.: frente, costas e detalhe). A primeira aparece na
+   * vitrine e em destaque; as outras viram miniaturas na peça aberta. Vazio = espaço para foto.
+   */
   fotos: string[]
   modelo: { altura: string; veste: string }
 }

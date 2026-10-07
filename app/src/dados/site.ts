@@ -32,7 +32,6 @@ export const site = {
   menu: [
     { rotulo: 'Início', href: '#inicio' },
     { rotulo: 'Coleções', href: '#colecoes' },
-    { rotulo: 'Ateliê', href: '#atelie' },
     { rotulo: 'Sobre', href: '#sobre' },
     { rotulo: 'Contato', href: '#contato' },
   ],

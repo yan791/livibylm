@@ -954,7 +954,7 @@ img {
 .dif {
   position: relative;
   z-index: 3;
-  padding: clamp(72px, 12vh, 140px) clamp(20px, 6vw, 96px) clamp(56px, 9vh, 110px);
+  padding: clamp(40px, 6vh, 72px) clamp(20px, 6vw, 96px) clamp(40px, 6vh, 72px);
   background: var(--creme-2);
 }
 
@@ -995,8 +995,8 @@ img {
 }
 
 .dif-fecho {
-  margin-top: clamp(56px, 9vh, 110px);
-  padding-top: 5vh;
+  margin-top: clamp(32px, 5vh, 56px);
+  padding-top: clamp(24px, 4vh, 40px);
   border-top: 1px solid rgb(79 15 16 / 0.18);
   display: flex;
   justify-content: space-between;
@@ -1029,7 +1029,6 @@ img {
 }
 
 .sobre,
-.atelie,
 .comprar {
   padding: clamp(80px, 14vh, 160px) clamp(20px, 6vw, 96px);
   background: var(--creme);
@@ -1075,21 +1074,6 @@ img {
   color: var(--vinho);
 }
 
-.atelie {
-  background: var(--creme-2);
-}
-
-.atelie-topo {
-  display: grid;
-  gap: 18px;
-  max-width: 900px;
-}
-
-.atelie-nota {
-  font-size: 0.9rem;
-}
-
-.atelie-etapas,
 .comprar-passos {
   margin-top: clamp(40px, 7vh, 80px);
   display: grid;
@@ -1097,7 +1081,6 @@ img {
   gap: clamp(20px, 3vw, 48px);
 }
 
-.atelie-etapas li,
 .comprar-passos li {
   padding-top: 20px;
   border-top: 1px solid rgb(79 15 16 / 0.2);
@@ -1106,14 +1089,12 @@ img {
   align-content: start;
 }
 
-.atelie-etapas .num,
 .comprar-passos .num {
   font-size: 0.66rem;
   letter-spacing: 0.3em;
   color: var(--taupe);
 }
 
-.atelie-etapas strong,
 .comprar-passos strong {
   font-family: var(--serif);
   font-weight: 500;
@@ -1121,29 +1102,9 @@ img {
   color: var(--vinho);
 }
 
-.atelie-etapas p,
 .comprar-passos p {
   font-size: 0.95rem;
   line-height: 1.65;
-}
-
-.atelie-bastidores {
-  margin: clamp(48px, 8vh, 96px) calc(-1 * clamp(20px, 6vw, 96px)) 0;
-  padding: 0 clamp(20px, 6vw, 96px) 12px;
-  display: flex;
-  gap: 18px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-
-.atelie-bastidores::-webkit-scrollbar {
-  display: none;
-}
-
-.atelie-quadro {
-  flex: 0 0 clamp(220px, 24vw, 340px);
-  scroll-snap-align: start;
 }
 
 .comprar-topo {
@@ -2632,6 +2593,588 @@ img {
 }
 
 /* ============================================================
+   CATÁLOGO RÁPIDO (abre por cima da página)
+   ============================================================ */
+
+.cat {
+  --topo-h: 80px;
+  --margem: clamp(20px, 4vw, 56px);
+  position: fixed;
+  inset: 0;
+  z-index: 84;
+  display: flex;
+  flex-direction: column;
+  background: var(--fundo);
+  color: var(--chocolate);
+  overscroll-behavior: contain;
+  transition:
+    background-color 0.6s var(--ease),
+    color 0.6s var(--ease);
+}
+
+.cat.tema-escuro {
+  color: var(--creme);
+}
+
+.cat.tema-escuro .sobretitulo {
+  color: var(--rose);
+}
+
+.cat-topo {
+  flex: none;
+  height: var(--topo-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 var(--margem);
+}
+
+.cat-topo-acoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat-voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8em;
+  min-height: 44px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cat-voltar .ico {
+  width: 1.3em;
+}
+
+.cat-fechar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.35s var(--ease);
+}
+
+.cat-fechar:hover {
+  border-color: currentColor;
+}
+
+.cat-fechar svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cat.tema-escuro .sacola-botao {
+  color: var(--rose-claro);
+}
+
+.cat.tema-escuro .sacola-contador {
+  background: var(--rose-claro);
+  color: var(--vinho);
+}
+
+.cat-corpo {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+/* vitrine: a fileira de peças */
+.cat-vitrine {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-bottom: clamp(20px, 4svh, 40px);
+}
+
+.cat-colecoes {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px var(--margem) 4px;
+  scrollbar-width: none;
+}
+
+.cat-colecoes::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-colecoes button {
+  flex: none;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  font-family: var(--serif);
+  font-size: 1rem;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.35s var(--ease),
+    color 0.35s var(--ease),
+    border-color 0.35s var(--ease);
+}
+
+.cat-colecoes button:hover {
+  border-color: currentColor;
+}
+
+.cat-colecoes button.ativa {
+  background: var(--vinho);
+  border-color: var(--vinho);
+  color: var(--rose-claro);
+}
+
+.cat.tema-escuro .cat-colecoes button.ativa {
+  background: var(--rose-claro);
+  border-color: var(--rose-claro);
+  color: var(--vinho);
+}
+
+.cat-bloco {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cat-cabeca {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  padding: clamp(14px, 3svh, 32px) var(--margem) clamp(14px, 2.4svh, 26px);
+}
+
+.cat-titulo {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.6rem, 6vw, 5rem);
+  line-height: 1;
+  color: var(--vinho);
+}
+
+.cat.tema-escuro .cat-titulo,
+.cat.tema-escuro .cat-nome {
+  color: var(--rose-claro);
+}
+
+.cat-clima {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  opacity: 0.85;
+}
+
+.cat-setas {
+  flex: none;
+  display: flex;
+  gap: 8px;
+}
+
+.cat-setas button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  color: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.35s var(--ease),
+    opacity 0.35s var(--ease);
+}
+
+.cat-setas button:hover:not(:disabled) {
+  border-color: currentColor;
+}
+
+.cat-setas button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.cat-setas svg {
+  width: 16px;
+  height: 12px;
+}
+
+.cat-trilho {
+  /* o que sobra da tela depois do topo, das abas e do título */
+  --foto-h: clamp(220px, 100svh - 460px, 600px);
+  position: relative;
+  display: flex;
+  column-gap: clamp(14px, 1.8vw, 26px);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--margem);
+  padding: 4px var(--margem) 8px;
+  scrollbar-width: none;
+}
+
+.cat-trilho::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-trilho > li {
+  flex: none;
+  width: calc(var(--foto-h) * 0.75);
+  scroll-snap-align: start;
+}
+
+.cat-card {
+  position: relative;
+}
+
+.cat-card-gatilho {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cat-card-foto {
+  display: block;
+  height: var(--foto-h);
+  margin-bottom: 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 50px -30px rgb(30 10 0 / 0.55);
+}
+
+.cat-card-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 25%;
+  transition: transform 1s var(--ease);
+}
+
+.cat-card-gatilho:hover .cat-card-foto img {
+  transform: scale(1.04);
+}
+
+.cat-card-foto .espaco {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cat-card-nome {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.cat-card-preco {
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  opacity: 0.85;
+}
+
+.cat-card-desejo {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+
+.cat-progresso {
+  height: 1px;
+  margin: clamp(14px, 2.4svh, 24px) var(--margem) 0;
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  overflow: hidden;
+}
+
+.cat-progresso span {
+  display: block;
+  height: 100%;
+  background: currentColor;
+}
+
+.cat-dica {
+  display: none;
+}
+
+/* peça aberta */
+.cat-peca {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(0, 480px);
+  justify-content: center;
+  align-items: start;
+  gap: clamp(32px, 5vw, 80px);
+  padding: 0 var(--margem) clamp(24px, 4svh, 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--fundo);
+}
+
+/* fotos: a principal e, quando houver mais de uma, as miniaturas ao lado */
+.cat-galeria {
+  --galeria-h: min(calc(100svh - var(--topo-h) - 48px), 68svh, 640px);
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cat-foto-principal {
+  flex: none;
+  height: var(--galeria-h);
+  aspect-ratio: 2 / 3;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 34px 70px -32px rgb(30 10 0 / 0.5);
+}
+
+.cat-foto-principal > .espaco {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cat-fotos {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.cat-fotos::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-fotos li {
+  flex: none;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+}
+
+.cat-fotos img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 20%;
+}
+
+.cat-miniaturas {
+  flex: none;
+  display: grid;
+  gap: 10px;
+}
+
+.cat-miniaturas button {
+  width: 64px;
+  aspect-ratio: 2 / 3;
+  border-radius: 10px;
+  overflow: hidden;
+  opacity: 0.5;
+  outline: 1px solid transparent;
+  outline-offset: 3px;
+  cursor: pointer;
+  transition:
+    opacity 0.3s var(--ease),
+    outline-color 0.3s var(--ease);
+}
+
+.cat-miniaturas button:hover {
+  opacity: 0.8;
+}
+
+.cat-miniaturas button.ativa {
+  opacity: 1;
+  outline-color: currentColor;
+}
+
+.cat-miniaturas img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 20%;
+}
+
+.cat-info {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  max-width: 520px;
+  padding-top: clamp(4px, 2svh, 24px);
+}
+
+.cat-navega {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.cat-contagem {
+  white-space: nowrap;
+}
+
+.cat-nome {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  line-height: 1.02;
+  color: var(--vinho);
+}
+
+.cat-preco {
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+}
+
+.cat-desc {
+  margin-top: 10px;
+  max-width: 46ch;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.cat-ficha {
+  margin-top: 10px;
+  padding: 14px 0;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.cat-ficha div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 0.9rem;
+}
+
+.cat-ficha dt {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.cat-grupo {
+  margin-top: 14px;
+}
+
+.cat-grupo.aviso .pc-tamanhos button {
+  animation: chamar 0.5s var(--ease);
+  border-color: var(--bordo);
+}
+
+.cat-modelo {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+.cat-aviso {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--bordo);
+}
+
+.cat.tema-escuro .cat-aviso {
+  color: var(--rose-claro);
+}
+
+.cat-acoes {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cat-acoes .pilula {
+  flex: 1 1 200px;
+  min-height: 52px;
+}
+
+.cat-guardou {
+  font-size: 0.85rem;
+}
+
+.cat-guardou button {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.cat-pagina {
+  margin-top: 14px;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.cat-pagina .seta {
+  width: 0.8em;
+  height: 0.8em;
+}
+
+.cat.tema-escuro .pilula {
+  border-color: var(--rose-claro);
+  color: var(--rose-claro);
+}
+
+.cat.tema-escuro .pilula:hover,
+.cat.tema-escuro .pilula.cheia {
+  background: var(--rose-claro);
+  color: var(--vinho);
+}
+
+.cat.tema-escuro .pilula.cheia:hover {
+  background: var(--creme);
+  border-color: var(--creme);
+}
+
+.cat.tema-escuro .pc-tamanhos button.ativo {
+  background: var(--rose-claro);
+  border-color: var(--rose-claro);
+  color: var(--vinho);
+}
+
+/* a foto tocada nos looks "voa" até a primeira peça da vitrine */
+html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img {
+  view-transition-name: peca;
+}
+
+/* ============================================================
    CELULAR E TABLET EM PÉ
    ============================================================ */
 
@@ -2769,10 +3312,14 @@ img {
     border-radius: 14px;
   }
 
+  /* quatro numa linha quando cabem; senão, dois a dois e juntos no centro */
   .dif-lista {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px 12px;
+    flex-wrap: wrap;
+    gap: 24px 12px;
+  }
+
+  .dif-lista li {
+    flex: 0 0 140px;
   }
 
   .dif-fecho {
@@ -2812,8 +3359,7 @@ img {
     grid-template-columns: 1fr;
   }
 
-  .atelie-etapas,
-.comprar-passos {
+  .comprar-passos {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -2881,11 +3427,86 @@ img {
     padding: 0;
     justify-content: center;
   }
+
+  /* catálogo: desliza com o dedo, peça aberta em uma coluna */
+  .cat {
+    --topo-h: 68px;
+  }
+
+  .cat-cabeca .cat-setas {
+    display: none;
+  }
+
+  .cat-trilho > li {
+    width: min(66vw, var(--foto-h) * 0.75);
+  }
+
+  .cat-card-foto {
+    height: auto;
+    aspect-ratio: 3 / 4;
+  }
+
+  .cat-dica {
+    display: block;
+    margin-top: 12px;
+    text-align: center;
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .cat-peca {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding-bottom: 0;
+  }
+
+  .cat-galeria {
+    --galeria-h: min(50svh, 420px, calc((100vw - 100px) * 1.5));
+    position: relative;
+  }
+
+  .cat-miniaturas button {
+    width: 48px;
+  }
+
+  .cat-info {
+    max-width: none;
+    padding-top: 0;
+  }
+
+  .cat-acoes {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex-wrap: nowrap;
+    margin: 18px calc(-1 * var(--margem)) 0;
+    padding: 12px var(--margem) calc(12px + env(safe-area-inset-bottom));
+    background: var(--fundo);
+    border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  }
+
+  .cat-acoes .pilula {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 50px;
+    padding: 0 12px;
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
+  }
+
+  .cat-acoes-extra {
+    display: none;
+  }
+
+  .cat-pagina {
+    margin-bottom: 28px;
+  }
 }
 
 @media (max-width: 520px) {
-  .atelie-etapas,
-.comprar-passos {
+  .comprar-passos {
     grid-template-columns: 1fr;
   }
 

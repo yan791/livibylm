@@ -6,9 +6,10 @@ import { Cabecalho } from './components/Cabecalho'
 import { Rodape } from './components/Rodape'
 import { Apresentacao } from './sections/Apresentacao'
 import { Looks } from './sections/Looks'
-import { Atelie, ComoComprar, Diferenciais, Sobre } from './sections/Depois'
+import { ComoComprar, Diferenciais, Sobre } from './sections/Depois'
 import { FaixaColecoes } from './components/Vivos'
 import { GavetaSacola } from './components/Sacola'
+import { Catalogo } from './components/Catalogo'
 import { PaginaColecao } from './paginas/Colecao'
 import { movimentoReduzido } from './lib/midia'
 
@@ -27,6 +28,7 @@ export default function App() {
     <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'never'}>
       <Cabecalho rota={rota} />
       <GavetaSacola />
+      <Catalogo />
       {rota.nome === 'colecao' ? <PaginaColecao key={rota.colecao} rota={rota} /> : <Home rota={rota} />}
     </MotionConfig>
   )
@@ -59,7 +61,6 @@ function Home({ rota }: { rota: Extract<Rota, { nome: 'inicio' }> }) {
       <FaixaColecoes />
       <Diferenciais />
       <Sobre />
-      <Atelie />
       <ComoComprar />
       <FaixaColecoes escura reverso />
       <Rodape rota={rota} />
