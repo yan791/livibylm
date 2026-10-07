@@ -1,88 +1,31 @@
 /*
-  ATO 1: a abertura (Referência 1).
-  Ao rolar, o palco fica fixo um instante: a moldura cresce, as palavras
-  saem pelas laterais, a modelo dá um passo para trás e o primeiro look da
-  coleção (Lúmina) chega ao centro, exatamente onde os looks começam.
-  Camadas: cores de fundo > brilho > palavras > moldura > fotos > interface.
-  Parada no topo, a abertura reveza as fotos das coleções: a foto, o nome
-  gigante, o cartão e a cor de fundo mudam juntos.
+  ATO 1: a abertura, como capa de revista (versão do Yan).
+  Estúdio terracota (o próprio fundo da foto), o nome da marca gigante
+  atrás da modelo, selo girando e detalhes de editorial. Ao rolar, a moldura
+  cresce, o título sobe, a modelo dá um passo para trás e o primeiro look
+  (Lúmina) chega ao centro, exatamente onde os looks começam.
+  Camadas: estúdio > cor de passagem > brilho > título > moldura > modelo > interface.
 */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { useLayoutEffect, useRef } from 'react'
+import { motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
-import { acharColecao, colecoes } from '../dados/colecoes'
-import { gsap } from '../lib/scroll'
-import { mostrarCatalogo } from '../lib/catalogo'
-import { cn } from '../lib/cn'
+import { colecoes } from '../dados/colecoes'
+import { gsap, rolarPara } from '../lib/scroll'
 import { TextEffect } from '../components/core/text-effect'
+import { SpinningText } from '../components/core/spinning-text'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
-import { IconeAgulha, Menu, SetaDiagonal } from '../components/icones'
+import { Menu, SetaDiagonal } from '../components/icones'
 import { PROPORCAO } from '../lib/cartao'
-import { GuiaRolar, Ima } from '../components/Vivos'
+import { GuiaRolar } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
+import { atrasoAbertura } from '../components/Cortina'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-/** palavra gigante: as letras surgem uma a uma e o brilho de veludo chega depois */
-function Palavra({ texto, atraso, atrasoLuz }: { texto: string; atraso: number; atrasoLuz: number }) {
-  return (
-    <>
-      <TextEffect
-        as="span"
-        per="char"
-        preset="fade-in-blur"
-        delay={atraso}
-        speedReveal={0.45}
-        speedSegment={0.32}
-        className="ap-palavra-base grao"
-      >
-        {texto}
-      </TextEffect>
-      <motion.span
-        className="ap-palavra-luz"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2, delay: atrasoLuz }}
-      >
-        {texto}
-      </motion.span>
-    </>
-  )
-}
-
 export function Apresentacao() {
   const palco = useRef<HTMLDivElement>(null)
-  const cartao = useRef<HTMLDivElement>(null)
-  const a = site.abertura
-  const [indice, setIndice] = useState(0)
-  const [trocou, setTrocou] = useState(false)
-  const foto = a.fotos[indice]
-  const colecaoAtual = acharColecao(foto.colecao)!
   const primeira = colecoes[0]
-
-  // as fotos se revezam sozinhas enquanto a visitante está parada no topo
-  useEffect(() => {
-    if (a.fotos.length < 2) return
-    let sobreOCartao = false
-    const area = cartao.current
-    const entrar = () => (sobreOCartao = true)
-    const sair = () => (sobreOCartao = false)
-    area?.addEventListener('pointerenter', entrar)
-    area?.addEventListener('pointerleave', sair)
-    const id = window.setInterval(() => {
-      const noTopo = window.scrollY < 40
-      const livre = !document.hidden && !document.documentElement.classList.contains('lenis-stopped')
-      if (!noTopo || !livre || sobreOCartao) return
-      setTrocou(true)
-      setIndice((i) => (i + 1) % a.fotos.length)
-    }, a.intervalo * 1000)
-    return () => {
-      window.clearInterval(id)
-      area?.removeEventListener('pointerenter', entrar)
-      area?.removeEventListener('pointerleave', sair)
-    }
-  }, [a.fotos.length, a.intervalo])
 
   useLayoutEffect(() => {
     const el = palco.current
@@ -121,8 +64,8 @@ export function Apresentacao() {
           },
           0,
         )
-        tl.to(q('.ap-palavra.esq'), { xPercent: -70, opacity: 0, duration: 0.6, ease: 'power2.in' }, 0)
-        tl.to(q('.ap-palavra.dir'), { xPercent: 70, opacity: 0, duration: 0.6, ease: 'power2.in' }, 0)
+        tl.to(q('.ap-palavra.esq'), { xPercent: -60, opacity: 0, duration: 0.5, ease: 'power2.in' }, 0)
+        tl.to(q('.ap-palavra.dir'), { yPercent: -45, opacity: 0, duration: 0.65, ease: 'power2.in' }, 0)
         tl.to(q('.ap-ui'), { opacity: 0, y: 30, duration: 0.35, ease: 'power1.in' }, 0)
         tl.to(q('.ap-brilho'), { opacity: 0, duration: 0.5 }, 0)
         tl.to(
@@ -137,7 +80,7 @@ export function Apresentacao() {
           { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: 'power2.out', immediateRender: true },
           0.5,
         )
-        // o look chegou sozinho ao centro: o convite para continuar rolando aparece embaixo
+        // o look chegou sozinho ao centro: o convite para continuar rolando aparece dos lados
         tl.fromTo(q('.guia-rolar'), { opacity: 0 }, { opacity: 1, duration: 0.25, immediateRender: true }, 0.85)
       },
     )
@@ -146,6 +89,10 @@ export function Apresentacao() {
     const palavras = Array.from(el.querySelectorAll<HTMLElement>('.ap-palavra'))
     const mover = (ev: PointerEvent) => {
       if (ev.pointerType !== 'mouse') return
+      // parallax das camadas: cada uma anda um pouco, em direções diferentes
+      const r0 = el.getBoundingClientRect()
+      el.style.setProperty('--ax', ((ev.clientX - r0.left) / r0.width - 0.5).toFixed(3))
+      el.style.setProperty('--ay', ((ev.clientY - r0.top) / r0.height - 0.5).toFixed(3))
       for (const p of palavras) {
         const r = p.getBoundingClientRect()
         p.style.setProperty('--mx', `${ev.clientX - r.left}px`)
@@ -160,43 +107,52 @@ export function Apresentacao() {
     }
   }, [])
 
-  const abrirColecao = (e: React.MouseEvent) => {
-    e.preventDefault()
-    mostrarCatalogo(colecaoAtual.slug, cartao.current?.querySelector('.ap-cartao-peca img'))
-  }
+  const a = site.abertura
+  const d0 = atrasoAbertura()
 
   return (
     <section className="ap" id="inicio" aria-label="Abertura">
-      <div
-        className="ap-palco"
-        ref={palco}
-        data-tema={foto.tema ?? 'claro'}
-        data-foto={foto.recorte ? 'recorte' : 'com-fundo'}
-        style={{ backgroundColor: foto.fundo }}
-      >
+      <div className="ap-palco" ref={palco}>
+        <div className="ap-estudio" aria-hidden="true" />
         <div className="ap-cor" aria-hidden="true" style={{ background: primeira.fundo }} />
         <div className="ap-brilho" aria-hidden="true" />
 
         <h1 className="ap-palavras">
           <span className="sr-only">
-            {a.esquerda} {colecaoAtual.nome}, Livi by LM
+            Livi by LM, {a.esquerda} {a.direita}
           </span>
-          <span className="ap-palavra esq" aria-hidden="true">
-            <Palavra texto={a.esquerda} atraso={0.35} atrasoLuz={1.8} />
-          </span>
+          <motion.span
+            className="ap-palavra esq"
+            aria-hidden="true"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease, delay: 0.3 + d0 }}
+          >
+            <em>
+              {a.esquerda} {a.direita}
+            </em>
+            <span className="ap-edicao">{a.edicao}</span>
+          </motion.span>
           <span className="ap-palavra dir" aria-hidden="true">
-            {/* só a opacidade anima aqui: transform ou filter tirariam o brilho do lugar */}
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={colecaoAtual.slug}
-                initial={false}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.45, ease }}
-              >
-                <Palavra texto={colecaoAtual.nome} atraso={trocou ? 0.05 : 0.55} atrasoLuz={trocou ? 0.9 : 1.8} />
-              </motion.span>
-            </AnimatePresence>
+            <TextEffect
+              as="span"
+              per="char"
+              preset="fade-in-blur"
+              delay={0.45 + d0}
+              speedReveal={0.45}
+              speedSegment={0.32}
+              className="ap-palavra-base grao"
+            >
+              {a.marca}
+            </TextEffect>
+            <motion.span
+              className="ap-palavra-luz"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.2, delay: 1.8 + d0 }}
+            >
+              {a.marca}
+            </motion.span>
           </span>
         </h1>
 
@@ -205,7 +161,7 @@ export function Apresentacao() {
           aria-hidden="true"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.4, ease }}
+          transition={{ duration: 1.4, ease, delay: d0 }}
         />
 
         <div className="ap-fotos" aria-hidden="true">
@@ -218,18 +174,9 @@ export function Apresentacao() {
               className="ap-hero-entrada"
               initial={{ opacity: 0, y: 46 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.5, ease, delay: 0.15 }}
+              transition={{ duration: 1.5, ease, delay: 0.15 + d0 }}
             >
-              {a.fotos.map((f, i) => (
-                <img
-                  key={f.src}
-                  className={cn('ap-hero-recorte', !f.recorte && 'com-fundo', i === indice && 'ativa')}
-                  src={f.src}
-                  alt=""
-                  draggable={false}
-                  fetchPriority={i === 0 ? 'high' : 'low'}
-                />
-              ))}
+              <img className="ap-hero-recorte" src={a.recorte} alt="" draggable={false} fetchPriority="high" />
             </motion.div>
           </div>
         </div>
@@ -241,10 +188,10 @@ export function Apresentacao() {
             className="ap-topo"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease, delay: 0.2 }}
+            transition={{ duration: 0.9, ease, delay: 0.2 + d0 }}
           >
             <a href="/" className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
-              <Logo />
+              <Logo claro />
             </a>
             <nav className="ap-menu" aria-label="Menu principal">
               {site.menu.map((m, i) => (
@@ -271,75 +218,46 @@ export function Apresentacao() {
             </button>
           </motion.header>
 
+          <motion.p
+            className="ap-lateral"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2, delay: 1 + d0 }}
+          >
+            Moda feminina autoral <i>·</i> {a.esquerda} {a.direita}
+          </motion.p>
+
           <motion.div
             className="ap-intro"
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 0.9 }}
+            transition={{ duration: 1, ease, delay: 0.9 + d0 }}
           >
-            <IconeAgulha className="ap-intro-icone" />
+            <span className="ap-intro-linha" aria-hidden="true" />
             <h2>{a.titulo}</h2>
             <p>{a.apoio}</p>
           </motion.div>
 
-          <motion.div
-            ref={cartao}
-            className="ap-cartao"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 1.05 }}
+          {/* o selo rola a página até as coleções (o "Coleções" do menu é que abre o catálogo) */}
+          <motion.a
+            href="/#colecoes"
+            className="ap-selo"
+            aria-label="Ver as coleções"
+            initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1.2, ease, delay: 1.1 + d0 }}
+            onClick={(e) => {
+              e.preventDefault()
+              rolarPara('#colecoes')
+            }}
           >
-            <a
-              href={`/colecao/${colecaoAtual.slug}`}
-              className="ap-cartao-peca"
-              onClick={abrirColecao}
-              aria-label={`Ver a coleção ${colecaoAtual.nome}`}
-            >
-              <AnimatePresence initial={false}>
-                <motion.img
-                  key={colecaoAtual.slug}
-                  src={colecaoAtual.capa}
-                  alt=""
-                  draggable={false}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.9, ease }}
-                />
-              </AnimatePresence>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={colecaoAtual.slug}
-                  className="ap-cartao-nome"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4, ease }}
-                >
-                  {colecaoAtual.nome}
-                </motion.span>
-              </AnimatePresence>
-            </a>
-            <Ima>
-              <a href={`/colecao/${colecaoAtual.slug}`} className="pilula" onClick={abrirColecao}>
-                Ver coleção <SetaDiagonal className="seta" />
-              </a>
-            </Ima>
-          </motion.div>
-
-          {/* convite discreto para rolar: some junto com a interface quando a rolagem começa */}
-          <motion.div
-            className="ap-rolar"
-            aria-hidden="true"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, ease, delay: 2.2 }}
-          >
-            <span className="ap-rolar-linha" />
-            <span>
-              Role<span className="ap-rolar-extra"> para descobrir</span>
+            <SpinningText className="ap-selo-texto" duration={20} radius={10.6} fontSize={0.62}>
+              {a.selo}
+            </SpinningText>
+            <span className="ap-selo-centro">
+              <SetaDiagonal className="seta" />
             </span>
-          </motion.div>
+          </motion.a>
         </div>
       </div>
     </section>

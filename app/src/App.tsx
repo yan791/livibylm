@@ -10,6 +10,7 @@ import { ComoComprar, Diferenciais, Sobre } from './sections/Depois'
 import { FaixaColecoes } from './components/Vivos'
 import { GavetaSacola } from './components/Sacola'
 import { Catalogo } from './components/Catalogo'
+import { Cortina } from './components/Cortina'
 import { PaginaColecao } from './paginas/Colecao'
 import { movimentoReduzido } from './lib/midia'
 
@@ -29,6 +30,7 @@ export default function App() {
       <Cabecalho rota={rota} />
       <GavetaSacola />
       <Catalogo />
+      <Cortina />
       {rota.nome === 'colecao' ? <PaginaColecao key={rota.colecao} rota={rota} /> : <Home rota={rota} />}
     </MotionConfig>
   )
