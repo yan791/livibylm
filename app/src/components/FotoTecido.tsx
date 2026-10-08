@@ -1,6 +1,6 @@
 /*
-  Efeito tecido: ao passar o mouse (ou tocar, no celular), a foto ondula de
-  leve como cetim se movendo, com um brilho suave onde o dedo ou o mouse está.
+  Efeito tecido: ao passar o mouse (só no computador), a foto ondula de
+  leve como cetim se movendo, com um brilho suave onde o mouse está.
   A foto normal fica sempre por baixo; o WebGL (three.js) só liga durante o
   efeito e desliga sozinho quando a foto volta ao repouso.
 */
@@ -205,16 +205,16 @@ export function FotoTecido({
     }
     const r = el.getBoundingClientRect()
     motor.current.tocar((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
-    if (e.pointerType !== 'mouse') window.setTimeout(() => motor.current?.sair(), 650)
   }
 
+  // só com mouse: no celular o efeito não liga e o three.js (~190 KB) nem é baixado,
+  // evitando o engasgo no primeiro toque numa foto
   return (
     <div
       ref={caixa}
       className={cn('tecido', className)}
-      onPointerEnter={tocar}
+      onPointerEnter={(e) => e.pointerType === 'mouse' && tocar(e)}
       onPointerMove={(e) => e.pointerType === 'mouse' && tocar(e)}
-      onPointerDown={(e) => e.pointerType !== 'mouse' && tocar(e)}
       onPointerLeave={() => motor.current?.sair()}
     >
       <img src={src} alt={alt} draggable={false} loading={carregamento} style={imgStyle} />

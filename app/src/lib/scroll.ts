@@ -15,7 +15,8 @@ const travas = new Set<string>()
 
 export function iniciarRolagem() {
   if (lenis || movimentoReduzido()) return lenis
-  lenis = new Lenis({ duration: 1.15, easing: (t) => 1 - Math.pow(1 - t, 3.2), smoothWheel: true })
+  // 0,8 s: suave, mas a página para logo depois que o mouse para (com 1,15 s ficava "arrastado")
+  lenis = new Lenis({ duration: 0.8, easing: (t) => 1 - Math.pow(1 - t, 3.2), smoothWheel: true })
   lenis.on('scroll', ScrollTrigger.update)
   gsap.ticker.add((t) => lenis?.raf(t * 1000))
   gsap.ticker.lagSmoothing(0)

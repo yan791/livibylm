@@ -107,9 +107,10 @@ export function Looks() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + el.clientHeight * 3.8,
+            // no celular a sequência é um pouco mais curta (lá se desliza rápido)
+            end: () => '+=' + el.clientHeight * (desk ? 3.8 : 3.0),
             pin: true,
-            scrub: 1,
+            scrub: 0.5,
             invalidateOnRefresh: true,
             onRefresh: aplicar,
             onToggle: (st) => (el.style.visibility = st.isActive || st.progress > 0 ? 'visible' : 'hidden'),

@@ -35,7 +35,8 @@ export function Apresentacao() {
 
     mm.add(
       { desk: '(min-width: 861px) and (min-aspect-ratio: 11/10)', cel: '(max-width: 860px), (max-aspect-ratio: 11/10)' },
-      () => {
+      (ctx) => {
+        const { desk } = ctx.conditions as { desk: boolean }
         const q = gsap.utils.selector(el)
         const H = () => el.clientHeight
         const W = () => el.clientWidth
@@ -46,9 +47,10 @@ export function Apresentacao() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + H() * 1.3,
+            // no celular a passagem é um pouco mais curta: lá se desliza rápido e a trava longa cansa
+            end: () => '+=' + H() * (desk ? 1.3 : 1.1),
             pin: true,
-            scrub: 1,
+            scrub: 0.5,
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },
