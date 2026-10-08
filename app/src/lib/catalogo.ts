@@ -1,52 +1,56 @@
 /*
-  Catálogo rápido: a vitrine de uma coleção abre por cima da página, sem
-  sair dela. Abrir o catálogo e abrir uma peça entram no histórico, então o
-  "voltar" do celular volta um passo (peça > vitrine > página) em vez de
-  sair do site.
+  Catálogo rápido: a vitrine de uma coleção abre por cima da página inicial e
+  tem endereço próprio, que pode ser compartilhado e abre direto no catálogo:
+    /colecao/velvet                       vitrine da Velvet
+    /colecao/velvet/vestido-velvet-longo  peça aberta
+  O endereço manda: abrir, trocar de peça e voltar mexem só no endereço, e o
+  catálogo mostra o que ele diz. Abrir o catálogo e abrir uma peça entram no
+  histórico, então o "voltar" do celular volta um passo (peça > vitrine >
+  página) em vez de sair do site.
 */
-import { useSyncExternalStore } from 'react'
-import { pausarRolagem } from './scroll'
-import { comTransicao } from './rota'
+import { comTransicao, interpretar, navegar, useCaminho } from './rota'
+import { semBase } from './base'
 
 export type EstadoCatalogo = { colecao: string; peca: string | null }
 
-/** o que fica guardado no histórico: o estado e quantos passos o catálogo empilhou */
-type Marca = EstadoCatalogo & { passos: number }
+/**
+  Guardado em cada passo do histórico: quantos passos o catálogo empilhou e se
+  ele foi aberto de dentro do site (quem chega por um link direto não tem uma
+  página do site "atrás" para onde voltar).
+*/
+type Marca = { passos: number; deDentro: boolean }
 
-const ouvintes = new Set<() => void>()
-const lerMarca = (): Marca | undefined =>
-  typeof history === 'undefined' ? undefined : (history.state as { catalogo?: Marca } | null)?.catalogo
+const marcaAtual = (): Marca =>
+  (history.state as { catalogo?: Marca } | null)?.catalogo ?? { passos: 0, deDentro: false }
 
-let estado: EstadoCatalogo | null = null
-let passos = 0
+const endereco = (colecao: string, peca?: string | null) => `/colecao/${colecao}${peca ? '/' + peca : ''}`
 
-function definir(novo: EstadoCatalogo | null, n: number) {
-  estado = novo
-  passos = n
-  pausarRolagem(Boolean(novo), 'catalogo')
-  ouvintes.forEach((f) => f())
+function lerEndereco(caminho: string): EstadoCatalogo | null {
+  const rota = interpretar(caminho)
+  return rota.nome === 'colecao' ? { colecao: rota.colecao, peca: rota.peca ?? null } : null
 }
 
-function marcar(novo: EstadoCatalogo, n: number, substituir = false) {
-  const marca: Marca = { ...novo, passos: n }
-  history[substituir ? 'replaceState' : 'pushState']({ catalogo: marca }, '', location.href)
-  definir(novo, n)
+const aberto = () => lerEndereco(semBase(location.pathname))
+
+function ir(estado: EstadoCatalogo, marca: Marca, substituir: boolean) {
+  navegar(endereco(estado.colecao, estado.peca), { substituir, semTransicao: true, estado: { catalogo: marca } })
 }
 
+/** o catálogo aberto agora (ou null), lido do endereço */
 export function useCatalogo() {
-  return useSyncExternalStore(
-    (cb) => {
-      ouvintes.add(cb)
-      return () => ouvintes.delete(cb)
-    },
-    () => estado,
-    () => null,
-  )
+  return lerEndereco(useCaminho())
 }
 
 export function abrirCatalogo(colecao: string, peca: string | null = null) {
-  if (estado) marcar({ colecao, peca: null }, passos, true)
-  else marcar({ colecao, peca: null }, 1)
+  const agora = aberto()
+  if (!agora) {
+    ir({ colecao, peca: null }, { passos: 1, deDentro: true }, false)
+    if (peca) verPeca(peca)
+    return
+  }
+  // já aberto (ex.: tocou numa peça da sacola): troca no lugar, sem empilhar passos repetidos
+  if (agora.peca && peca) return ir({ colecao, peca }, marcaAtual(), true)
+  ir({ colecao, peca: null }, marcaAtual(), true)
   if (peca) verPeca(peca)
 }
 
@@ -64,37 +68,29 @@ export function mostrarCatalogo(colecao: string, foto?: HTMLImageElement | null)
 
 /** da vitrine para a peça empilha um passo; de uma peça para outra só troca */
 export function verPeca(peca: string) {
-  if (!estado) return
-  if (estado.peca) marcar({ ...estado, peca }, passos, true)
-  else marcar({ ...estado, peca }, passos + 1)
+  const agora = aberto()
+  if (!agora) return
+  const marca = marcaAtual()
+  if (agora.peca) ir({ ...agora, peca }, marca, true)
+  else ir({ ...agora, peca }, { ...marca, passos: marca.passos + 1 }, false)
 }
 
 export function trocarColecao(colecao: string) {
-  if (estado) marcar({ colecao, peca: null }, passos, true)
+  if (aberto()) ir({ colecao, peca: null }, marcaAtual(), true)
 }
 
 export function voltarDaPeca() {
-  if (estado?.peca) history.back()
+  const agora = aberto()
+  if (!agora?.peca) return
+  const marca = marcaAtual()
+  // a vitrine está logo atrás no histórico? então é só voltar; se a peça veio de um link direto, troca pela vitrine
+  const vitrineAtras = marca.passos > (marca.deDentro ? 1 : 0)
+  if (vitrineAtras) history.back()
+  else ir({ ...agora, peca: null }, marca, true)
 }
 
 export function fecharCatalogo() {
-  if (passos > 0) history.go(-passos)
-  else definir(null, 0)
-}
-
-/** fecha sem mexer no histórico, para seguir para outra página (o "voltar" de lá reabre o catálogo) */
-export function sairDoCatalogo() {
-  definir(null, 0)
-}
-
-if (typeof window !== 'undefined') {
-  // recarregou a página com o catálogo aberto: abre de novo onde estava
-  const inicial = lerMarca()
-  if (inicial) definir({ colecao: inicial.colecao, peca: inicial.peca }, inicial.passos)
-
-  window.addEventListener('popstate', () => {
-    const m = lerMarca()
-    if (m) definir({ colecao: m.colecao, peca: m.peca }, m.passos)
-    else if (estado) definir(null, 0)
-  })
+  const marca = marcaAtual()
+  if (marca.deDentro) history.go(-marca.passos)
+  else navegar('/', { substituir: true, semTransicao: true })
 }

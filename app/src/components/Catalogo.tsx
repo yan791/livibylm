@@ -2,19 +2,21 @@
   Catálogo rápido: ao tocar num look, a coleção abre por cima da página numa
   vitrine que desliza para o lado. Cada peça abre com fotos, preço, cor,
   tamanhos e descrição, e segue para a sacola ou direto para o WhatsApp.
+  O que aparece aqui vem do endereço (/colecao/velvet/vestido-velvet): o link
+  da peça pode ser compartilhado e abre direto nela.
 */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { acharColecao, colecoes, precoBR, type Colecao, type Peca } from '../dados/colecoes'
 import { linkWhatsApp, mensagemPeca } from '../dados/site'
-import { fecharCatalogo, sairDoCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
+import { fecharCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
 import { abrirSacola, adicionarNaSacola, useSacola } from '../lib/sacola'
-import { navegar, suportaTransicao } from '../lib/rota'
+import { suportaTransicao } from '../lib/rota'
+import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { Espaco, Ph } from './Espaco'
 import { BotaoDesejo, BotaoSacola } from './Sacola'
-import { Fechar, SetaDiagonal, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
-import { comBase } from '../lib/base'
+import { Fechar, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
@@ -24,11 +26,29 @@ export function Catalogo() {
   const colecao = estado ? acharColecao(estado.colecao) : undefined
   const peca = colecao && estado?.peca ? colecao.pecas.find((p) => p.slug === estado.peca) : undefined
 
+  // trava a rolagem da página por baixo e põe no título da aba a coleção ou a peça aberta
+  useLayoutEffect(() => {
+    const raiz = document.documentElement
+    if (colecao) {
+      raiz.dataset.catalogo = colecao.slug
+      raiz.style.setProperty('--fundo-catalogo', colecao.fundo)
+    } else {
+      delete raiz.dataset.catalogo
+      raiz.style.removeProperty('--fundo-catalogo')
+    }
+    pausarRolagem(Boolean(colecao), 'catalogo')
+    document.title = !colecao
+      ? 'Livi by LM | Moda feminina autoral'
+      : peca
+        ? `${peca.nome} | Coleção ${colecao.nome} | Livi by LM`
+        : `Coleção ${colecao.nome} | Livi by LM`
+  }, [colecao, peca])
+
   useEffect(() => {
     if (!colecao) return
     const esc = (e: KeyboardEvent) => {
       // a sacola e as janelas por cima fecham primeiro
-      if (e.key !== 'Escape' || document.querySelector('.gaveta, .dialogo')) return
+      if (e.key !== 'Escape' || document.querySelector('.gaveta')) return
       if (peca) voltarDaPeca()
       else fecharCatalogo()
     }
@@ -243,12 +263,6 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
     window.open(linkWhatsApp(mensagemPeca(colecao, peca, cor.nome, tamanho)), '_blank', 'noopener')
   }
 
-  const paginaDaPeca = (e: React.MouseEvent) => {
-    e.preventDefault()
-    sairDoCatalogo()
-    navegar(`/colecao/${colecao.slug}/${peca.slug}`)
-  }
-
   return (
     <motion.article
       className="cat-peca"
@@ -290,15 +304,15 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
         </dl>
 
         <div className="cat-grupo">
-          <p className="pc-rotulo">
+          <p className="cat-rotulo">
             Cor <span>{cor.nome}</span>
           </p>
-          <div className="pc-cores">
+          <div className="cat-cores">
             {peca.cores.map((c) => (
               <button
                 key={c.nome}
                 type="button"
-                className={cn('pc-cor', c.nome === cor.nome && 'ativa')}
+                className={cn('cat-cor', c.nome === cor.nome && 'ativa')}
                 style={{ '--c': c.hex } as React.CSSProperties}
                 onClick={() => setCor(c.nome)}
                 aria-label={c.nome}
@@ -309,8 +323,8 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
         </div>
 
         <div className={cn('cat-grupo', aviso && !tamanho && 'aviso')}>
-          <p className="pc-rotulo">Tamanho</p>
-          <div className="pc-tamanhos" role="radiogroup" aria-label="Tamanho">
+          <p className="cat-rotulo">Tamanho</p>
+          <div className="cat-tamanhos" role="radiogroup" aria-label="Tamanho">
             {peca.tamanhos.map((t) => (
               <button
                 key={t}
@@ -360,10 +374,6 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
             </motion.p>
           )}
         </AnimatePresence>
-
-        <a href={comBase(`/colecao/${colecao.slug}/${peca.slug}`)} className="cat-pagina" onClick={paginaDaPeca}>
-          Página completa da peça <SetaDiagonal className="seta" />
-        </a>
       </div>
     </motion.article>
   )

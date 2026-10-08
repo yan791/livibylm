@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react'
 import { MotionConfig } from 'motion/react'
-import { useCaminho, interpretar, aoSairDaPagina, type Rota } from './lib/rota'
+import { useCaminho, interpretar, type Rota } from './lib/rota'
 import { iniciarRolagem, rolarPara, ScrollTrigger } from './lib/scroll'
 import { Cabecalho } from './components/Cabecalho'
 import { Rodape } from './components/Rodape'
@@ -11,10 +11,7 @@ import { FaixaColecoes } from './components/Vivos'
 import { GavetaSacola } from './components/Sacola'
 import { Catalogo } from './components/Catalogo'
 import { Cortina } from './components/Cortina'
-import { PaginaColecao } from './paginas/Colecao'
 import { movimentoReduzido } from './lib/midia'
-
-let rolagemHome = 0
 
 export default function App() {
   const caminho = useCaminho()
@@ -29,30 +26,23 @@ export default function App() {
     <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'never'}>
       <Cabecalho rota={rota} />
       <GavetaSacola />
+      {/* /colecao/... abre o catálogo por cima da página inicial, que fica sempre montada */}
       <Catalogo />
       <Cortina />
-      {rota.nome === 'colecao' ? <PaginaColecao key={rota.colecao} rota={rota} /> : <Home rota={rota} />}
+      <Home rota={rota} />
     </MotionConfig>
   )
 }
 
-function Home({ rota }: { rota: Extract<Rota, { nome: 'inicio' }> }) {
+function Home({ rota }: { rota: Rota }) {
   useLayoutEffect(() => {
-    document.title = 'Livi by LM | Moda feminina autoral'
-    aoSairDaPagina(() => {
-      rolagemHome = window.scrollY
-    })
-    // volta para onde a visitante estava (ou para a âncora pedida)
-    const voltar = () => {
+    // chegou por um link com âncora (ex.: /#sobre): vai direto para a seção
+    const ancora = rota.nome === 'inicio' ? rota.ancora : undefined
+    const id = requestAnimationFrame(() => {
       ScrollTrigger.refresh()
-      if (rota.ancora) rolarPara('#' + rota.ancora, { imediato: true })
-      else if (rolagemHome) rolarPara(rolagemHome, { imediato: true })
-    }
-    const id = requestAnimationFrame(voltar)
-    return () => {
-      cancelAnimationFrame(id)
-      aoSairDaPagina(null)
-    }
+      if (ancora) rolarPara('#' + ancora, { imediato: true })
+    })
+    return () => cancelAnimationFrame(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
