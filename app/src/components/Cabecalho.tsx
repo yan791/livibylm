@@ -6,7 +6,7 @@ import { rolarPara, pausarRolagem } from '../lib/scroll'
 import { mostrarCatalogo } from '../lib/catalogo'
 import { cn } from '../lib/cn'
 import { Logo } from './Logo'
-import { BotaoSacola } from './Sacola'
+import { BotaoDesejos, BotaoSacola } from './Gaveta'
 import { Fechar, Instagram, Menu, SetaDiagonal, WhatsApp } from './icones'
 import { comBase } from '../lib/base'
 
@@ -81,6 +81,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
             <WhatsApp className="ico" />
             <span>WhatsApp</span>
           </a>
+          <BotaoDesejos className="cab-desejos" />
           <BotaoSacola className="cab-sacola" />
           <button type="button" className="cab-menu" onClick={() => setMenu(true)} aria-label="Abrir menu" tabIndex={compacto ? 0 : -1}>
             <Menu />

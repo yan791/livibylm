@@ -3579,3 +3579,437 @@ html[data-movimento='reduzido'] .lk-bloco-info {
     height: 44px;
   }
 }
+
+/* ============================================================
+   LISTA DE DESEJOS x SACOLA
+   O coração salva para ver depois; a sacola é o que vai para a compra.
+   ============================================================ */
+
+/* coração das peças */
+.desejo {
+  position: relative;
+}
+
+.desejo-onda {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  border: 1.5px solid var(--bordo);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .desejo[data-dica]::after {
+    content: attr(data-dica);
+    position: absolute;
+    right: calc(100% + 8px);
+    top: 50%;
+    translate: 6px -50%;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #140907;
+    color: var(--creme);
+    font-family: var(--sans);
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.25s var(--ease),
+      translate 0.4s var(--ease);
+  }
+
+  .desejo[data-dica]:hover::after {
+    opacity: 1;
+    translate: 0 -50%;
+  }
+}
+
+/* coração ao lado do nome da peça aberta */
+.cat-nome-linha {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cat-nome-desejo {
+  width: 46px;
+  height: 46px;
+  margin-top: 0.3em;
+}
+
+/* ao lado do título, a dica aparece embaixo do coração (e não por cima do nome) */
+@media (hover: hover) {
+  .cat-nome-desejo[data-dica]::after {
+    right: 0;
+    top: calc(100% + 8px);
+    translate: 0 -4px;
+  }
+
+  .cat-nome-desejo[data-dica]:hover::after {
+    translate: 0 0;
+  }
+}
+
+/* coraçãozinho que voa até o botão de desejos do topo */
+.voo-coracao {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 97;
+  pointer-events: none;
+}
+
+.voo-coracao > span {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+}
+
+.voo-coracao svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: #b8323f;
+  filter: drop-shadow(0 4px 8px rgb(60 10 10 / 0.35));
+}
+
+/* botões do topo: coração e sacola lado a lado */
+.ap-desejos {
+  position: absolute;
+  right: calc(30 * var(--u) + max(30 * var(--u), 36px) + 2px);
+  top: calc(28 * var(--u));
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.ap .ap-whats {
+  right: calc(30 * var(--u) + 2 * max(30 * var(--u), 36px) + 16px);
+}
+
+.ap .ap-desejos {
+  color: var(--creme);
+}
+
+/* gaveta: duas abas */
+.gaveta .gaveta-topo {
+  align-items: center;
+  padding: 10px 18px 0 26px;
+}
+
+.gaveta-abas {
+  display: flex;
+  gap: 26px;
+}
+
+.gaveta-aba {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 18px 0 16px;
+  font-family: var(--serif);
+  font-size: 1.45rem;
+  line-height: 1;
+  color: var(--taupe-claro);
+  cursor: pointer;
+  transition: color 0.35s var(--ease);
+}
+
+.gaveta-aba:hover,
+.gaveta-aba.ativa {
+  color: var(--vinho);
+}
+
+.gaveta-aba .ico {
+  width: 19px;
+  height: 19px;
+}
+
+.gaveta-aba-n {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(79 15 16 / 0.09);
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  transition:
+    background-color 0.35s var(--ease),
+    color 0.35s var(--ease);
+}
+
+.gaveta-aba.ativa .gaveta-aba-n {
+  background: var(--vinho);
+  color: var(--rose-claro);
+}
+
+.gaveta-aba-marca {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--vinho);
+}
+
+.gaveta-aba:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.gaveta-painel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gaveta-vazia-titulo {
+  font-family: var(--serif);
+  font-style: normal !important;
+  font-weight: 500;
+  font-size: 1.6rem !important;
+  line-height: 1.15;
+  color: var(--vinho);
+}
+
+.gaveta-vazia .pilula .ico {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+/* item da sacola: "Salvar para depois" */
+.gaveta-mover {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--taupe);
+  cursor: pointer;
+  transition: color 0.3s var(--ease);
+}
+
+.gaveta-mover .ico {
+  width: 14px;
+  height: 14px;
+}
+
+.gaveta-mover:hover {
+  color: var(--vinho);
+}
+
+/* item da lista de desejos */
+.gaveta-colecao {
+  margin-bottom: 4px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--taupe);
+}
+
+.gaveta-desejos .gaveta-detalhe {
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  opacity: 1;
+}
+
+.gaveta-acao {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgb(79 15 16 / 0.35);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vinho);
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease),
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease);
+}
+
+.gaveta-acao .ico {
+  width: 15px;
+  height: 15px;
+}
+
+.gaveta-acao:hover,
+.gaveta-acao.feito {
+  background: var(--vinho);
+  border-color: var(--vinho);
+  color: var(--rose-claro);
+}
+
+.gaveta-tirar-desejo {
+  color: var(--bordo);
+  transition: scale 0.2s var(--ease);
+}
+
+.gaveta-tirar-desejo:active {
+  scale: 0.88;
+}
+
+.gaveta-rodape-desejos {
+  gap: 0;
+}
+
+/* aviso ao salvar uma peça */
+.aviso-area {
+  position: fixed;
+  z-index: 95;
+  left: 0;
+  right: 0;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: 999px;
+  background: #140907;
+  color: var(--creme);
+  box-shadow: 0 18px 40px rgb(20 6 2 / 0.35);
+  pointer-events: auto;
+}
+
+.aviso-foto {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  color: var(--creme);
+}
+
+.aviso-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.aviso-foto svg {
+  width: 22px;
+  height: 22px;
+}
+
+.aviso-texto {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.aviso-texto strong {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rose-claro);
+  white-space: nowrap;
+}
+
+.aviso-texto strong .ico {
+  width: 11px;
+  height: 11px;
+  color: #e07a84;
+}
+
+.aviso-texto > span {
+  overflow: hidden;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.98rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.aviso-ver {
+  flex: none;
+  height: 40px;
+  margin-left: 6px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--rose-claro);
+  color: var(--vinho);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease);
+}
+
+.aviso-ver:hover {
+  background: var(--creme);
+}
+
+@media (max-width: 860px), (max-aspect-ratio: 11/10) {
+  .ap-desejos {
+    right: 128px;
+    top: 20px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .gaveta .gaveta-topo {
+    padding: 6px 12px 0 20px;
+  }
+
+  .gaveta-abas {
+    gap: 20px;
+  }
+
+  .gaveta-aba {
+    font-size: 1.25rem;
+    gap: 7px;
+  }
+
+  .cat-nome-desejo {
+    width: 42px;
+    height: 42px;
+    margin-top: 0.15em;
+  }
+
+  /* na peça aberta, o aviso fica acima da barra fixa de compra */
+  html[data-catalogo] .aviso-area {
+    bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+}

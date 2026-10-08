@@ -18,7 +18,7 @@ import { abrirMenu, irPara } from '../components/Cabecalho'
 import { Menu, SetaDiagonal } from '../components/icones'
 import { PROPORCAO } from '../lib/cartao'
 import { GuiaRolar } from '../components/Vivos'
-import { BotaoSacola } from '../components/Sacola'
+import { BotaoDesejos, BotaoSacola } from '../components/Gaveta'
 import { atrasoAbertura } from '../components/Cortina'
 import { comBase } from '../lib/base'
 import { irParaColecoes } from './Looks'
@@ -222,6 +222,7 @@ export function Apresentacao() {
             <a href={linkWhatsApp()} target="_blank" rel="noreferrer" className="ap-whats">
               Atendimento pelo WhatsApp <SetaDiagonal className="seta" />
             </a>
+            <BotaoDesejos className="ap-desejos" />
             <BotaoSacola className="ap-sacola" />
             <button type="button" className="ap-menu-botao" onClick={abrirMenu} aria-label="Abrir menu">
               <Menu />

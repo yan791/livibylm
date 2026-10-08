@@ -152,3 +152,30 @@ export function IconeFita(props: P) {
     </svg>
   )
 }
+
+/** sacola de compras (o carrinho da loja) */
+export function IconeSacola(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <g {...linha} strokeWidth="1.3">
+        <path d="M5 8.5h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3Z" />
+        <path d="M9 11V7a3 3 0 0 1 6 0v4" />
+      </g>
+    </svg>
+  )
+}
+
+/** coração da lista de desejos: contorno ou cheio */
+export function Coracao({ cheio = false, ...props }: P & { cheio?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <path
+        d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.4 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10Z"
+        fill={cheio ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}

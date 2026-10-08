@@ -2,6 +2,7 @@
   Catálogo rápido: ao tocar num look, a coleção abre por cima da página numa
   vitrine que desliza para o lado. Cada peça abre com fotos, preço, cor,
   tamanhos e descrição, e segue para a sacola ou direto para o WhatsApp.
+  O coração das peças só salva na lista de desejos (não leva à compra).
   O que aparece aqui vem do endereço (/colecao/velvet/vestido-velvet): o link
   da peça pode ser compartilhado e abre direto nela.
 */
@@ -15,7 +16,8 @@ import { suportaTransicao } from '../lib/rota'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { Espaco, Ph } from './Espaco'
-import { BotaoDesejo, BotaoSacola } from './Sacola'
+import { BotaoDesejos, BotaoSacola } from './Gaveta'
+import { BotaoDesejo } from './Desejos'
 import { Fechar, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -82,6 +84,7 @@ export function Catalogo() {
               <p className="sobretitulo">Catálogo</p>
             )}
             <div className="cat-topo-acoes">
+              <BotaoDesejos className="cat-desejos" />
               <BotaoSacola className="cat-sacola" />
               <button type="button" className="cat-fechar" onClick={fecharCatalogo} aria-label="Fechar catálogo" autoFocus>
                 <Fechar />
@@ -220,10 +223,7 @@ function Trilho({ colecao }: { colecao: Colecao }) {
                 <span className="cat-card-nome">{p.nome}</span>
                 <span className="cat-card-preco">{precoBR(p.preco)}</span>
               </button>
-              <BotaoDesejo
-                className="cat-card-desejo"
-                item={{ colecao: colecao.slug, peca: p.slug, cor: p.cores[0].nome, tamanho: null }}
-              />
+              <BotaoDesejo className="cat-card-desejo" item={{ colecao: colecao.slug, peca: p.slug }} />
             </article>
           </motion.li>
         ))}
@@ -241,21 +241,21 @@ function Trilho({ colecao }: { colecao: Colecao }) {
 
 /** a peça aberta: fotos, informações e compra */
 function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
-  const guardada = useSacola().find((i) => i.peca === peca.slug)
-  const [nomeCor, setCor] = useState(guardada?.cor ?? null)
+  const naSacola = useSacola().find((i) => i.peca === peca.slug)
+  const [nomeCor, setCor] = useState(naSacola?.cor ?? null)
   const cor = peca.cores.find((c) => c.nome === nomeCor) ?? peca.cores[0]
-  const [tamanho, setTamanho] = useState<string | null>(guardada?.tamanho ?? null)
+  const [tamanho, setTamanho] = useState<string | null>(naSacola?.tamanho ?? null)
   const [aviso, setAviso] = useState(false)
-  const [guardou, setGuardou] = useState(false)
+  const [adicionou, setAdicionou] = useState(false)
   const posicao = colecao.pecas.indexOf(peca)
   const anterior = colecao.pecas[posicao - 1]
   const proxima = colecao.pecas[posicao + 1]
-  const mudouNaSacola = guardada && (guardada.cor !== cor.nome || guardada.tamanho !== tamanho)
+  const mudouNaSacola = naSacola && (naSacola.cor !== cor.nome || naSacola.tamanho !== tamanho)
 
-  const guardar = () => {
-    if (guardada && !mudouNaSacola) return abrirSacola()
+  const adicionar = () => {
+    if (naSacola && !mudouNaSacola) return abrirSacola()
     adicionarNaSacola({ colecao: colecao.slug, peca: peca.slug, cor: cor.nome, tamanho })
-    setGuardou(true)
+    setAdicionou(true)
   }
 
   const querer = () => {
@@ -292,7 +292,10 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
           </div>
         </div>
 
-        <h2 className="cat-nome">{peca.nome}</h2>
+        <div className="cat-nome-linha">
+          <h2 className="cat-nome">{peca.nome}</h2>
+          <BotaoDesejo className="cat-nome-desejo" item={{ colecao: colecao.slug, peca: peca.slug }} />
+        </div>
         <p className="cat-preco">{precoBR(peca.preco)}</p>
         <p className="cat-desc">{peca.descricao}</p>
 
@@ -348,8 +351,8 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
         </div>
 
         <div className="cat-acoes">
-          <button type="button" className="pilula cheia" onClick={guardar}>
-            {!guardada ? 'Adicionar à sacola' : mudouNaSacola ? 'Atualizar na sacola' : 'Na sacola ✓'}
+          <button type="button" className="pilula cheia" onClick={adicionar}>
+            {!naSacola ? 'Adicionar à sacola' : mudouNaSacola ? 'Atualizar na sacola' : 'Na sacola ✓'}
           </button>
           <button type="button" className="pilula" onClick={querer}>
             <WhatsApp className="ico" />
@@ -359,7 +362,7 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
           </button>
         </div>
         <AnimatePresence>
-          {guardou && guardada && (
+          {adicionou && naSacola && (
             <motion.p
               className="cat-guardou"
               initial={{ opacity: 0, y: 6 }}
@@ -367,7 +370,7 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4, ease }}
             >
-              Peça guardada na sacola.{' '}
+              Peça adicionada à sacola.{' '}
               <button type="button" onClick={abrirSacola}>
                 Ver sacola
               </button>

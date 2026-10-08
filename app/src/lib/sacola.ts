@@ -1,78 +1,36 @@
 /*
-  Sacola de desejos: a cliente junta várias peças e envia tudo numa
-  mensagem só pelo WhatsApp. Fica salva no navegador dela.
+  Sacola: as peças que a cliente quer comprar, com cor e tamanho. Ela envia
+  tudo numa mensagem só pelo WhatsApp. (Peças salvas só para ver depois ficam
+  na lista de desejos, em lib/desejos.)
 */
-import { useSyncExternalStore } from 'react'
-import { colecoes, precoBR } from '../dados/colecoes'
+import { precoBR } from '../dados/colecoes'
 import { linkWhatsApp } from '../dados/site'
+import { abrirGaveta, criarLista, detalhar } from './lista'
 
 export type ItemSacola = { colecao: string; peca: string; cor: string; tamanho: string | null }
 
-const CHAVE = 'livi-sacola'
-const ouvintes = new Set<() => void>()
+export const EVENTO_SACOLA_ADICIONOU = 'livi:sacola-adicionou'
 
-function carregar(): ItemSacola[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(CHAVE) ?? '[]')
-    return Array.isArray(v) ? v : []
-  } catch {
-    return []
-  }
-}
+const sacola = criarLista<ItemSacola>('livi-sacola')
 
-let itens: ItemSacola[] = typeof window === 'undefined' ? [] : carregar()
+export const useSacola = sacola.usar
+export const naSacola = sacola.tem
 
-function salvar(novos: ItemSacola[]) {
-  itens = novos
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(itens))
-  } catch {
-    /* sem armazenamento: a sacola vive só nesta visita */
-  }
-  ouvintes.forEach((f) => f())
-}
-
-export function useSacola() {
-  return useSyncExternalStore(
-    (cb) => {
-      ouvintes.add(cb)
-      return () => ouvintes.delete(cb)
-    },
-    () => itens,
-    () => itens,
-  )
-}
-
-export const naSacola = (peca: string) => itens.some((i) => i.peca === peca)
-
-export function alternarNaSacola(item: ItemSacola) {
-  if (naSacola(item.peca)) salvar(itens.filter((i) => i.peca !== item.peca))
-  else {
-    salvar([...itens, item])
-    window.dispatchEvent(new CustomEvent('livi:sacola-adicionou'))
-  }
-}
-
+/** põe a peça na sacola (ou atualiza cor e tamanho, se ela já estiver lá) */
 export function adicionarNaSacola(item: ItemSacola) {
-  if (naSacola(item.peca)) salvar(itens.map((i) => (i.peca === item.peca ? { ...i, ...item } : i)))
-  else salvar([...itens, item])
-  window.dispatchEvent(new CustomEvent('livi:sacola-adicionou'))
+  const itens = sacola.ler()
+  if (sacola.tem(item.peca)) sacola.salvar(itens.map((i) => (i.peca === item.peca ? { ...i, ...item } : i)))
+  else sacola.salvar([...itens, item])
+  window.dispatchEvent(new CustomEvent(EVENTO_SACOLA_ADICIONOU))
 }
 
-export const removerDaSacola = (peca: string) => salvar(itens.filter((i) => i.peca !== peca))
+export const removerDaSacola = (peca: string) => sacola.salvar(sacola.ler().filter((i) => i.peca !== peca))
 export const tamanhoNaSacola = (peca: string, tamanho: string) =>
-  salvar(itens.map((i) => (i.peca === peca ? { ...i, tamanho } : i)))
+  sacola.salvar(sacola.ler().map((i) => (i.peca === peca ? { ...i, tamanho } : i)))
 
-export const abrirSacola = () => window.dispatchEvent(new CustomEvent('livi:sacola'))
+export const abrirSacola = () => abrirGaveta('sacola')
 
-/** dados completos de cada item (nome, preço, foto), a partir do arquivo de dados */
-export function detalhar(lista: ItemSacola[]) {
-  return lista.flatMap((i) => {
-    const c = colecoes.find((x) => x.slug === i.colecao)
-    const p = c?.pecas.find((x) => x.slug === i.peca)
-    return c && p ? [{ ...i, colecaoNome: c.nome, fundo: c.fundo, peca: p }] : []
-  })
-}
+export { detalhar }
 
 /** a sacola inteira numa mensagem: uma peça por bloco, total e uma pergunta que muda conforme o caso */
 export function mensagemSacola(lista: ItemSacola[]) {

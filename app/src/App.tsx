@@ -8,7 +8,8 @@ import { Apresentacao } from './sections/Apresentacao'
 import { Looks } from './sections/Looks'
 import { ComoComprar, Diferenciais, Sobre } from './sections/Depois'
 import { FaixaColecoes } from './components/Vivos'
-import { GavetaSacola } from './components/Sacola'
+import { Gaveta } from './components/Gaveta'
+import { AvisoDesejo } from './components/Desejos'
 import { Catalogo } from './components/Catalogo'
 import { Cortina } from './components/Cortina'
 import { movimentoReduzido } from './lib/midia'
@@ -25,7 +26,8 @@ export default function App() {
   return (
     <MotionConfig reducedMotion={movimentoReduzido() ? 'always' : 'never'}>
       <Cabecalho rota={rota} />
-      <GavetaSacola />
+      <Gaveta />
+      <AvisoDesejo />
       {/* /colecao/... abre o catálogo por cima da página inicial, que fica sempre montada */}
       <Catalogo />
       <Cortina />
