@@ -107,7 +107,7 @@ export function Looks() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + el.clientHeight * 2.6,
+            end: () => '+=' + el.clientHeight * 3.8,
             pin: true,
             scrub: 1,
             invalidateOnRefresh: true,

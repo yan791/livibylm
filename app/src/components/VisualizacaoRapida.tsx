@@ -77,7 +77,7 @@ function Acoes({ colecao, peca, aoDestacar }: { colecao: Colecao; peca: Peca; ao
           className="pilula cheia"
           onClick={() => {
             if (!tamanho) return setAviso(true)
-            window.open(linkWhatsApp(mensagemPeca(peca.nome, cor.nome, tamanho)), '_blank', 'noopener')
+            window.open(linkWhatsApp(mensagemPeca(colecao, peca, cor.nome, tamanho)), '_blank', 'noopener')
           }}
         >
           <WhatsApp className="ico" /> Quero essa peça

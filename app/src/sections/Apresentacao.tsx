@@ -46,7 +46,7 @@ export function Apresentacao() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + H() * 1.1,
+            end: () => '+=' + H() * 1.3,
             pin: true,
             scrub: 1,
             anticipatePin: 1,

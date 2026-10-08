@@ -58,7 +58,7 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
       setAvisoTamanho(true)
       return
     }
-    window.open(linkWhatsApp(mensagemPeca(peca.nome, cor.nome, tamanho)), '_blank', 'noopener')
+    window.open(linkWhatsApp(mensagemPeca(colecao, peca, cor.nome, tamanho)), '_blank', 'noopener')
   }
 
   const voltar = (e: React.MouseEvent) => {

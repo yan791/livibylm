@@ -74,11 +74,29 @@ export function detalhar(lista: ItemSacola[]) {
   })
 }
 
+/** a sacola inteira numa mensagem: uma peça por bloco, total e uma pergunta que muda conforme o caso */
 export function mensagemSacola(lista: ItemSacola[]) {
-  const linhas = detalhar(lista).map(
-    (i) => `• ${i.peca.nome}, cor ${i.cor}, tamanho ${i.tamanho ?? 'a definir'} (${precoBR(i.peca.preco)})`,
+  const itens = detalhar(lista)
+  const varias = itens.length > 1
+  const pecas = itens.map((i, n) =>
+    [
+      `${varias ? `${n + 1}. ` : ''}*${i.peca.nome}*`,
+      `Coleção ${i.colecaoNome} · Cor ${i.cor} · ${i.tamanho ? `Tamanho ${i.tamanho}` : 'Tamanho a definir'}`,
+      precoBR(i.peca.preco),
+    ].join('\n'),
   )
-  return `Olá! Vim pelo site da Livi e separei estas peças:\n\n${linhas.join('\n')}\n\nPodemos conversar?`
+  const total = itens.reduce((s, i) => s + i.peca.preco, 0)
+  const faltaTamanho = itens.some((i) => !i.tamanho)
+  return [
+    `Olá! Vim pelo site da Livi e separei ${varias ? 'estas peças' : 'esta peça'}:`,
+    ...pecas,
+    varias ? `*Total estimado: ${precoBR(total)}*` : '',
+    faltaTamanho
+      ? 'Pode me ajudar com os tamanhos e ver a disponibilidade?'
+      : 'Podemos conversar sobre a disponibilidade e o envio?',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 export const linkSacola = (lista: ItemSacola[]) => linkWhatsApp(mensagemSacola(lista))

@@ -56,6 +56,8 @@ export function Cabecalho({ rota }: { rota: Rota }) {
   const clicar = (href: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     setMenu(false)
+    // o menu aberto trava a rolagem; solta já, senão a página ignora o pedido de rolar até a seção
+    pausarRolagem(false)
     irPara(href, rota)
   }
 

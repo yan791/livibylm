@@ -4,7 +4,7 @@
   espaços reservados; textos concretos ficam marcados para confirmar.
 */
 import { motion } from 'motion/react'
-import { linkWhatsApp, site } from '../dados/site'
+import { linkWhatsApp, mensagens, site } from '../dados/site'
 import { Espaco, Ph } from '../components/Espaco'
 import { Ima, TituloVivo } from '../components/Vivos'
 import {
@@ -63,7 +63,7 @@ export function Diferenciais() {
         </div>
         <div className="dif-acoes">
           <Ima>
-            <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
+            <a className="pilula cheia" href={linkWhatsApp(mensagens.disponiveis)} target="_blank" rel="noreferrer">
               <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
             </a>
           </Ima>
@@ -149,7 +149,7 @@ export function ComoComprar() {
         <motion.div className="comprar-chamada" {...aparece}>
           <p>Ficou com alguma dúvida? A conversa é direta, com quem conhece cada peça.</p>
           <Ima>
-            <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
+            <a className="pilula cheia" href={linkWhatsApp(mensagens.duvida)} target="_blank" rel="noreferrer">
               <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
             </a>
           </Ima>
