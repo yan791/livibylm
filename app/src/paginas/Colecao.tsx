@@ -18,6 +18,7 @@ import { BotaoDesejo } from '../components/Sacola'
 import { CartaoPeca } from '../components/VisualizacaoRapida'
 import { FaixaColecoes, TituloVivo } from '../components/Vivos'
 import { PROPORCAO } from '../lib/cartao'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -101,7 +102,7 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease, delay: 0.15 }}
         >
-          <a href="/#colecoes" className="pc-voltar" onClick={voltar}>
+          <a href={comBase('/#colecoes')} className="pc-voltar" onClick={voltar}>
             <SetaEsquerda className="ico" /> Coleções
           </a>
           <p className="sobretitulo">
@@ -237,7 +238,7 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
             .map((c) => (
               <a
                 key={c.slug}
-                href={`/colecao/${c.slug}`}
+                href={comBase(`/colecao/${c.slug}`)}
                 className="pc-outra"
                 style={{ '--c': c.fundo } as React.CSSProperties}
                 onClick={(e) => {

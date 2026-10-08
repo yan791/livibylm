@@ -10,6 +10,7 @@ import { mostrarCatalogo } from '../lib/catalogo'
 import { cn } from '../lib/cn'
 import { Magnetic } from './core/magnetic'
 import { InfiniteSlider } from './core/infinite-slider'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -111,7 +112,7 @@ export function FaixaColecoes({ escura = false, reverso = false }: { escura?: bo
         {colecoes.map((c) => (
           <a
             key={c.slug}
-            href={`/colecao/${c.slug}`}
+            href={comBase(`/colecao/${c.slug}`)}
             className="faixa-item"
             onClick={(e) => {
               e.preventDefault()

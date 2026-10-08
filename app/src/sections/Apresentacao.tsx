@@ -20,6 +20,7 @@ import { PROPORCAO } from '../lib/cartao'
 import { GuiaRolar } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
 import { atrasoAbertura } from '../components/Cortina'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -196,14 +197,14 @@ export function Apresentacao() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease, delay: 0.2 + d0 }}
           >
-            <a href="/" className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
+            <a href={comBase('/')} className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
               <Logo claro />
             </a>
             <nav className="ap-menu" aria-label="Menu principal">
               {site.menu.map((m, i) => (
                 <a
                   key={m.href}
-                  href={'/' + m.href}
+                  href={comBase('/' + m.href)}
                   className={i === 0 ? 'ativo' : undefined}
                   aria-current={i === 0 ? 'page' : undefined}
                   onClick={(e) => {
@@ -237,7 +238,7 @@ export function Apresentacao() {
 
           {/* o selo rola a página até as coleções (o "Coleções" do menu é que abre o catálogo) */}
           <motion.a
-            href="/#colecoes"
+            href={comBase('/#colecoes')}
             className="ap-selo"
             aria-label="Ver as coleções"
             initial={{ opacity: 0, scale: 0.8, rotate: -20 }}

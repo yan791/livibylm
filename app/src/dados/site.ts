@@ -3,6 +3,8 @@
   Itens com [confirmar] aguardam confirmação da cliente.
 */
 
+import { comBase } from '../lib/base'
+
 export const site = {
   marca: 'Livi',
   assinatura: 'by LM',
@@ -21,8 +23,8 @@ export const site = {
     /** coleção atual: o menu "Coleções" abre o catálogo por ela */
     colecao: 'velvet',
     /** foto da abertura: recorte (sem fundo) e a mesma foto com fundo */
-    recorte: '/img/hero/modelo2-recorte.webp',
-    foto: '/img/hero/modelo2-foto.webp',
+    recorte: comBase('/img/hero/modelo2-recorte.webp'),
+    foto: comBase('/img/hero/modelo2-foto.webp'),
     /** proporção da foto (largura / altura) e cor do fundo dela */
     proporcao: 1126 / 1666,
     fundoFoto: '#9a501f',

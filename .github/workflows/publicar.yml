@@ -1,0 +1,62 @@
+# Publica o site no GitHub Pages a cada push na branch "ajustes" (ou pelo botão
+# "Run workflow" na aba Actions). O link fica em https://<dono>.github.io/<repositorio>/
+name: Publicar site (GitHub Pages)
+
+on:
+  push:
+    branches: [ajustes]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# um push novo cancela a publicação anterior que ainda estiver rodando
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  gerar:
+    # só publica no repositório que ligou o Pages e criou a variável PUBLICAR_PAGES = sim
+    # (Settings > Secrets and variables > Actions > Variables); nos outros, é pulado em vez de falhar
+    if: github.event_name == 'workflow_dispatch' || vars.PUBLICAR_PAGES == 'sim'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      # o site fica numa subpasta com o nome do repositório (/livibylm/)
+      - name: Gerar o site
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
+
+      # o GitHub Pages não conhece as rotas do site (/colecao/...): o 404 vira o
+      # próprio site, que lê o endereço e abre a página certa
+      - name: Abrir links diretos de coleções e peças
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: app/dist
+
+  publicar:
+    needs: gerar
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.publicacao.outputs.page_url }}
+    steps:
+      - id: publicacao
+        uses: actions/deploy-pages@v4

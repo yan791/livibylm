@@ -14,6 +14,7 @@ import { cn } from '../lib/cn'
 import { Espaco, Ph } from './Espaco'
 import { BotaoDesejo, BotaoSacola } from './Sacola'
 import { Fechar, SetaDiagonal, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
@@ -360,7 +361,7 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
           )}
         </AnimatePresence>
 
-        <a href={`/colecao/${colecao.slug}/${peca.slug}`} className="cat-pagina" onClick={paginaDaPeca}>
+        <a href={comBase(`/colecao/${colecao.slug}/${peca.slug}`)} className="cat-pagina" onClick={paginaDaPeca}>
           Página completa da peça <SetaDiagonal className="seta" />
         </a>
       </div>

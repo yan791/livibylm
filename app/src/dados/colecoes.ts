@@ -8,6 +8,8 @@
   "[confirmar]" ainda precisam ser confirmados com a cliente.
 */
 
+import { comBase } from '../lib/base'
+
 export type Cor = { nome: string; hex: string }
 
 export type Peca = {
@@ -47,7 +49,7 @@ const MODELO = { altura: '1,70 m [confirmar]', veste: 'P [confirmar]' }
  * FOTOS FICTÍCIAS: a peça no cabide (render 3D) e um detalhe, só para a apresentação.
  * Troque pelas fotos reais da peça vestida assim que chegarem. [trocar]
  */
-const ficticias = (slug: string) => [`/img/pecas/ficticias/${slug}.webp`, `/img/pecas/ficticias/${slug}-detalhe.webp`]
+const ficticias = (slug: string) => [comBase(`/img/pecas/ficticias/${slug}.webp`), comBase(`/img/pecas/ficticias/${slug}-detalhe.webp`)]
 
 export const colecoes: Colecao[] = [
   {
@@ -58,7 +60,7 @@ export const colecoes: Colecao[] = [
     tema: 'claro',
     clima: 'Luz e linhas longas.',
     descricao: 'Peças claras, de brilho suave, pensadas para a luz do fim de tarde.',
-    capa: '/img/colecoes/lumina.webp',
+    capa: comBase('/img/colecoes/lumina.webp'),
     pecas: [
       {
         slug: 'vestido-lumina',
@@ -68,7 +70,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Pérola', hex: '#efeae3' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/lumina.webp', ...ficticias('vestido-lumina')],
+        fotos: [comBase('/img/colecoes/lumina.webp'), ...ficticias('vestido-lumina')],
         modelo: MODELO,
       },
       {
@@ -114,7 +116,7 @@ export const colecoes: Colecao[] = [
     tema: 'escuro',
     clima: 'Terra, calor e drapeado.',
     descricao: 'Tons de terra e chocolate, com drapeados que acompanham o corpo.',
-    capa: '/img/colecoes/velvet.webp',
+    capa: comBase('/img/colecoes/velvet.webp'),
     pecas: [
       {
         slug: 'vestido-velvet',
@@ -124,7 +126,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe [confirmar]',
         cores: [{ nome: 'Chocolate', hex: '#3e1d12' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/velvet.webp', ...ficticias('vestido-velvet')],
+        fotos: [comBase('/img/colecoes/velvet.webp'), ...ficticias('vestido-velvet')],
         modelo: MODELO,
       },
       {
@@ -170,7 +172,7 @@ export const colecoes: Colecao[] = [
     tema: 'escuro',
     clima: 'Contraste, sombra e caimento.',
     descricao: 'Preto e vinho em peças de linhas limpas, feitas para a noite.',
-    capa: '/img/colecoes/carmim.webp',
+    capa: comBase('/img/colecoes/carmim.webp'),
     pecas: [
       {
         slug: 'conjunto-carmim',
@@ -180,7 +182,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe acetinado [confirmar]',
         cores: [{ nome: 'Preto', hex: '#120c0b' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/carmim.webp', ...ficticias('conjunto-carmim')],
+        fotos: [comBase('/img/colecoes/carmim.webp'), ...ficticias('conjunto-carmim')],
         modelo: MODELO,
       },
       {
@@ -226,7 +228,7 @@ export const colecoes: Colecao[] = [
     tema: 'claro',
     clima: 'Estrutura e presença.',
     descricao: 'Modelagens ajustadas, de recortes precisos, para quem gosta de presença.',
-    capa: '/img/colecoes/confianca.webp',
+    capa: comBase('/img/colecoes/confianca.webp'),
     pecas: [
       {
         slug: 'vestido-confianca',
@@ -236,7 +238,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Alfaiataria com elastano [confirmar]',
         cores: [{ nome: 'Preto', hex: '#0f0b0a' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/confianca.webp', ...ficticias('vestido-confianca')],
+        fotos: [comBase('/img/colecoes/confianca.webp'), ...ficticias('vestido-confianca')],
         modelo: MODELO,
       },
       {

@@ -8,6 +8,7 @@ import { cn } from '../lib/cn'
 import { Logo } from './Logo'
 import { BotaoSacola } from './Sacola'
 import { Fechar, Instagram, Menu, SetaDiagonal, WhatsApp } from './icones'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -19,7 +20,7 @@ export function irPara(href: string, rota: Rota) {
   if (href === '#colecoes') return mostrarCatalogo(site.abertura.colecao)
   if (rota.nome === 'inicio') {
     rolarPara(href === '#inicio' ? 0 : href)
-    history.replaceState(null, '', href === '#inicio' ? '/' : '/' + href)
+    history.replaceState(null, '', comBase(href === '#inicio' ? '/' : '/' + href))
   } else navegar('/' + href)
 }
 
@@ -61,11 +62,11 @@ export function Cabecalho({ rota }: { rota: Rota }) {
   return (
     <>
       <header className={cn('cab', compacto && 'visivel')} aria-hidden={!compacto}>
-        <a href="/" className="cab-logo" onClick={clicar('#inicio')} tabIndex={compacto ? 0 : -1}>
+        <a href={comBase('/')} className="cab-logo" onClick={clicar('#inicio')} tabIndex={compacto ? 0 : -1}>
           <Logo />
         </a>
         <nav className="cab-acoes" aria-label="Atalhos">
-          <a href="/#colecoes" className="cab-link" onClick={clicar('#colecoes')} tabIndex={compacto ? 0 : -1}>
+          <a href={comBase('/#colecoes')} className="cab-link" onClick={clicar('#colecoes')} tabIndex={compacto ? 0 : -1}>
             Coleções
           </a>
           <a
@@ -107,7 +108,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
               {site.menu.map((m, i) => (
                 <motion.a
                   key={m.href}
-                  href={'/' + m.href}
+                  href={comBase('/' + m.href)}
                   onClick={clicar(m.href)}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}

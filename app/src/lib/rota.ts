@@ -2,10 +2,13 @@
   Roteador mínimo com URLs reais (/colecao/velvet/vestido-velvet).
   Toda troca de página passa pela View Transitions API quando o navegador
   suporta, para a peça "voar" de uma página para a outra sem corte seco.
+  As rotas são escritas sem a base ("/colecao/velvet"); a base do site
+  publicado ("/livibylm/") entra e sai só aqui.
 */
 import { useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
 import { movimentoReduzido } from './midia'
+import { comBase, semBase } from './base'
 
 export type Rota =
   | { nome: 'inicio'; ancora?: string }
@@ -31,7 +34,7 @@ function assinar(cb: () => void) {
 export function useCaminho() {
   return useSyncExternalStore(
     assinar,
-    () => location.pathname + location.hash,
+    () => semBase(location.pathname) + location.hash,
     () => '/',
   )
 }
@@ -63,10 +66,10 @@ export function comTransicao(fn: () => void, tipo = 'pagina') {
 }
 
 export function navegar(url: string, o: { substituir?: boolean; tipo?: string; semTransicao?: boolean } = {}) {
-  const mesmaPagina = interpretar(url).nome === interpretar(location.pathname).nome
+  const mesmaPagina = interpretar(url).nome === interpretar(semBase(location.pathname)).nome
   if (!mesmaPagina) antesDeTrocar?.()
   const aplicar = () => {
-    history[o.substituir ? 'replaceState' : 'pushState'](null, '', url)
+    history[o.substituir ? 'replaceState' : 'pushState'](null, '', comBase(url))
     paginaAtual = location.pathname
     emitir()
   }

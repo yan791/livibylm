@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { pausarRolagem } from '../lib/scroll'
+import { semBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const CHAVE_CORTINA = 'livi-cortina'
@@ -15,7 +16,7 @@ let cortinaVai: boolean | null = null
 export function cortinaVaiAparecer() {
   if (cortinaVai !== null) return cortinaVai
   try {
-    cortinaVai = location.pathname === '/' && !sessionStorage.getItem(CHAVE_CORTINA)
+    cortinaVai = semBase(location.pathname) === '/' && !sessionStorage.getItem(CHAVE_CORTINA)
   } catch {
     cortinaVai = false
   }

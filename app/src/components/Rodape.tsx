@@ -5,6 +5,7 @@ import { mostrarCatalogo } from '../lib/catalogo'
 import { irPara } from './Cabecalho'
 import { Logo } from './Logo'
 import { Instagram, SetaDiagonal, WhatsApp } from './icones'
+import { comBase } from '../lib/base'
 
 export function Rodape({ rota }: { rota: Rota }) {
   return (
@@ -18,7 +19,7 @@ export function Rodape({ rota }: { rota: Rota }) {
         {site.menu.map((m) => (
           <a
             key={m.href}
-            href={'/' + m.href}
+            href={comBase('/' + m.href)}
             onClick={(e) => {
               e.preventDefault()
               irPara(m.href, rota)
@@ -33,7 +34,7 @@ export function Rodape({ rota }: { rota: Rota }) {
         {colecoes.map((c) => (
           <a
             key={c.slug}
-            href={`/colecao/${c.slug}`}
+            href={comBase(`/colecao/${c.slug}`)}
             onClick={(e) => {
               e.preventDefault()
               mostrarCatalogo(c.slug)

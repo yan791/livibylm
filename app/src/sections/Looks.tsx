@@ -12,6 +12,7 @@ import { alturaCartao, PROPORCAO } from '../lib/cartao'
 import { SetaDiagonal } from '../components/icones'
 import { FotoTecido } from '../components/FotoTecido'
 import { GuiaRolar } from '../components/Vivos'
+import { comBase } from '../lib/base'
 
 const FUNDO_FINAL = '#ece5de'
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
@@ -157,7 +158,7 @@ export function Looks() {
 
         {colecoes.map((c) => (
           <div key={c.slug} className="lk-cartao" data-slug={c.slug} style={{ '--ar': PROPORCAO[c.slug] } as React.CSSProperties}>
-            <a href={`/colecao/${c.slug}`} className="lk-cartao-link" onClick={abrir(c.slug)} aria-label={`Coleção ${c.nome}`}>
+            <a href={comBase(`/colecao/${c.slug}`)} className="lk-cartao-link" onClick={abrir(c.slug)} aria-label={`Coleção ${c.nome}`}>
               <FotoTecido src={c.capa} alt={`Look da coleção ${c.nome}`} carregamento={c.slug === 'lumina' ? 'eager' : 'lazy'} />
             </a>
           </div>
@@ -169,14 +170,14 @@ export function Looks() {
               {c.numero} <i>/</i> 0{colecoes.length}
             </span>
             <span className="lk-clima">{c.clima}</span>
-            <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-ver">
+            <a href={comBase(`/colecao/${c.slug}`)} onClick={abrir(c.slug)} className="lk-ver">
               Ver coleção <SetaDiagonal className="seta" />
             </a>
           </div>
         ))}
 
         {colecoes.map((c) => (
-          <a key={c.slug} href={`/colecao/${c.slug}`} className="lk-rotulo" onClick={abrir(c.slug)}>
+          <a key={c.slug} href={comBase(`/colecao/${c.slug}`)} className="lk-rotulo" onClick={abrir(c.slug)}>
             <strong>{c.nome}</strong>
             <span>
               Ver coleção <SetaDiagonal className="seta" />
@@ -193,7 +194,7 @@ export function Looks() {
           {colecoes.map((c) => (
             <article key={c.slug} className={`lk-bloco tema-${c.tema}`} data-slug={c.slug}>
               <p className="lk-bloco-nome">{c.nome}</p>
-              <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-bloco-foto">
+              <a href={comBase(`/colecao/${c.slug}`)} onClick={abrir(c.slug)} className="lk-bloco-foto">
                 <img src={c.capa} alt={`Look da coleção ${c.nome}`} loading="lazy" draggable={false} />
               </a>
               <div className="lk-bloco-info">
@@ -201,7 +202,7 @@ export function Looks() {
                   {c.numero} <i>/</i> 0{colecoes.length}
                 </span>
                 <span className="lk-clima">{c.clima}</span>
-                <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-ver">
+                <a href={comBase(`/colecao/${c.slug}`)} onClick={abrir(c.slug)} className="lk-ver">
                   Ver coleção <SetaDiagonal className="seta" />
                 </a>
               </div>
