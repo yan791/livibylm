@@ -42,6 +42,8 @@ type CircularGalleryProps = {
   /** espaço entre cartões vizinhos, em px */
   gap?: number;
   onActiveChange?: (index: number) => void;
+  /** quanto do intervalo do giro automático já passou (0 a 1), para mostrar o tempo até o próximo giro */
+  onAutoplayProgress?: (t: number) => void;
   /** toque no cartão da frente (um toque num cartão do lado só o traz para a frente) */
   onItemClick?: (index: number, img: HTMLImageElement) => void;
   className?: string;
@@ -57,7 +59,18 @@ const LIMIAR_ARRASTO = 6;
 
 const CircularGallery = forwardRef<CircularGalleryHandle, CircularGalleryProps>(
   (
-    { items, minSlots = 8, autoplay = 4500, paused = false, gap = 40, onActiveChange, onItemClick, className, label = 'Galeria' },
+    {
+      items,
+      minSlots = 8,
+      autoplay = 4500,
+      paused = false,
+      gap = 40,
+      onActiveChange,
+      onAutoplayProgress,
+      onItemClick,
+      className,
+      label = 'Galeria',
+    },
     ref,
   ) => {
     const n = items.length;
@@ -68,8 +81,8 @@ const CircularGallery = forwardRef<CircularGalleryHandle, CircularGalleryProps>(
     const raiz = useRef<HTMLDivElement>(null);
     const anel = useRef<HTMLDivElement>(null);
     const cartoes = useRef<(HTMLDivElement | null)[]>([]);
-    const callbacks = useRef({ onActiveChange, onItemClick });
-    callbacks.current = { onActiveChange, onItemClick };
+    const callbacks = useRef({ onActiveChange, onAutoplayProgress, onItemClick });
+    callbacks.current = { onActiveChange, onAutoplayProgress, onItemClick };
     const pausado = useRef(paused);
     pausado.current = paused;
 
@@ -222,9 +235,12 @@ const CircularGallery = forwardRef<CircularGalleryHandle, CircularGalleryProps>(
         // enquanto não pode girar, o relógio fica parado: depois espera o intervalo inteiro
         if (!livre) {
           s.ultimaAcao = performance.now();
+          callbacks.current.onAutoplayProgress?.(0);
           return;
         }
-        if (performance.now() - s.ultimaAcao >= autoplay) girarPara(Math.round(s.alvo / passo) * passo - passo);
+        const passou = performance.now() - s.ultimaAcao;
+        callbacks.current.onAutoplayProgress?.(Math.min(1, passou / autoplay));
+        if (passou >= autoplay) girarPara(Math.round(s.alvo / passo) * passo - passo);
       }, 250);
       return () => {
         io.disconnect();

@@ -815,43 +815,6 @@ img {
   color: var(--creme);
 }
 
-/* nome da coleção da frente, gigante, atrás do anel */
-.lk-nomes {
-  position: absolute;
-  inset: 0;
-  opacity: var(--revelar);
-  pointer-events: none;
-}
-
-.lk-nome {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -58%;
-  margin: 0;
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 18.5vw;
-  line-height: 1;
-  letter-spacing: 0.03em;
-  font-variation-settings: 'opsz' 60;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--vinho);
-  opacity: 0;
-  transition:
-    opacity 0.7s var(--ease),
-    color 0.9s var(--ease);
-}
-
-.lk-nome[data-ativo] {
-  opacity: 1;
-}
-
-.lk-palco[data-tema='escuro'] .lk-nome {
-  color: var(--rose-claro);
-}
-
 .lk-anel {
   position: absolute;
   inset: 0;
@@ -898,8 +861,9 @@ img {
 
 .lk-clima {
   font-family: var(--serif);
-  font-style: italic;
-  font-size: 1.1rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
 }
 
 .lk-ver {
@@ -3213,5 +3177,405 @@ html[data-movimento='reduzido'] .lk-bloco-info {
     height: 78svh;
     bottom: -4svh;
     left: calc(50% - 78svh * var(--ar) / 2);
+  }
+}
+
+/* ============================================================
+   LETREIRO DA COLEÇÃO (carrossel)
+   ============================================================ */
+
+.lk-barra {
+  bottom: 3.2svh;
+  gap: clamp(22px, 3.4vw, 56px);
+}
+
+.lt {
+  --lt-nome: var(--vinho);
+  --lt-brilho: #c4626a;
+  --lt-apoio: rgb(54 14 0 / 0.7);
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--lt-apoio);
+  transition: color 0.9s var(--ease);
+}
+
+.lk-palco[data-tema='escuro'] .lt {
+  --lt-nome: var(--creme);
+  --lt-brilho: #f2cb8e;
+  --lt-apoio: rgb(244 239 234 / 0.76);
+}
+
+.lt-abrir {
+  display: grid;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lt-abrir:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 10px;
+  border-radius: 6px;
+}
+
+/* "Coleção Nº 01" entre dois fios */
+.lt-sobre {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--sans);
+  font-size: 0.62rem;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+}
+
+.lt-sobre-texto {
+  display: inline-flex;
+  align-items: center;
+  /* compensa o espaço que o espaçamento deixa depois da última letra */
+  margin-right: -0.38em;
+}
+
+.lt-fio {
+  width: 34px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+  transform-origin: right;
+  animation: lt-fio 1s var(--ease) both;
+}
+
+.lt-fio.dir {
+  transform-origin: left;
+}
+
+@keyframes lt-fio {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.lt-rolo {
+  display: inline-flex;
+  margin-left: 0.55em;
+}
+
+.lt-rolo-casa {
+  display: inline-block;
+  height: 1.2em;
+  overflow: hidden;
+}
+
+.lt-rolo-fita {
+  display: flex;
+  flex-direction: column;
+  translate: 0 calc(var(--n) * -1.2em);
+  transition: translate 0.9s var(--ease);
+}
+
+.lt-rolo-fita > span {
+  height: 1.2em;
+}
+
+/* o nome */
+.lt-nome {
+  display: grid;
+  margin-top: 4px;
+  padding: 0 0.14em;
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(2.5rem, min(4.4vw, 7.2svh), 4.4rem);
+  line-height: 1.1;
+  font-variation-settings: 'opsz' 60;
+  color: var(--lt-nome);
+  transition: color 0.9s var(--ease);
+}
+
+.lt-nome > * {
+  grid-area: 1 / 1;
+  justify-self: center;
+}
+
+.lt-palavra {
+  position: relative;
+  white-space: nowrap;
+}
+
+.lt-medida,
+.lt-pe-medida {
+  visibility: hidden;
+}
+
+.lt-letra {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  translate: 0 0;
+  transition: translate 0.55s var(--ease);
+  transition-delay: calc(var(--i, 0) * 30ms);
+}
+
+/* brilho de cetim: atravessa o nome uma vez, quando ele termina de se escrever */
+.lt-cetim {
+  position: absolute;
+  inset: 0;
+  color: var(--lt-brilho);
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(100deg, transparent 40%, #000 50%, transparent 60%), url('./assets/grao.png');
+  mask-image: linear-gradient(100deg, transparent 40%, #000 50%, transparent 60%), url('./assets/grao.png');
+  -webkit-mask-size: 300% 100%, 150px 150px;
+  mask-size: 300% 100%, 150px 150px;
+  -webkit-mask-repeat: no-repeat, repeat;
+  mask-repeat: no-repeat, repeat;
+  -webkit-mask-position: 100% 0, 0 0;
+  mask-position: 100% 0, 0 0;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  animation: lt-cetim 1.7s 0.8s cubic-bezier(0.45, 0.05, 0.3, 1) both;
+}
+
+@keyframes lt-cetim {
+  to {
+    -webkit-mask-position: 0% 0, 0 0;
+    mask-position: 0% 0, 0 0;
+  }
+}
+
+/* clima da coleção (troca por "Ver a coleção" com o mouse em cima) */
+.lt-pe {
+  display: grid;
+  font-family: var(--sans);
+  font-size: clamp(0.8rem, 0.95vw, 0.92rem);
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+}
+
+.lt-pe > * {
+  grid-area: 1 / 1;
+  justify-self: center;
+  white-space: nowrap;
+}
+
+.lt-pe-atual {
+  height: 1.6em;
+  overflow: hidden;
+}
+
+.lt-pe-trilho {
+  display: grid;
+  transition: translate 0.6s var(--ease);
+}
+
+.lt-pe-trilho > span {
+  height: 1.6em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lt-pe-ver {
+  gap: 0.7em;
+  font-size: 0.72em;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--lt-nome);
+}
+
+.lt-pe-ver .seta {
+  width: 0.95em;
+  height: 0.95em;
+}
+
+@media (hover: hover) {
+  .lt-abrir:hover .lt-letra {
+    translate: 0 -0.08em;
+  }
+
+  .lt-abrir:hover .lt-pe-trilho {
+    translate: 0 -1.6em;
+  }
+}
+
+/* um traço por coleção: o da frente é mais longo e enche até o próximo giro */
+.lt-tracos {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lt-traco-botao {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  padding: 0 3px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lt-traco {
+  position: relative;
+  display: block;
+  width: 14px;
+  height: 2px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--lt-nome) 24%, transparent);
+  transition:
+    width 0.6s var(--ease),
+    background-color 0.9s var(--ease);
+}
+
+.lt-traco-botao[data-ativo] .lt-traco {
+  width: 46px;
+}
+
+.lt-traco-cheio {
+  position: absolute;
+  inset: 0;
+  background: var(--lt-nome);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition:
+    transform 0.26s linear,
+    background-color 0.9s var(--ease);
+}
+
+.lt-traco-botao[data-ativo] .lt-traco-cheio {
+  transform: scaleX(var(--tempo, 0));
+}
+
+.lt[data-zerou] .lt-traco-cheio {
+  transition: none;
+}
+
+.lt-traco-botao:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (hover: hover) {
+  .lt-traco-botao:not([data-ativo]):hover .lt-traco {
+    background: color-mix(in srgb, var(--lt-nome) 60%, transparent);
+  }
+}
+
+/* setas: enchem de cor a partir do centro e a seta atravessa o botão */
+.lk-seta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 52px;
+  height: 52px;
+  transition:
+    color 0.4s var(--ease),
+    border-color 0.4s var(--ease),
+    scale 0.2s var(--ease);
+}
+
+.lk-seta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--vinho);
+  transform: scale(0);
+  transition: transform 0.55s var(--ease);
+}
+
+.lk-palco[data-tema='escuro'] .lk-seta::before {
+  background: var(--creme);
+}
+
+.lk-seta-trilho {
+  display: grid;
+  place-items: center;
+}
+
+.lk-seta-trilho svg {
+  grid-area: 1 / 1;
+  transition: translate 0.55s var(--ease);
+}
+
+.lk-seta.dir .lk-seta-trilho svg:last-child {
+  translate: -42px 0;
+}
+
+.lk-seta.esq .lk-seta-trilho svg:last-child {
+  translate: 42px 0;
+}
+
+@media (hover: hover) {
+  .lk-seta:hover {
+    border-color: var(--vinho);
+    background: transparent;
+    color: var(--creme);
+  }
+
+  .lk-palco[data-tema='escuro'] .lk-seta:hover {
+    border-color: var(--creme);
+    color: var(--fundo);
+  }
+
+  .lk-seta:hover::before {
+    transform: scale(1);
+  }
+
+  .lk-seta.dir:hover .lk-seta-trilho svg:first-child {
+    translate: 42px 0;
+  }
+
+  .lk-seta.esq:hover .lk-seta-trilho svg:first-child {
+    translate: -42px 0;
+  }
+
+  .lk-seta:hover .lk-seta-trilho svg:last-child {
+    translate: 0 0;
+  }
+}
+
+@media (max-width: 860px), (max-aspect-ratio: 11/10) {
+  .lk-barra {
+    bottom: 8svh;
+    gap: 10px;
+  }
+
+  .lt {
+    gap: 4px;
+  }
+
+  .lt-sobre {
+    gap: 10px;
+    font-size: 0.56rem;
+  }
+
+  .lt-fio {
+    width: 18px;
+  }
+
+  .lt-nome {
+    font-size: clamp(2.2rem, 11vw, 3rem);
+  }
+
+  .lt-pe {
+    font-size: 0.76rem;
+  }
+
+  .lk-seta {
+    width: 44px;
+    height: 44px;
   }
 }

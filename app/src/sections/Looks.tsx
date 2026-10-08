@@ -12,8 +12,9 @@ import { gsap, rolarPara, ScrollTrigger } from '../lib/scroll'
 import { mostrarCatalogo, useCatalogo } from '../lib/catalogo'
 import { movimentoReduzido, useCelular } from '../lib/midia'
 import { PROPORCAO } from '../lib/cartao'
-import { SetaDiagonal, SetaDireita, SetaEsquerda } from '../components/icones'
-import { GuiaRolar } from '../components/Vivos'
+import { SetaDireita, SetaEsquerda } from '../components/icones'
+import { GuiaRolar, Ima } from '../components/Vivos'
+import { Letreiro, type Sentido } from '../components/Letreiro'
 import { CircularGallery, type CircularGalleryHandle, type GalleryItem } from '../components/ui/circular-gallery'
 import { comBase } from '../lib/base'
 
@@ -34,10 +35,28 @@ export function irParaColecoes() {
 export function Looks() {
   const palco = useRef<HTMLDivElement>(null)
   const galeria = useRef<CircularGalleryHandle>(null)
-  const [ativa, setAtiva] = useState(0)
+  const letreiro = useRef<HTMLDivElement>(null)
+  const tempo = useRef(0)
+  // coleção da frente e o sentido do último giro (o nome se escreve vindo desse lado)
+  const [frente, setFrente] = useState<{ i: number; dir: Sentido }>({ i: 0, dir: 1 })
+  const [revelado, setRevelado] = useState(true)
   const catalogoAberto = Boolean(useCatalogo())
   const celular = useCelular()
-  const atual = colecoes[ativa]
+  const atual = colecoes[frente.i]
+  const n = colecoes.length
+
+  const aoTrocar = (i: number) =>
+    setFrente((f) => (i === f.i ? f : { i, dir: (i - f.i + n) % n === n - 1 ? -1 : 1 }))
+
+  // o traço da coleção da frente enche no ritmo do giro automático (direto no DOM, sem re-render)
+  const aoPassarTempo = (t: number) => {
+    const el = letreiro.current
+    if (!el) return
+    if (t < tempo.current) el.dataset.zerou = ''
+    else delete el.dataset.zerou
+    tempo.current = t
+    el.style.setProperty('--tempo', t.toFixed(3))
+  }
 
   useLayoutEffect(() => {
     const el = palco.current
@@ -49,12 +68,19 @@ export function Looks() {
         const { desk } = ctx.conditions as { desk: boolean }
         if (movimentoReduzido()) return
         const estado = { revelar: 0 }
+        let aberto: boolean | null = null
 
         // 0: só o look da abertura, no mesmo tamanho e lugar; 1: o anel inteiro com as informações
         const aplicar = () => {
           el.style.setProperty('--revelar', estado.revelar.toFixed(3))
-          el.dataset.revelado = estado.revelar > 0.6 ? 'sim' : 'nao'
+          const agora = estado.revelar > 0.6
+          el.dataset.revelado = agora ? 'sim' : 'nao'
           galeria.current?.reveal(estado.revelar)
+          // o nome da coleção se escreve quando o letreiro aparece (e sai quando volta para a abertura)
+          if (agora !== aberto) {
+            aberto = agora
+            setRevelado(agora)
+          }
         }
 
         const tl = gsap.timeline({
@@ -85,17 +111,12 @@ export function Looks() {
           el.style.removeProperty('--revelar')
           delete el.dataset.revelado
           galeria.current?.reveal(1)
+          setRevelado(true)
         }
       },
     )
     return () => mm.revert()
   }, [])
-
-  // a foto da frente "voa" até a primeira peça do catálogo da coleção (View Transitions)
-  const verColecao = (e: React.MouseEvent) => {
-    e.preventDefault()
-    mostrarCatalogo(atual.slug, galeria.current?.frontImage())
-  }
 
   const abrirBloco = (slug: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -110,14 +131,6 @@ export function Looks() {
         data-tema={atual.tema}
         style={{ '--fundo': atual.fundo } as React.CSSProperties}
       >
-        <div className="lk-nomes" aria-hidden="true">
-          {colecoes.map((c, i) => (
-            <p key={c.slug} className="lk-nome" data-ativo={i === ativa || undefined}>
-              {c.nome}
-            </p>
-          ))}
-        </div>
-
         <div className="lk-anel">
           <CircularGallery
             ref={galeria}
@@ -125,7 +138,8 @@ export function Looks() {
             label="Coleções Livi"
             gap={celular ? 16 : 40}
             paused={catalogoAberto}
-            onActiveChange={setAtiva}
+            onActiveChange={aoTrocar}
+            onAutoplayProgress={aoPassarTempo}
             onItemClick={(i, img) => mostrarCatalogo(colecoes[i].slug, img)}
           />
         </div>
@@ -134,21 +148,30 @@ export function Looks() {
         <GuiaRolar ar={PROPORCAO[colecoes[0].slug]} />
 
         <div className="lk-barra">
-          <button type="button" className="lk-seta" onClick={() => galeria.current?.prev()} aria-label="Coleção anterior">
-            <SetaEsquerda />
-          </button>
-          <div className="lk-info">
-            <span className="lk-num">
-              {atual.numero} <i>/</i> 0{colecoes.length}
-            </span>
-            <span className="lk-clima">{atual.clima}</span>
-            <a href={comBase(`/colecao/${atual.slug}`)} onClick={verColecao} className="lk-ver">
-              Ver coleção <SetaDiagonal className="seta" />
-            </a>
-          </div>
-          <button type="button" className="lk-seta" onClick={() => galeria.current?.next()} aria-label="Próxima coleção">
-            <SetaDireita />
-          </button>
+          <Ima forca={0.3}>
+            <button type="button" className="lk-seta esq" onClick={() => galeria.current?.prev()} aria-label="Coleção anterior">
+              <span className="lk-seta-trilho">
+                <SetaEsquerda />
+                <SetaEsquerda />
+              </span>
+            </button>
+          </Ima>
+          <Letreiro
+            ref={letreiro}
+            indice={frente.i}
+            dir={frente.dir}
+            visivel={revelado}
+            onAbrir={() => mostrarCatalogo(atual.slug, galeria.current?.frontImage())}
+            onIr={(i) => galeria.current?.goTo(i)}
+          />
+          <Ima forca={0.3}>
+            <button type="button" className="lk-seta dir" onClick={() => galeria.current?.next()} aria-label="Próxima coleção">
+              <span className="lk-seta-trilho">
+                <SetaDireita />
+                <SetaDireita />
+              </span>
+            </button>
+          </Ima>
         </div>
 
         {/* movimento reduzido: um look por bloco */}
@@ -160,13 +183,7 @@ export function Looks() {
                 <img src={c.capa} alt={`Look da coleção ${c.nome}`} loading="lazy" draggable={false} />
               </a>
               <div className="lk-bloco-info">
-                <span className="lk-num">
-                  {c.numero} <i>/</i> 0{colecoes.length}
-                </span>
-                <span className="lk-clima">{c.clima}</span>
-                <a href={comBase(`/colecao/${c.slug}`)} onClick={abrirBloco(c.slug)} className="lk-ver">
-                  Ver coleção <SetaDiagonal className="seta" />
-                </a>
+                <span className="lk-clima">{c.nome}</span>
               </div>
             </article>
           ))}
