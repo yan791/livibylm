@@ -1,6 +1,6 @@
 /*
-  ATO 1: a abertura, como capa de revista.
-  Estúdio terracota (o próprio fundo da foto), o nome da coleção gigante
+  ATO 1: a abertura, como capa de revista (versão do Yan).
+  Estúdio terracota (o próprio fundo da foto), o nome da marca gigante
   atrás da modelo, selo girando e detalhes de editorial. Ao rolar, a moldura
   cresce, o título sobe, a modelo dá um passo para trás e o primeiro look
   (Lúmina) chega ao centro, exatamente onde os looks começam.
@@ -12,13 +12,16 @@ import { site, linkWhatsApp } from '../dados/site'
 import { colecoes } from '../dados/colecoes'
 import { gsap } from '../lib/scroll'
 import { TextEffect } from '../components/core/text-effect'
+import { SpinningText } from '../components/core/spinning-text'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
 import { Menu, SetaDiagonal } from '../components/icones'
-import { SpinningText } from '../components/core/spinning-text'
 import { PROPORCAO } from '../lib/cartao'
+import { GuiaRolar } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
-import { atrasoAbertura } from '../components/Modernos'
+import { atrasoAbertura } from '../components/Cortina'
+import { comBase } from '../lib/base'
+import { irParaColecoes } from './Looks'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -33,7 +36,8 @@ export function Apresentacao() {
 
     mm.add(
       { desk: '(min-width: 861px) and (min-aspect-ratio: 11/10)', cel: '(max-width: 860px), (max-aspect-ratio: 11/10)' },
-      () => {
+      (ctx) => {
+        const { desk } = ctx.conditions as { desk: boolean }
         const q = gsap.utils.selector(el)
         const H = () => el.clientHeight
         const W = () => el.clientWidth
@@ -44,9 +48,10 @@ export function Apresentacao() {
           scrollTrigger: {
             trigger: el,
             start: 'top top',
-            end: () => '+=' + H() * 1.3,
+            // no celular a passagem é um pouco mais curta: lá se desliza rápido e a trava longa cansa
+            end: () => '+=' + H() * (desk ? 1.3 : 1.1),
             pin: true,
-            scrub: 1,
+            scrub: 0.5,
             anticipatePin: 1,
             invalidateOnRefresh: true,
           },
@@ -79,6 +84,8 @@ export function Apresentacao() {
           { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: 'power2.out', immediateRender: true },
           0.5,
         )
+        // o look chegou sozinho ao centro: o convite para continuar rolando aparece dos lados
+        tl.fromTo(q('.guia-rolar'), { opacity: 0 }, { opacity: 1, duration: 0.25, immediateRender: true }, 0.85)
       },
     )
 
@@ -118,50 +125,54 @@ export function Apresentacao() {
           <span className="sr-only">
             Livi by LM, {a.esquerda} {a.direita}
           </span>
-          <motion.span
-            className="ap-palavra esq"
-            aria-hidden="true"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 0.3 + d0 }}
-          >
-            <em>
-              {a.esquerda} {a.direita}
-            </em>
-            <span className="ap-edicao">{a.edicao}</span>
-          </motion.span>
-          {[['dir', a.marca, 0.45]].map(([lado, texto, atraso]) => (
-            <span key={lado as string} className={`ap-palavra ${lado}`} aria-hidden="true">
-              <TextEffect
-                as="span"
-                per="char"
-                preset="fade-in-blur"
-                delay={(atraso as number) + d0}
-                speedReveal={0.45}
-                speedSegment={0.32}
-                className="ap-palavra-base grao"
-              >
-                {texto as string}
-              </TextEffect>
-              <motion.span
-                className="ap-palavra-luz"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 1.2, delay: 1.8 + d0 }}
-              >
-                {texto as string}
-              </motion.span>
-            </span>
-          ))}
+          {/* a entrada anima por dentro e a rolagem (GSAP) por fora: se os dois mexessem no
+              mesmo elemento, ao mudar o tamanho da tela o GSAP o devolveria invisível */}
+          <span className="ap-palavra esq" aria-hidden="true">
+            <motion.span
+              className="ap-capa-titulo"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease, delay: 0.3 + d0 }}
+            >
+              <em>
+                {a.esquerda} {a.direita}
+              </em>
+              <span className="ap-edicao">{a.edicao}</span>
+            </motion.span>
+          </span>
+          <span className="ap-palavra dir" aria-hidden="true">
+            <TextEffect
+              as="span"
+              per="char"
+              preset="fade-in-blur"
+              delay={0.45 + d0}
+              speedReveal={0.45}
+              speedSegment={0.32}
+              className="ap-palavra-base grao"
+            >
+              {a.marca}
+            </TextEffect>
+            <motion.span
+              className="ap-palavra-luz"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.2, delay: 1.8 + d0 }}
+            >
+              {a.marca}
+            </motion.span>
+          </span>
         </h1>
 
+        {/* mesma separação: a moldura aparece pela caixa de fora e some (ao rolar) pela de dentro */}
         <motion.div
-          className="ap-moldura"
+          className="ap-moldura-entrada"
           aria-hidden="true"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.4, ease, delay: d0 }}
-        />
+        >
+          <div className="ap-moldura" />
+        </motion.div>
 
         <div className="ap-fotos" aria-hidden="true">
           {/* o primeiro look chega aqui no fim da abertura, no mesmo lugar em que os looks começam */}
@@ -180,6 +191,8 @@ export function Apresentacao() {
           </div>
         </div>
 
+        <GuiaRolar ar={PROPORCAO[primeira.slug]} escuro={primeira.tema === 'escuro'} />
+
         <div className="ap-ui">
           <motion.header
             className="ap-topo"
@@ -187,14 +200,14 @@ export function Apresentacao() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease, delay: 0.2 + d0 }}
           >
-            <a href="/" className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
+            <a href={comBase('/')} className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
               <Logo claro />
             </a>
             <nav className="ap-menu" aria-label="Menu principal">
               {site.menu.map((m, i) => (
                 <a
                   key={m.href}
-                  href={'/' + m.href}
+                  href={comBase('/' + m.href)}
                   className={i === 0 ? 'ativo' : undefined}
                   aria-current={i === 0 ? 'page' : undefined}
                   onClick={(e) => {
@@ -215,15 +228,6 @@ export function Apresentacao() {
             </button>
           </motion.header>
 
-          <motion.p
-            className="ap-lateral"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 1 + d0 }}
-          >
-            Moda feminina autoral <i>·</i> {a.esquerda} {a.direita}
-          </motion.p>
-
           <motion.div
             className="ap-intro"
             initial={{ opacity: 0, y: 18 }}
@@ -235,8 +239,9 @@ export function Apresentacao() {
             <p>{a.apoio}</p>
           </motion.div>
 
+          {/* o selo rola a página até o carrossel das coleções (o "Coleções" do menu é que abre o catálogo) */}
           <motion.a
-            href="/#colecoes"
+            href={comBase('/#colecoes')}
             className="ap-selo"
             aria-label="Ver as coleções"
             initial={{ opacity: 0, scale: 0.8, rotate: -20 }}
@@ -244,7 +249,7 @@ export function Apresentacao() {
             transition={{ duration: 1.2, ease, delay: 1.1 + d0 }}
             onClick={(e) => {
               e.preventDefault()
-              irPara('#colecoes', { nome: 'inicio' })
+              irParaColecoes()
             }}
           >
             <SpinningText className="ap-selo-texto" duration={20} radius={10.6} fontSize={0.62}>
@@ -254,7 +259,6 @@ export function Apresentacao() {
               <SetaDiagonal className="seta" />
             </span>
           </motion.a>
-
         </div>
       </div>
     </section>

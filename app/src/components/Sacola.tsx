@@ -15,13 +15,23 @@ import {
   useSacola,
   type ItemSacola,
 } from '../lib/sacola'
-import { navegar } from '../lib/rota'
+import { abrirCatalogo, mostrarCatalogo } from '../lib/catalogo'
+import { site } from '../dados/site'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
-import { Fechar, IconeCabide, IconeSacola, SetaDiagonal, WhatsApp } from './icones'
-import { Tamanhos, TextoTroca } from './Modernos'
+import { Fechar, IconeCabide, SetaDiagonal, WhatsApp } from './icones'
 
 const ease = [0.22, 1, 0.36, 1] as const
+
+export function IconeSacola(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}>
+      <path d="M5 8.5h14l-1.2 11.2a1.5 1.5 0 0 1-1.5 1.3H7.7a1.5 1.5 0 0 1-1.5-1.3Z" />
+      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+      <path d="M12 17.6s-2.6-1.5-2.6-3.2c0-.9.7-1.5 1.4-1.5.5 0 .9.3 1.2.7.3-.4.7-.7 1.2-.7.7 0 1.4.6 1.4 1.5 0 1.7-2.6 3.2-2.6 3.2Z" />
+    </svg>
+  )
+}
 
 function Coracao({ cheio }: { cheio: boolean }) {
   return (
@@ -38,15 +48,9 @@ function Coracao({ cheio }: { cheio: boolean }) {
 }
 
 /** botão de coração: guarda ou tira a peça da sacola */
-const FAISCAS = Array.from({ length: 9 }, (_, i) => {
-  const a = (i / 9) * Math.PI * 2 - Math.PI / 2
-  return { x: Math.cos(a), y: Math.sin(a), s: i % 3 === 0 ? 5 : 3.5 }
-})
-
 export function BotaoDesejo({ item, className, comTexto = false }: { item: ItemSacola; className?: string; comTexto?: boolean }) {
   const lista = useSacola()
   const ativo = lista.some((i) => i.peca === item.peca)
-  const [explosao, setExplosao] = useState(0)
   return (
     <button
       type="button"
@@ -56,25 +60,9 @@ export function BotaoDesejo({ item, className, comTexto = false }: { item: ItemS
       onClick={(e) => {
         e.stopPropagation()
         e.preventDefault()
-        if (!ativo) setExplosao((n) => n + 1)
         alternarNaSacola(item)
       }}
     >
-      <AnimatePresence>
-        {explosao > 0 && (
-          <span key={explosao} className="desejo-faiscas" aria-hidden="true">
-            {FAISCAS.map((f, i) => (
-              <motion.i
-                key={i}
-                style={{ width: f.s, height: f.s }}
-                initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
-                animate={{ x: f.x * 26, y: f.y * 26, opacity: 0, scale: 0.4 }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              />
-            ))}
-          </span>
-        )}
-      </AnimatePresence>
       <motion.span className="desejo-icone" key={String(ativo)} initial={{ scale: 0.6 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 14 }}>
         <Coracao cheio={ativo} />
       </motion.span>
@@ -136,6 +124,7 @@ export function GavetaSacola() {
           />
           <motion.aside
             className="gaveta"
+            data-lenis-prevent
             role="dialog"
             aria-modal="true"
             aria-label="Sacola de desejos"
@@ -163,7 +152,7 @@ export function GavetaSacola() {
                   className="pilula"
                   onClick={() => {
                     setAberta(false)
-                    navegar('/#colecoes')
+                    mostrarCatalogo(site.abertura.colecao)
                   }}
                 >
                   Ver coleções <SetaDiagonal className="seta" />
@@ -188,7 +177,7 @@ export function GavetaSacola() {
                           style={{ background: i.fundo }}
                           onClick={() => {
                             setAberta(false)
-                            navegar(`/colecao/${i.colecao}/${i.peca.slug}`)
+                            abrirCatalogo(i.colecao, i.peca.slug)
                           }}
                           aria-label={`Ver ${i.peca.nome}`}
                         >
@@ -199,13 +188,20 @@ export function GavetaSacola() {
                           <p className="gaveta-detalhe">
                             {i.colecaoNome} · {i.cor} · {precoBR(i.peca.preco)}
                           </p>
-                          <Tamanhos
-                            className="gaveta-tamanhos pequeno"
-                            rotulo={`Tamanho de ${i.peca.nome}`}
-                            opcoes={i.peca.tamanhos}
-                            valor={i.tamanho}
-                            aoEscolher={(t) => tamanhoNaSacola(i.peca.slug, t)}
-                          />
+                          <div className="gaveta-tamanhos" role="radiogroup" aria-label={`Tamanho de ${i.peca.nome}`}>
+                            {i.peca.tamanhos.map((t) => (
+                              <button
+                                key={t}
+                                type="button"
+                                role="radio"
+                                aria-checked={i.tamanho === t}
+                                className={cn(i.tamanho === t && 'ativo')}
+                                onClick={() => tamanhoNaSacola(i.peca.slug, t)}
+                              >
+                                {t}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <button type="button" className="gaveta-tirar" onClick={() => removerDaSacola(i.peca.slug)} aria-label={`Tirar ${i.peca.nome}`}>
                           <Fechar />
@@ -220,7 +216,7 @@ export function GavetaSacola() {
                     <strong>{precoBR(total)}</strong>
                   </p>
                   <a className="pilula cheia" href={linkSacola(lista)} target="_blank" rel="noreferrer">
-                    <WhatsApp className="ico" /> <TextoTroca>Enviar pelo WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
+                    <WhatsApp className="ico" /> Enviar pelo WhatsApp <SetaDiagonal className="seta" />
                   </a>
                   <p className="gaveta-nota">As peças seguem na mensagem. Disponibilidade e medidas são confirmadas na conversa.</p>
                 </div>

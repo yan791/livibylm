@@ -1,11 +1,15 @@
 /*
-  Roteador mínimo com URLs reais (/colecao/velvet/vestido-velvet).
-  Toda troca de página passa pela View Transitions API quando o navegador
-  suporta, para a peça "voar" de uma página para a outra sem corte seco.
+  Roteador mínimo com URLs reais: "/" é a página inicial e
+  "/colecao/velvet/vestido-velvet" abre o catálogo por cima dela (lib/catalogo).
+  As trocas passam pela View Transitions API quando o navegador suporta,
+  para a peça "voar" de um lugar para o outro sem corte seco.
+  As rotas são escritas sem a base ("/colecao/velvet"); a base do site
+  publicado ("/livibylm/") entra e sai só aqui.
 */
 import { useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
 import { movimentoReduzido } from './midia'
+import { comBase, semBase } from './base'
 
 export type Rota =
   | { nome: 'inicio'; ancora?: string }
@@ -14,11 +18,8 @@ export type Rota =
 const ouvintes = new Set<() => void>()
 const emitir = () => ouvintes.forEach((f) => f())
 
-let antesDeTrocar: (() => void) | null = null
-/** chamado logo antes de uma troca de página (ex.: guardar a rolagem da home) */
-export function aoSairDaPagina(fn: (() => void) | null) {
-  antesDeTrocar = fn
-}
+/** endereço atual, para o "voltar" ignorar passos que só mudam a âncora (#sobre) */
+let paginaAtual = typeof location === 'undefined' ? '/' : location.pathname
 
 function assinar(cb: () => void) {
   ouvintes.add(cb)
@@ -28,7 +29,7 @@ function assinar(cb: () => void) {
 export function useCaminho() {
   return useSyncExternalStore(
     assinar,
-    () => location.pathname + location.hash,
+    () => semBase(location.pathname) + location.hash,
     () => '/',
   )
 }
@@ -48,8 +49,10 @@ export const suportaTransicao = () =>
 export function comTransicao(fn: () => void, tipo = 'pagina') {
   if (suportaTransicao()) {
     document.documentElement.dataset.transicao = tipo
-    const t = (document as Document & { startViewTransition: (cb: () => void) => { finished: Promise<void> } })
+    const t = (document as Document & { startViewTransition: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> } })
       .startViewTransition(() => flushSync(fn))
+    // se o navegador desistir da animação, a troca já aconteceu: não é erro
+    t.ready.catch(() => {})
     t.finished.finally(() => {
       delete document.documentElement.dataset.transicao
     })
@@ -59,11 +62,13 @@ export function comTransicao(fn: () => void, tipo = 'pagina') {
   return Promise.resolve()
 }
 
-export function navegar(url: string, o: { substituir?: boolean; tipo?: string; semTransicao?: boolean } = {}) {
-  const mesmaPagina = interpretar(url).nome === interpretar(location.pathname).nome
-  if (!mesmaPagina) antesDeTrocar?.()
+export function navegar(
+  url: string,
+  o: { substituir?: boolean; tipo?: string; semTransicao?: boolean; estado?: unknown } = {},
+) {
   const aplicar = () => {
-    history[o.substituir ? 'replaceState' : 'pushState'](null, '', url)
+    history[o.substituir ? 'replaceState' : 'pushState'](o.estado ?? null, '', comBase(url))
+    paginaAtual = location.pathname
     emitir()
   }
   if (o.semTransicao) {
@@ -75,7 +80,8 @@ export function navegar(url: string, o: { substituir?: boolean; tipo?: string; s
 
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
-    antesDeTrocar?.()
+    if (location.pathname === paginaAtual) return
+    paginaAtual = location.pathname
     comTransicao(emitir, 'voltar')
   })
 }

@@ -5,6 +5,3 @@ export const PROPORCAO: Record<string, number> = {
   carmim: 1080 / 1600,
   confianca: 401 / 615,
 }
-
-/** altura do cartão de foto dos looks (fração da tela), igual na abertura e nos looks */
-export const alturaCartao = (desk: boolean) => (desk ? 0.78 : 0.62)

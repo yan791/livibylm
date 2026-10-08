@@ -1,13 +1,12 @@
 /*
-  Depois da apresentação: a criadora, o ateliê, clientes reais e como comprar.
+  Depois da apresentação: os diferenciais, a criadora e como comprar.
   Ritmo mais calmo, ainda fluido. Fotos que ainda não existem aparecem como
   espaços reservados; textos concretos ficam marcados para confirmar.
 */
 import { motion } from 'motion/react'
-import { linkWhatsApp, site } from '../dados/site'
+import { linkWhatsApp, mensagens, site } from '../dados/site'
 import { Espaco, Ph } from '../components/Espaco'
 import { Ima, TituloVivo } from '../components/Vivos'
-import { TextoTroca } from '../components/Modernos'
 import {
   IconeAgulha,
   IconeConversa,
@@ -64,13 +63,13 @@ export function Diferenciais() {
         </div>
         <div className="dif-acoes">
           <Ima>
-            <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
-              <WhatsApp className="ico" /> <TextoTroca>Falar no WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
+            <a className="pilula cheia" href={linkWhatsApp(mensagens.disponiveis)} target="_blank" rel="noreferrer">
+              <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
             </a>
           </Ima>
           <Ima>
             <a className="pilula" href={site.instagram} target="_blank" rel="noreferrer">
-              <Instagram className="ico" /> <TextoTroca>{site.instagramArroba}</TextoTroca>
+              <Instagram className="ico" /> {site.instagramArroba}
             </a>
           </Ima>
         </div>
@@ -99,43 +98,6 @@ export function Sobre() {
           <span>LM</span> criadora da Livi
         </p>
       </motion.div>
-    </section>
-  )
-}
-
-const etapas = [
-  { titulo: 'Desenho', texto: 'Cada coleção começa no papel, a partir de uma ideia de cor e movimento.' },
-  { titulo: 'Tecido', texto: 'A escolha do tecido define o caimento e o brilho da peça.' },
-  { titulo: 'Modelagem e prova', texto: 'Ajustes até a peça vestir do jeito certo.' },
-  { titulo: 'Ensaio', texto: 'A coleção ganha luz, cor e as fotos que você vê aqui.' },
-]
-
-export function Atelie() {
-  return (
-    <section className="atelie" id="atelie" aria-labelledby="atelie-titulo">
-      <motion.div className="atelie-topo" {...aparece}>
-        <p className="sobretitulo">O ateliê</p>
-        <TituloVivo id="atelie-titulo" className="titulo-secao" partes={['Do primeiro traço', { em: 'ao ensaio.' }]} />
-        <p className="atelie-nota">
-          <Ph>[Processo de criação a confirmar com a cliente]</Ph>
-        </p>
-      </motion.div>
-      <ol className="atelie-etapas">
-        {etapas.map((e, i) => (
-          <motion.li key={e.titulo} {...aparece} transition={{ ...aparece.transition, delay: i * 0.08 }}>
-            <span className="num">0{i + 1}</span>
-            <strong>{e.titulo}</strong>
-            <p>{e.texto}</p>
-          </motion.li>
-        ))}
-      </ol>
-      <div className="atelie-bastidores" tabIndex={0} aria-label="Bastidores do ensaio, deslize para ver">
-        {['Bastidores do ensaio', 'Provas no ateliê', 'Detalhe de costura', 'Escolha dos tecidos', 'Making of'].map((r, i) => (
-          <motion.div key={r} className="atelie-quadro" {...aparece} transition={{ ...aparece.transition, delay: i * 0.06 }}>
-            <Espaco rotulo={r} proporcao={i % 2 ? '4 / 5' : '3 / 4'} />
-          </motion.div>
-        ))}
-      </div>
     </section>
   )
 }
@@ -187,8 +149,8 @@ export function ComoComprar() {
         <motion.div className="comprar-chamada" {...aparece}>
           <p>Ficou com alguma dúvida? A conversa é direta, com quem conhece cada peça.</p>
           <Ima>
-            <a className="pilula cheia" href={linkWhatsApp()} target="_blank" rel="noreferrer">
-              <WhatsApp className="ico" /> <TextoTroca>Falar no WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
+            <a className="pilula cheia" href={linkWhatsApp(mensagens.duvida)} target="_blank" rel="noreferrer">
+              <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
             </a>
           </Ima>
         </motion.div>

@@ -3,11 +3,12 @@ import { AnimatePresence, motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
 import { navegar, type Rota } from '../lib/rota'
 import { rolarPara, pausarRolagem } from '../lib/scroll'
+import { mostrarCatalogo } from '../lib/catalogo'
 import { cn } from '../lib/cn'
 import { Logo } from './Logo'
 import { BotaoSacola } from './Sacola'
-import { TextoTroca } from './Modernos'
 import { Fechar, Instagram, Menu, SetaDiagonal, WhatsApp } from './icones'
+import { comBase } from '../lib/base'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -15,9 +16,11 @@ const ease = [0.22, 1, 0.36, 1] as const
 export const abrirMenu = () => window.dispatchEvent(new CustomEvent('livi:menu'))
 
 export function irPara(href: string, rota: Rota) {
+  // "Coleções" vai direto para o catálogo, começando pela coleção atual
+  if (href === '#colecoes') return mostrarCatalogo(site.abertura.colecao)
   if (rota.nome === 'inicio') {
     rolarPara(href === '#inicio' ? 0 : href)
-    history.replaceState(null, '', href === '#inicio' ? '/' : '/' + href)
+    history.replaceState(null, '', comBase(href === '#inicio' ? '/' : '/' + href))
   } else navegar('/' + href)
 }
 
@@ -53,17 +56,19 @@ export function Cabecalho({ rota }: { rota: Rota }) {
   const clicar = (href: string) => (e: React.MouseEvent) => {
     e.preventDefault()
     setMenu(false)
+    // o menu aberto trava a rolagem; solta já, senão a página ignora o pedido de rolar até a seção
+    pausarRolagem(false)
     irPara(href, rota)
   }
 
   return (
     <>
       <header className={cn('cab', compacto && 'visivel')} aria-hidden={!compacto}>
-        <a href="/" className="cab-logo" onClick={clicar('#inicio')} tabIndex={compacto ? 0 : -1}>
+        <a href={comBase('/')} className="cab-logo" onClick={clicar('#inicio')} tabIndex={compacto ? 0 : -1}>
           <Logo />
         </a>
         <nav className="cab-acoes" aria-label="Atalhos">
-          <a href="/#colecoes" className="cab-link" onClick={clicar('#colecoes')} tabIndex={compacto ? 0 : -1}>
+          <a href={comBase('/#colecoes')} className="cab-link" onClick={clicar('#colecoes')} tabIndex={compacto ? 0 : -1}>
             Coleções
           </a>
           <a
@@ -105,7 +110,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
               {site.menu.map((m, i) => (
                 <motion.a
                   key={m.href}
-                  href={'/' + m.href}
+                  href={comBase('/' + m.href)}
                   onClick={clicar(m.href)}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -123,7 +128,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
               transition={{ duration: 0.6, delay: 0.45 }}
             >
               <a href={linkWhatsApp()} target="_blank" rel="noreferrer" className="pilula cheia">
-                <TextoTroca>Atendimento pelo WhatsApp</TextoTroca> <SetaDiagonal className="seta" />
+                Atendimento pelo WhatsApp <SetaDiagonal className="seta" />
               </a>
               <a href={site.instagram} target="_blank" rel="noreferrer" className="menu-insta">
                 <Instagram className="ico" /> {site.instagramArroba}

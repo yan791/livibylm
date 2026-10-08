@@ -8,6 +8,8 @@
   "[confirmar]" ainda precisam ser confirmados com a cliente.
 */
 
+import { comBase } from '../lib/base'
+
 export type Cor = { nome: string; hex: string }
 
 export type Peca = {
@@ -18,7 +20,10 @@ export type Peca = {
   tecido: string
   cores: Cor[]
   tamanhos: string[]
-  /** fotos da peça vestida. A primeira aparece em destaque. Vazio = espaço para foto. */
+  /**
+   * fotos da peça vestida, de 1 a 3 (ex.: frente, costas e detalhe). A primeira aparece na
+   * vitrine e em destaque; as outras viram miniaturas na peça aberta. Vazio = espaço para foto.
+   */
   fotos: string[]
   modelo: { altura: string; veste: string }
 }
@@ -40,6 +45,12 @@ export type Colecao = {
 const TAMANHOS = ['PP', 'P', 'M', 'G', 'GG'] // [confirmar] grade de tamanhos
 const MODELO = { altura: '1,70 m [confirmar]', veste: 'P [confirmar]' }
 
+/**
+ * FOTOS FICTÍCIAS: a peça no cabide (render 3D) e um detalhe, só para a apresentação.
+ * Troque pelas fotos reais da peça vestida assim que chegarem. [trocar]
+ */
+const ficticias = (slug: string) => [comBase(`/img/pecas/ficticias/${slug}.webp`), comBase(`/img/pecas/ficticias/${slug}-detalhe.webp`)]
+
 export const colecoes: Colecao[] = [
   {
     slug: 'lumina',
@@ -49,7 +60,7 @@ export const colecoes: Colecao[] = [
     tema: 'claro',
     clima: 'Luz e linhas longas.',
     descricao: 'Peças claras, de brilho suave, pensadas para a luz do fim de tarde.',
-    capa: '/img/colecoes/lumina.webp',
+    capa: comBase('/img/colecoes/lumina.webp'),
     pecas: [
       {
         slug: 'vestido-lumina',
@@ -59,7 +70,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Pérola', hex: '#efeae3' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/lumina.webp'],
+        fotos: [comBase('/img/colecoes/lumina.webp'), ...ficticias('vestido-lumina')],
         modelo: MODELO,
       },
       {
@@ -70,7 +81,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Champanhe', hex: '#e6d6bf' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('vestido-lumina-midi'),
         modelo: MODELO,
       },
       {
@@ -81,7 +92,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Pérola', hex: '#efeae3' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('top-lumina-halter'),
         modelo: MODELO,
       },
       {
@@ -92,7 +103,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Pérola', hex: '#efeae3' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('saia-lumina-fluida'),
         modelo: MODELO,
       },
     ],
@@ -105,7 +116,7 @@ export const colecoes: Colecao[] = [
     tema: 'escuro',
     clima: 'Terra, calor e drapeado.',
     descricao: 'Tons de terra e chocolate, com drapeados que acompanham o corpo.',
-    capa: '/img/colecoes/velvet.webp',
+    capa: comBase('/img/colecoes/velvet.webp'),
     pecas: [
       {
         slug: 'vestido-velvet',
@@ -115,7 +126,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe [confirmar]',
         cores: [{ nome: 'Chocolate', hex: '#3e1d12' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/velvet.webp'],
+        fotos: [comBase('/img/colecoes/velvet.webp'), ...ficticias('vestido-velvet')],
         modelo: MODELO,
       },
       {
@@ -126,7 +137,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe [confirmar]',
         cores: [{ nome: 'Ferrugem', hex: '#833a1a' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('vestido-velvet-longo'),
         modelo: MODELO,
       },
       {
@@ -137,7 +148,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe [confirmar]',
         cores: [{ nome: 'Chocolate', hex: '#3e1d12' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('top-velvet-drapeado'),
         modelo: MODELO,
       },
       {
@@ -148,7 +159,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe [confirmar]',
         cores: [{ nome: 'Terracota', hex: '#9e521f' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('saia-velvet'),
         modelo: MODELO,
       },
     ],
@@ -161,7 +172,7 @@ export const colecoes: Colecao[] = [
     tema: 'escuro',
     clima: 'Contraste, sombra e caimento.',
     descricao: 'Preto e vinho em peças de linhas limpas, feitas para a noite.',
-    capa: '/img/colecoes/carmim.webp',
+    capa: comBase('/img/colecoes/carmim.webp'),
     pecas: [
       {
         slug: 'conjunto-carmim',
@@ -171,7 +182,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe acetinado [confirmar]',
         cores: [{ nome: 'Preto', hex: '#120c0b' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/carmim.webp'],
+        fotos: [comBase('/img/colecoes/carmim.webp'), ...ficticias('conjunto-carmim')],
         modelo: MODELO,
       },
       {
@@ -182,7 +193,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe acetinado [confirmar]',
         cores: [{ nome: 'Bordô', hex: '#6e0f1c' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('top-carmim-drapeado'),
         modelo: MODELO,
       },
       {
@@ -193,7 +204,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Crepe acetinado [confirmar]',
         cores: [{ nome: 'Preto', hex: '#120c0b' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('saia-carmim'),
         modelo: MODELO,
       },
       {
@@ -204,7 +215,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Cetim [confirmar]',
         cores: [{ nome: 'Vinho', hex: '#5f0421' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('vestido-carmim-longo'),
         modelo: MODELO,
       },
     ],
@@ -217,7 +228,7 @@ export const colecoes: Colecao[] = [
     tema: 'claro',
     clima: 'Estrutura e presença.',
     descricao: 'Modelagens ajustadas, de recortes precisos, para quem gosta de presença.',
-    capa: '/img/colecoes/confianca.webp',
+    capa: comBase('/img/colecoes/confianca.webp'),
     pecas: [
       {
         slug: 'vestido-confianca',
@@ -227,7 +238,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Alfaiataria com elastano [confirmar]',
         cores: [{ nome: 'Preto', hex: '#0f0b0a' }],
         tamanhos: TAMANHOS,
-        fotos: ['/img/colecoes/confianca.webp'],
+        fotos: [comBase('/img/colecoes/confianca.webp'), ...ficticias('vestido-confianca')],
         modelo: MODELO,
       },
       {
@@ -238,7 +249,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Alfaiataria [confirmar]',
         cores: [{ nome: 'Vinho', hex: '#4f0f10' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('corset-confianca'),
         modelo: MODELO,
       },
       {
@@ -249,7 +260,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Alfaiataria com elastano [confirmar]',
         cores: [{ nome: 'Marinho', hex: '#26284b' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('vestido-confianca-midi'),
         modelo: MODELO,
       },
       {
@@ -260,7 +271,7 @@ export const colecoes: Colecao[] = [
         tecido: 'Alfaiataria com elastano [confirmar]',
         cores: [{ nome: 'Preto', hex: '#0f0b0a' }],
         tamanhos: TAMANHOS,
-        fotos: [],
+        fotos: ficticias('saia-lapis-confianca'),
         modelo: MODELO,
       },
     ],

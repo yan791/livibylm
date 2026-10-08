@@ -1,23 +1,62 @@
 /*
-  ATO 3: a coleção. Continua exatamente de onde o Ato 2 parou (o cartão da
-  Lúmina no centro). Os looks passam um a um, com escala e fundo
-  acompanhando a foto, e terminam lado a lado como uma capa de coleção.
+  ATO 2: as coleções num carrossel 3D (galeria circular). Começa exatamente
+  onde a abertura parou (o look da Lúmina no centro): com um pouco de
+  rolagem o cartão recua e o anel com as outras coleções aparece em volta.
+  Dali em diante a cliente troca de coleção arrastando, pelas setas ou
+  esperando o giro sozinho, sem precisar rolar a página; tocar na foto da
+  frente abre o catálogo da coleção.
 */
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { colecoes } from '../dados/colecoes'
-import { gsap, ScrollTrigger } from '../lib/scroll'
-import { navegar } from '../lib/rota'
-import { movimentoReduzido } from '../lib/midia'
-import { alturaCartao, PROPORCAO } from '../lib/cartao'
-import { SetaDiagonal } from '../components/icones'
-import { FotoTecido } from '../components/FotoTecido'
+import { gsap, rolarPara, ScrollTrigger } from '../lib/scroll'
+import { mostrarCatalogo, useCatalogo } from '../lib/catalogo'
+import { movimentoReduzido, useCelular } from '../lib/midia'
+import { PROPORCAO } from '../lib/cartao'
+import { SetaDireita, SetaEsquerda } from '../components/icones'
+import { GuiaRolar, Ima } from '../components/Vivos'
+import { Letreiro, type Sentido } from '../components/Letreiro'
+import { CircularGallery, type CircularGalleryHandle, type GalleryItem } from '../components/ui/circular-gallery'
+import { comBase } from '../lib/base'
 
-const FUNDO_FINAL = '#ece5de'
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-const suave = (t: number) => t * t * (3 - 2 * t)
+const itens: GalleryItem[] = colecoes.map((c) => ({
+  id: c.slug,
+  src: c.capa,
+  alt: `Coleção ${c.nome}`,
+  aspect: PROPORCAO[c.slug],
+  href: comBase(`/colecao/${c.slug}`),
+}))
+
+/** rola até as coleções já com o anel aberto (o fim da entrada), e não até o começo dela */
+export function irParaColecoes() {
+  const st = ScrollTrigger.getById('colecoes')
+  rolarPara(st ? st.start + (st.end - st.start) * 0.8 : '#colecoes')
+}
 
 export function Looks() {
   const palco = useRef<HTMLDivElement>(null)
+  const galeria = useRef<CircularGalleryHandle>(null)
+  const letreiro = useRef<HTMLDivElement>(null)
+  const tempo = useRef(0)
+  // coleção da frente e o sentido do último giro (o nome se escreve vindo desse lado)
+  const [frente, setFrente] = useState<{ i: number; dir: Sentido }>({ i: 0, dir: 1 })
+  const [revelado, setRevelado] = useState(true)
+  const catalogoAberto = Boolean(useCatalogo())
+  const celular = useCelular()
+  const atual = colecoes[frente.i]
+  const n = colecoes.length
+
+  const aoTrocar = (i: number) =>
+    setFrente((f) => (i === f.i ? f : { i, dir: (i - f.i + n) % n === n - 1 ? -1 : 1 }))
+
+  // o traço da coleção da frente enche no ritmo do giro automático (direto no DOM, sem re-render)
+  const aoPassarTempo = (t: number) => {
+    const el = letreiro.current
+    if (!el) return
+    if (t < tempo.current) el.dataset.zerou = ''
+    else delete el.dataset.zerou
+    tempo.current = t
+    el.style.setProperty('--tempo', t.toFixed(3))
+  }
 
   useLayoutEffect(() => {
     const el = palco.current
@@ -28,176 +67,123 @@ export function Looks() {
       (ctx) => {
         const { desk } = ctx.conditions as { desk: boolean }
         if (movimentoReduzido()) return
-        const q = gsap.utils.selector(el)
+        const estado = { revelar: 0 }
+        let aberto: boolean | null = null
 
-        const cartoes = q('.lk-cartao') as HTMLElement[]
-        const nomes = q('.lk-nome') as HTMLElement[]
-        const infos = q('.lk-info') as HTMLElement[]
-        const rotulos = q('.lk-rotulo') as HTMLElement[]
-        const cores = q('.lk-cor') as HTMLElement[]
-        const corFinal = q('.lk-cor-final')[0] as HTMLElement
-        const ars = colecoes.map((c) => PROPORCAO[c.slug])
-        const n = colecoes.length
-        const estado = { pos: 0, fim: 0, intro: 0 }
-
+        // 0: só o look da abertura, no mesmo tamanho e lugar; 1: o anel inteiro com as informações
         const aplicar = () => {
-          const w = el.clientWidth
-          const h = el.clientHeight
-          const cardH = h * alturaCartao(desk)
-          const larg = ars.map((a) => a * cardH)
-          const G = desk ? w * 0.075 : w * 0.1
-          const cs = [0]
-          for (let i = 1; i < n; i++) cs.push(cs[i - 1] + larg[i - 1] / 2 + G + larg[i] / 2)
-          const p = estado.pos
-          const i0 = Math.floor(p)
-          const i1 = Math.min(i0 + 1, n - 1)
-          const atual = lerp(cs[i0], cs[i1], p - i0)
-          const e = suave(estado.fim)
-          // capa final: quatro lado a lado no computador, grade 2 x 2 no celular
-          const colunas = desk ? n : 2
-          const linhas = Math.ceil(n / colunas)
-          const vao = desk ? w * 0.022 : w * 0.04
-          const maxAr = Math.max(...ars)
-          const rowH = desk
-            ? Math.min(h * 0.52, (w * 0.84 - vao * (n - 1)) / ars.reduce((a, b) => a + b, 0))
-            : Math.min((h * 0.7 - vao * (linhas - 1)) / linhas, (w * 0.88 - vao) / (colunas * maxAr))
-          const largCel = rowH * maxAr
-          let rx = (w - (desk ? rowH * ars.reduce((a, b) => a + b, 0) + vao * (n - 1) : colunas * largCel + vao)) / 2
-          cartoes.forEach((c, i) => {
-            const d = Math.min(Math.abs(p - i), 1)
-            const lw = rowH * ars[i]
-            let xRow: number
-            let yRow: number
-            if (desk) {
-              xRow = rx + lw / 2 - w / 2
-              rx += lw + vao
-              yRow = -h * 0.045
-            } else {
-              const col = i % colunas
-              const lin = Math.floor(i / colunas)
-              xRow = rx + col * (largCel + vao) + largCel / 2 - w / 2
-              yRow = (lin - (linhas - 1) / 2) * (rowH + vao + 34) - h * 0.03
-            }
-            gsap.set(c, {
-              x: lerp(cs[i] - atual, xRow, e),
-              y: lerp(0, yRow, e),
-              scale: lerp(1 - 0.2 * d, rowH / cardH, e),
-              opacity: lerp(1 - 0.55 * d, 1, e),
-            })
-            const rot = rotulos[i]
-            rot.style.transform = `translate(${w / 2 + xRow}px, ${h / 2 + yRow + rowH / 2 + (desk ? 18 : 8)}px) translateX(-50%)`
-            rot.style.opacity = String(Math.max(0, (e - 0.55) / 0.45))
-            gsap.set(nomes[i], { opacity: (1 - d) * (1 - e) * estado.intro, xPercent: -50 + (i - p) * 22 })
-            infos[i].style.opacity = String(Math.max(0, 1 - d * 2.5) * (1 - e) * estado.intro)
-            cartoes[i].dataset.ativo = d < 0.5 && e < 0.5 ? 'sim' : 'nao'
-          })
-          cores.forEach((c, i) => (c.style.opacity = String(i === 0 ? 1 : Math.min(1, Math.max(0, p - (i - 1))))))
-          corFinal.style.opacity = String(e)
-          const tema = colecoes[Math.round(p)].tema
-          el.dataset.tema = e > 0.5 ? 'claro' : tema
+          el.style.setProperty('--revelar', estado.revelar.toFixed(3))
+          const agora = estado.revelar > 0.6
+          el.dataset.revelado = agora ? 'sim' : 'nao'
+          galeria.current?.reveal(estado.revelar)
+          // o nome da coleção se escreve quando o letreiro aparece (e sai quando volta para a abertura)
+          if (agora !== aberto) {
+            aberto = agora
+            setRevelado(agora)
+          }
         }
 
         const tl = gsap.timeline({
           defaults: { ease: 'none' },
           onUpdate: aplicar,
           scrollTrigger: {
+            id: 'colecoes',
             trigger: el,
             start: 'top top',
-            end: () => '+=' + el.clientHeight * 3.8,
+            end: () => '+=' + el.clientHeight * (desk ? 0.9 : 0.7),
             pin: true,
-            scrub: 1,
+            scrub: 0.5,
             invalidateOnRefresh: true,
             onRefresh: aplicar,
             onToggle: (st) => (el.style.visibility = st.isActive || st.progress > 0 ? 'visible' : 'hidden'),
-            onLeaveBack: () => (el.style.visibility = 'hidden'),
+            onLeaveBack: () => {
+              el.style.visibility = 'hidden'
+              // de volta à abertura: a Lúmina precisa estar de frente para a passagem continuar sem corte
+              galeria.current?.goTo(0, { instant: true })
+            },
           },
         })
         el.style.visibility = 'hidden'
-        tl.to(estado, { intro: 1, duration: 0.3 }, 0)
-        for (let i = 1; i < n; i++) tl.to(estado, { pos: i, duration: 0.75, ease: 'power2.inOut' }, 0.3 + (i - 1) * 1.05)
-        tl.to(estado, { fim: 1, duration: 0.9, ease: 'power1.inOut' }, 0.3 + (n - 1) * 1.05 + 0.2)
+        tl.to(estado, { revelar: 1, duration: 0.75, ease: 'power2.inOut' }).to({}, { duration: 0.25 })
         aplicar()
         return () => {
           el.style.visibility = ''
+          el.style.removeProperty('--revelar')
+          delete el.dataset.revelado
+          galeria.current?.reveal(1)
+          setRevelado(true)
         }
       },
     )
     return () => mm.revert()
   }, [])
 
-  // a foto clicada "voa" até a página da coleção (View Transitions)
-  const abrir = (slug: string) => (e: React.MouseEvent) => {
+  const abrirBloco = (slug: string) => (e: React.MouseEvent) => {
     e.preventDefault()
-    const alvo = e.currentTarget as HTMLElement
-    const img =
-      alvo.querySelector('img') ??
-      document.querySelector<HTMLImageElement>(`.lk-cartao[data-slug="${slug}"] img`) ??
-      document.querySelector<HTMLImageElement>(`.lk-bloco[data-slug="${slug}"] img`)
-    if (img) img.style.viewTransitionName = 'peca'
-    navegar(`/colecao/${slug}`)
+    mostrarCatalogo(slug, e.currentTarget.querySelector('img'))
   }
 
   return (
     <section className="lk" id="colecoes" aria-label="As coleções">
-      <div className="lk-palco" ref={palco}>
-        <div className="lk-cores" aria-hidden="true">
-          {colecoes.map((c) => (
-            <div key={c.slug} className="lk-cor" style={{ background: c.fundo }} />
-          ))}
-          <div className="lk-cor-final" style={{ background: FUNDO_FINAL }} />
+      <div
+        className="lk-palco"
+        ref={palco}
+        data-tema={atual.tema}
+        style={{ '--fundo': atual.fundo } as React.CSSProperties}
+      >
+        <div className="lk-anel">
+          <CircularGallery
+            ref={galeria}
+            items={itens}
+            label="Coleções Livi"
+            gap={celular ? 16 : 40}
+            paused={catalogoAberto}
+            onActiveChange={aoTrocar}
+            onAutoplayProgress={aoPassarTempo}
+            onItemClick={(i, img) => mostrarCatalogo(colecoes[i].slug, img)}
+          />
         </div>
 
-        {colecoes.map((c) => (
-          <p key={c.slug} className={`lk-nome tema-${c.tema}`} aria-hidden="true">
-            {c.nome}
-          </p>
-        ))}
+        {/* continua o convite que surge no fim da abertura e some quando o anel abre */}
+        <GuiaRolar ar={PROPORCAO[colecoes[0].slug]} />
 
-        {colecoes.map((c) => (
-          <div key={c.slug} className="lk-cartao" data-slug={c.slug} style={{ '--ar': PROPORCAO[c.slug] } as React.CSSProperties}>
-            <a href={`/colecao/${c.slug}`} className="lk-cartao-link" onClick={abrir(c.slug)} aria-label={`Coleção ${c.nome}`}>
-              <FotoTecido src={c.capa} alt={`Look da coleção ${c.nome}`} carregamento={c.slug === 'lumina' ? 'eager' : 'lazy'} />
-            </a>
-          </div>
-        ))}
+        <div className="lk-barra">
+          <Ima forca={0.3}>
+            <button type="button" className="lk-seta esq" onClick={() => galeria.current?.prev()} aria-label="Coleção anterior">
+              <span className="lk-seta-trilho">
+                <SetaEsquerda />
+                <SetaEsquerda />
+              </span>
+            </button>
+          </Ima>
+          <Letreiro
+            ref={letreiro}
+            indice={frente.i}
+            dir={frente.dir}
+            visivel={revelado}
+            onAbrir={() => mostrarCatalogo(atual.slug, galeria.current?.frontImage())}
+            onIr={(i) => galeria.current?.goTo(i)}
+          />
+          <Ima forca={0.3}>
+            <button type="button" className="lk-seta dir" onClick={() => galeria.current?.next()} aria-label="Próxima coleção">
+              <span className="lk-seta-trilho">
+                <SetaDireita />
+                <SetaDireita />
+              </span>
+            </button>
+          </Ima>
+        </div>
 
-        {colecoes.map((c) => (
-          <div key={c.slug} className={`lk-info tema-${c.tema}`}>
-            <span className="lk-num">
-              {c.numero} <i>/</i> 0{colecoes.length}
-            </span>
-            <span className="lk-clima">{c.clima}</span>
-            <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-ver">
-              Ver coleção <SetaDiagonal className="seta" />
-            </a>
-          </div>
-        ))}
-
-        {colecoes.map((c) => (
-          <a key={c.slug} href={`/colecao/${c.slug}`} className="lk-rotulo" onClick={abrir(c.slug)}>
-            <strong>{c.nome}</strong>
-            <span>
-              Ver coleção <SetaDiagonal className="seta" />
-            </span>
-          </a>
-        ))}
-
-        {/* celular e movimento reduzido: um look por bloco */}
+        {/* movimento reduzido: um look por bloco */}
         <div className="lk-lista">
           {colecoes.map((c) => (
             <article key={c.slug} className={`lk-bloco tema-${c.tema}`} data-slug={c.slug}>
               <p className="lk-bloco-nome">{c.nome}</p>
-              <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-bloco-foto">
+              <a href={comBase(`/colecao/${c.slug}`)} onClick={abrirBloco(c.slug)} className="lk-bloco-foto">
                 <img src={c.capa} alt={`Look da coleção ${c.nome}`} loading="lazy" draggable={false} />
               </a>
               <div className="lk-bloco-info">
-                <span className="lk-num">
-                  {c.numero} <i>/</i> 0{colecoes.length}
-                </span>
-                <span className="lk-clima">{c.clima}</span>
-                <a href={`/colecao/${c.slug}`} onClick={abrir(c.slug)} className="lk-ver">
-                  Ver coleção <SetaDiagonal className="seta" />
-                </a>
+                <span className="lk-clima">{c.nome}</span>
               </div>
             </article>
           ))}
