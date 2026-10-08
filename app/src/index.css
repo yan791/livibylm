@@ -785,7 +785,7 @@ img {
 }
 
 /* ============================================================
-   ATO 2: LOOKS
+   ATO 2: AS COLEÇÕES (carrossel 3D)
    ============================================================ */
 
 .lk {
@@ -794,33 +794,40 @@ img {
 }
 
 .lk-palco {
+  /* 0 = só o look da abertura; 1 = o anel aberto (a rolagem leva de um ao outro) */
+  --revelar: 1;
+  /* o cartão da frente começa do tamanho do look da abertura e recua até --cg-h */
+  --h-abertura: 78svh;
+  --escala-ini: 1.3;
+  --cg-h: calc(var(--h-abertura) / var(--escala-ini));
   position: relative;
   height: 100svh;
   min-height: 520px;
   overflow: hidden;
+  background-color: var(--fundo);
+  color: var(--chocolate);
+  transition:
+    background-color 0.9s var(--ease),
+    color 0.9s var(--ease);
 }
 
-.lk-cores,
-.lk-cor,
-.lk-cor-final {
+.lk-palco[data-tema='escuro'] {
+  color: var(--creme);
+}
+
+/* nome da coleção da frente, gigante, atrás do anel */
+.lk-nomes {
   position: absolute;
   inset: 0;
-}
-
-.lk-cor,
-.lk-cor-final {
-  opacity: 0;
-}
-
-.lk-cor:first-child {
-  opacity: 1;
+  opacity: var(--revelar);
+  pointer-events: none;
 }
 
 .lk-nome {
   position: absolute;
   left: 50%;
   top: 50%;
-  translate: 0 -54%;
+  translate: -50% -58%;
   margin: 0;
   font-family: var(--serif);
   font-weight: 500;
@@ -832,53 +839,51 @@ img {
   white-space: nowrap;
   color: var(--vinho);
   opacity: 0;
-  pointer-events: none;
+  transition:
+    opacity 0.7s var(--ease),
+    color 0.9s var(--ease);
 }
 
-.lk-nome.tema-escuro {
+.lk-nome[data-ativo] {
+  opacity: 1;
+}
+
+.lk-palco[data-tema='escuro'] .lk-nome {
   color: var(--rose-claro);
 }
 
-.lk-cartao {
-  --h: 78svh;
+.lk-anel {
   position: absolute;
-  top: calc((100svh - var(--h)) / 2);
-  left: calc(50% - var(--h) * var(--ar) / 2);
-  height: var(--h);
-  width: calc(var(--h) * var(--ar));
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 30px 60px -20px rgb(30 10 0 / 0.35);
-  will-change: transform, opacity;
+  inset: 0;
+  transform: translateY(calc(var(--revelar) * -3svh))
+    scale(calc(var(--escala-ini) + (1 - var(--escala-ini)) * var(--revelar)));
 }
 
-.lk-cartao img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 1.2s var(--ease);
+.lk-palco .guia-rolar {
+  opacity: calc(1 - var(--revelar) * 4);
 }
 
-.lk-cartao[data-ativo='sim']:hover img {
-  transform: scale(1.03);
-}
-
-.lk-info {
+/* setas e informações da coleção da frente: chegam no fim da entrada */
+.lk-barra {
   position: absolute;
   left: 50%;
-  bottom: 2.2svh;
+  bottom: 4svh;
   translate: -50% 0;
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: clamp(18px, 3vw, 40px);
   white-space: nowrap;
-  opacity: 0;
-  color: var(--chocolate);
+  opacity: calc(var(--revelar) * 2.5 - 1.5);
 }
 
-.lk-info.tema-escuro,
-.lk-bloco.tema-escuro {
-  color: var(--creme);
+.lk-palco[data-revelado='nao'] .lk-barra {
+  visibility: hidden;
+}
+
+.lk-info {
+  display: flex;
+  align-items: center;
+  gap: 28px;
 }
 
 .lk-num {
@@ -909,47 +914,131 @@ img {
   text-decoration: none;
 }
 
-.lk-ver .seta,
-.lk-rotulo .seta {
+.lk-ver .seta {
   width: 0.8em;
   height: 0.8em;
 }
 
-.lk-rotulo {
-  position: absolute;
-  left: 0;
-  top: 0;
+.lk-seta {
   display: grid;
-  justify-items: center;
-  gap: 4px;
-  opacity: 0;
-  color: var(--vinho);
-  text-decoration: none;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    scale 0.2s var(--ease);
 }
 
-.lk-rotulo strong {
-  font-family: var(--serif);
-  font-weight: 500;
-  font-size: 1.6rem;
+.lk-seta svg {
+  width: 16px;
+  height: 12px;
 }
 
-.lk-rotulo span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  font-size: 0.64rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--taupe);
+.lk-seta:active {
+  scale: 0.94;
+}
+
+.lk-seta:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .lk-seta:hover {
+    border-color: currentColor;
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
 }
 
 .lk-lista {
   display: none;
 }
 
+/* galeria circular 3D (components/ui/circular-gallery): a altura do cartão vem de --cg-h */
+.cg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.cg[data-arrastando] {
+  cursor: grabbing;
+}
+
+.cg-anel {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.cg-item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--cg-h, 60svh) * var(--ar));
+  height: var(--cg-h, 60svh);
+  margin: calc(var(--cg-h, 60svh) / -2) 0 0 calc(var(--cg-h, 60svh) * var(--ar) / -2);
+}
+
+.cg-cartao {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -20px rgb(30 10 0 / 0.35);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cg-cartao img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: transform 1.2s var(--ease);
+}
+
+/* os cartões que recuam escurecem um pouco: dá profundidade ao anel */
+.cg-cartao::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(25 10 0);
+  opacity: var(--sombra, 0);
+  pointer-events: none;
+}
+
+.cg-item[data-frente] .cg-cartao {
+  cursor: pointer;
+}
+
+.cg-cartao:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .cg-item[data-frente] .cg-cartao:hover img {
+    transform: scale(1.03);
+  }
+}
+
 /* convite para continuar rolando: dos dois lados do look, uma linha com um traço descendo e uma seta */
 .guia-rolar {
-  /* altura do look (a mesma de .lk-cartao e .ap-look) e distância das setas até a foto */
+  /* altura do look (a mesma de .ap-look) e distância das setas até a foto */
   --h: 78svh;
   --afastamento: clamp(28px, 4vw, 64px);
   position: absolute;
@@ -1399,37 +1488,6 @@ img {
 /* ============================================================
    DIFERENCIAIS DE EXPERIÊNCIA
    ============================================================ */
-
-/* efeito tecido nas fotos (three.js) */
-.tecido {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-.tecido img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.tecido-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 0.25s linear;
-  pointer-events: none;
-}
-
-.lk-cartao-link {
-  position: absolute;
-  inset: 0;
-  display: block;
-}
 
 /* coração da sacola */
 .desejo {
@@ -2563,10 +2621,15 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
     align-items: flex-start;
   }
 
-  /* looks: mesma passagem do computador, cartão um pouco menor */
-  .lk-cartao {
-    --h: 62svh;
-    border-radius: 14px;
+  /* coleções: o anel parte do look da abertura do celular e recua mais, para as
+     coleções vizinhas aparecerem dos lados (cantos na mesma proporção) */
+  .lk-palco {
+    --h-abertura: 62svh;
+    --escala-ini: 1.55;
+  }
+
+  .cg-cartao {
+    border-radius: 9px;
   }
 
   .guia-rolar {
@@ -2577,14 +2640,14 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
     font-size: 24vw;
   }
 
-  .lk-info {
-    bottom: 5svh;
-    flex-direction: column;
-    gap: 6px;
+  .lk-barra {
+    bottom: 9svh;
+    gap: 14px;
   }
 
-  .lk-rotulo strong {
-    font-size: 1.15rem;
+  .lk-info {
+    flex-direction: column;
+    gap: 6px;
   }
 
   /* arara */
@@ -2721,7 +2784,7 @@ html[data-transicao='catalogo'] .cat-trilho > li:first-child .cat-card-foto img 
   }
 }
 
-/* o Ato 3 encosta no fim do Ato 2 (computador e celular) */
+/* as coleções encostam no fim da abertura (computador e celular) */
 html[data-movimento='livre'] .lk {
   margin-top: -100svh;
 }
@@ -2743,11 +2806,9 @@ html[data-movimento='reduzido'] .lk-palco {
   background: var(--creme-2);
 }
 
-html[data-movimento='reduzido'] .lk-cores,
-html[data-movimento='reduzido'] .lk-nome,
-html[data-movimento='reduzido'] .lk-cartao,
-html[data-movimento='reduzido'] .lk-info,
-html[data-movimento='reduzido'] .lk-rotulo,
+html[data-movimento='reduzido'] .lk-nomes,
+html[data-movimento='reduzido'] .lk-anel,
+html[data-movimento='reduzido'] .lk-barra,
 html[data-movimento='reduzido'] .guia-rolar {
   display: none;
 }

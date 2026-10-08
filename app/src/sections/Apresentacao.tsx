@@ -10,7 +10,7 @@ import { useLayoutEffect, useRef } from 'react'
 import { motion } from 'motion/react'
 import { site, linkWhatsApp } from '../dados/site'
 import { colecoes } from '../dados/colecoes'
-import { gsap, rolarPara } from '../lib/scroll'
+import { gsap } from '../lib/scroll'
 import { TextEffect } from '../components/core/text-effect'
 import { SpinningText } from '../components/core/spinning-text'
 import { Logo } from '../components/Logo'
@@ -21,6 +21,7 @@ import { GuiaRolar } from '../components/Vivos'
 import { BotaoSacola } from '../components/Sacola'
 import { atrasoAbertura } from '../components/Cortina'
 import { comBase } from '../lib/base'
+import { irParaColecoes } from './Looks'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -238,7 +239,7 @@ export function Apresentacao() {
             <p>{a.apoio}</p>
           </motion.div>
 
-          {/* o selo rola a página até as coleções (o "Coleções" do menu é que abre o catálogo) */}
+          {/* o selo rola a página até o carrossel das coleções (o "Coleções" do menu é que abre o catálogo) */}
           <motion.a
             href={comBase('/#colecoes')}
             className="ap-selo"
@@ -248,7 +249,7 @@ export function Apresentacao() {
             transition={{ duration: 1.2, ease, delay: 1.1 + d0 }}
             onClick={(e) => {
               e.preventDefault()
-              rolarPara('#colecoes')
+              irParaColecoes()
             }}
           >
             <SpinningText className="ap-selo-texto" duration={20} radius={10.6} fontSize={0.62}>
