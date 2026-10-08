@@ -14,7 +14,6 @@ import { Espaco, Ph } from '../components/Espaco'
 import { Rodape } from '../components/Rodape'
 import { Fechar, IconeFita, SetaDiagonal, SetaEsquerda, WhatsApp } from '../components/icones'
 import { FotoTecido } from '../components/FotoTecido'
-import { PontosLook } from '../components/PontosLook'
 import { BotaoDesejo } from '../components/Sacola'
 import { CartaoPeca } from '../components/VisualizacaoRapida'
 import { FaixaColecoes, TituloVivo } from '../components/Vivos'
@@ -87,7 +86,6 @@ export function PaginaColecao({ rota }: { rota: Extract<Rota, { nome: 'colecao' 
                     carregamento="eager"
                     imgStyle={{ viewTransitionName: 'peca' } as React.CSSProperties}
                   />
-                  {peca.fotos[0] === colecao.capa && <PontosLook colecao={colecao} />}
                 </div>
               ) : (
                 <Espaco rotulo="Espaço para foto da peça" />

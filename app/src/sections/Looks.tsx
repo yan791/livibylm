@@ -11,7 +11,6 @@ import { movimentoReduzido } from '../lib/midia'
 import { alturaCartao, PROPORCAO } from '../lib/cartao'
 import { SetaDiagonal } from '../components/icones'
 import { FotoTecido } from '../components/FotoTecido'
-import { PontosLook } from '../components/PontosLook'
 import { GuiaRolar } from '../components/Vivos'
 
 const FUNDO_FINAL = '#ece5de'
@@ -161,7 +160,6 @@ export function Looks() {
             <a href={`/colecao/${c.slug}`} className="lk-cartao-link" onClick={abrir(c.slug)} aria-label={`Coleção ${c.nome}`}>
               <FotoTecido src={c.capa} alt={`Look da coleção ${c.nome}`} carregamento={c.slug === 'lumina' ? 'eager' : 'lazy'} />
             </a>
-            <PontosLook colecao={c} />
           </div>
         ))}
 

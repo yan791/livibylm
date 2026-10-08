@@ -121,18 +121,21 @@ export function Apresentacao() {
           <span className="sr-only">
             Livi by LM, {a.esquerda} {a.direita}
           </span>
-          <motion.span
-            className="ap-palavra esq"
-            aria-hidden="true"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease, delay: 0.3 + d0 }}
-          >
-            <em>
-              {a.esquerda} {a.direita}
-            </em>
-            <span className="ap-edicao">{a.edicao}</span>
-          </motion.span>
+          {/* a entrada anima por dentro e a rolagem (GSAP) por fora: se os dois mexessem no
+              mesmo elemento, ao mudar o tamanho da tela o GSAP o devolveria invisível */}
+          <span className="ap-palavra esq" aria-hidden="true">
+            <motion.span
+              className="ap-capa-titulo"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, ease, delay: 0.3 + d0 }}
+            >
+              <em>
+                {a.esquerda} {a.direita}
+              </em>
+              <span className="ap-edicao">{a.edicao}</span>
+            </motion.span>
+          </span>
           <span className="ap-palavra dir" aria-hidden="true">
             <TextEffect
               as="span"
@@ -156,13 +159,16 @@ export function Apresentacao() {
           </span>
         </h1>
 
+        {/* mesma separação: a moldura aparece pela caixa de fora e some (ao rolar) pela de dentro */}
         <motion.div
-          className="ap-moldura"
+          className="ap-moldura-entrada"
           aria-hidden="true"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.4, ease, delay: d0 }}
-        />
+        >
+          <div className="ap-moldura" />
+        </motion.div>
 
         <div className="ap-fotos" aria-hidden="true">
           {/* o primeiro look chega aqui no fim da abertura, no mesmo lugar em que os looks começam */}
@@ -217,15 +223,6 @@ export function Apresentacao() {
               <Menu />
             </button>
           </motion.header>
-
-          <motion.p
-            className="ap-lateral"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, delay: 1 + d0 }}
-          >
-            Moda feminina autoral <i>·</i> {a.esquerda} {a.direita}
-          </motion.p>
 
           <motion.div
             className="ap-intro"
