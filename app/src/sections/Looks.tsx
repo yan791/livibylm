@@ -4,10 +4,12 @@
   rolagem o cartão recua e o anel com as outras coleções aparece em volta.
   Dali em diante a cliente troca de coleção arrastando, pelas setas ou
   esperando o giro sozinho, sem precisar rolar a página; tocar na foto da
-  frente abre o catálogo da coleção.
+  frente abre o catálogo da coleção. Para isso ficar claro para quem chega,
+  o cartão da frente traz um convite ("Ver peças da coleção", com miniaturas das
+  peças e uma seta) que pulsa de leve quando a coleção chega à frente.
 */
 import { useLayoutEffect, useRef, useState } from 'react'
-import { colecoes } from '../dados/colecoes'
+import { colecoes, type Colecao } from '../dados/colecoes'
 import { gsap, rolarPara, ScrollTrigger } from '../lib/scroll'
 import { mostrarCatalogo, useCatalogo } from '../lib/catalogo'
 import { movimentoReduzido, useCelular } from '../lib/midia'
@@ -18,12 +20,35 @@ import { Letreiro, type Sentido } from '../components/Letreiro'
 import { CircularGallery, type CircularGalleryHandle, type GalleryItem } from '../components/ui/circular-gallery'
 import { comBase } from '../lib/base'
 
+/** convite dentro do cartão da frente: mostra que a foto é um botão e que há peças lá dentro */
+function Convite({ c }: { c: Colecao }) {
+  const fotos = c.pecas.flatMap((p) => p.fotos.slice(0, 1)).slice(0, 3)
+  return (
+    <span className="lk-convite" aria-hidden="true">
+      <span className="lk-convite-pilula">
+        {fotos.length > 0 && (
+          <span className="lk-convite-pecas">
+            {fotos.map((f) => (
+              <img key={f} src={f} alt="" loading="lazy" draggable={false} />
+            ))}
+          </span>
+        )}
+        <span className="lk-convite-texto">Ver peças da coleção</span>
+        <span className="lk-convite-seta">
+          <SetaDireita />
+        </span>
+      </span>
+    </span>
+  )
+}
+
 const itens: GalleryItem[] = colecoes.map((c) => ({
   id: c.slug,
   src: c.capa,
-  alt: `Coleção ${c.nome}`,
+  alt: `Ver peças da coleção ${c.nome}`,
   aspect: PROPORCAO[c.slug],
   href: comBase(`/colecao/${c.slug}`),
+  extra: <Convite c={c} />,
 }))
 
 /** rola até as coleções já com o anel aberto (o fim da entrada), e não até o começo dela */

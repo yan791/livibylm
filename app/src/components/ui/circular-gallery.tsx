@@ -19,6 +19,8 @@ export type GalleryItem = {
   /** object-position da foto */
   pos?: string;
   href?: string;
+  /** conteúdo extra por cima da foto (ex.: um convite para abrir); o CSS decide quando aparece */
+  extra?: React.ReactNode;
 };
 
 export type CircularGalleryHandle = {
@@ -375,6 +377,7 @@ const CircularGallery = forwardRef<CircularGalleryHandle, CircularGalleryProps>(
                     decoding="async"
                     style={{ objectPosition: item.pos ?? 'center' }}
                   />
+                  {item.extra}
                 </a>
               </div>
             );
