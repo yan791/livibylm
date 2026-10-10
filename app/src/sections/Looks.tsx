@@ -115,7 +115,7 @@ export function Looks() {
             id: 'colecoes',
             trigger: el,
             start: 'top top',
-            end: () => '+=' + el.clientHeight * (desk ? 0.9 : 0.7),
+            end: () => '+=' + el.clientHeight * (desk ? 0.4 : 0.35),
             pin: true,
             scrub: 0.5,
             invalidateOnRefresh: true,
