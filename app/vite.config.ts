@@ -40,13 +40,28 @@ function avisarSemApi() {
   console.warn('\n[livi] A API local não respondeu. Rode "npm run api" junto com o "npm run dev".\n')
 }
 
-/** no GitHub Pages: começa a baixar o catálogo junto com a página, antes do JavaScript */
-function adiantarCatalogo(api: string): Plugin {
+/*
+  Versão do GitHub Pages:
+  - /painel (e o que vier depois) leva ao painel, que mora no servidor da
+    loja. Roda antes de qualquer outra coisa da página, sem carregar o site.
+  - começa a baixar o catálogo junto com a página, antes do JavaScript.
+*/
+function paginaDoGithub(api: string): Plugin {
+  let base = '/'
   return {
-    name: 'livi-adiantar-catalogo',
+    name: 'livi-pagina-do-github',
     apply: 'build',
+    configResolved(config) {
+      base = config.base
+    },
     transformIndexHtml(html) {
-      return html.replace('</head>', `<link rel="preload" href="${api}/api/catalogo" as="fetch" crossorigin="anonymous" /></head>`)
+      const painel =
+        `<script>(function(){var b=${JSON.stringify(base)},p=location.pathname;` +
+        `if(p===b+'painel'||p.indexOf(b+'painel/')===0)` +
+        `location.replace(${JSON.stringify(api)}+'/'+p.slice(b.length)+location.search+location.hash)})()</script>`
+      return html
+        .replace('<head>', `<head>\n    ${painel}`)
+        .replace('</head>', `<link rel="preload" href="${api}/api/catalogo" as="fetch" crossorigin="anonymous" /></head>`)
     },
   }
 }
@@ -55,7 +70,7 @@ export default defineConfig(({ mode }) => {
   // VITE_API = endereço do Worker; só existe na versão do GitHub Pages (ver .github/workflows/publicar.yml)
   const api = loadEnv(mode, '.', 'VITE_').VITE_API?.replace(/\/$/, '')
   return {
-    plugins: [react(), tailwindcss(), lojaNoDev(), ...(api ? [adiantarCatalogo(api)] : [])],
+    plugins: [react(), tailwindcss(), lojaNoDev(), ...(api ? [paginaDoGithub(api)] : [])],
     base: '/',
     server: {
       // mantém o Host do Vite: o Worker confere se os pedidos do painel vêm do próprio site
