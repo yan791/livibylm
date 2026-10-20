@@ -4205,3 +4205,35 @@ html[data-movimento='reduzido'] .lk-bloco-info {
     height: 26px;
   }
 }
+
+/* ---------- sem catálogo (o servidor não mandou as peças) ---------- */
+
+.sem-catalogo {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  padding: 24px;
+  text-align: center;
+  background: var(--creme);
+  color: var(--chocolate);
+}
+.sem-catalogo-marca {
+  font-family: var(--serif);
+  font-size: clamp(56px, 14vw, 120px);
+  font-variation-settings: 'opsz' 60;
+  color: var(--vinho);
+  line-height: 1;
+}
+.sem-catalogo button {
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: var(--vinho);
+  color: var(--creme);
+  font-weight: 500;
+}
+.sem-catalogo a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

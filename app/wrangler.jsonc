@@ -1,0 +1,35 @@
+/*
+  Loja da Livi na Cloudflare: o mesmo Worker publica o site, guarda as peças
+  (banco D1), as fotos (R2) e responde ao painel em /painel.
+  Desenvolvimento: "npm run api" (este Worker em localhost:8787) + "npm run dev" (Vite).
+  Publicação: "npm run publicar".
+*/
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "livi",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-15",
+  "assets": {
+    "directory": "./dist-cloudflare",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // arquivos do site (JS, CSS, imagens) saem direto, sem passar pelo Worker;
+    // o resto (páginas, API, fotos do painel) passa por ele
+    "run_worker_first": ["/*", "!/assets/*", "!/img/*", "!/favicon.svg"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "livi",
+      "database_id": "bdf89b14-81f4-48dd-9ab3-78b36524db4c",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "FOTOS",
+      "bucket_name": "livi-fotos"
+    }
+  ],
+  "observability": { "enabled": true }
+}

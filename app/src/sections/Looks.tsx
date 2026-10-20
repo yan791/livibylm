@@ -13,7 +13,6 @@ import { colecoes, type Colecao } from '../dados/colecoes'
 import { gsap, rolarPara, ScrollTrigger } from '../lib/scroll'
 import { mostrarCatalogo, useCatalogo } from '../lib/catalogo'
 import { movimentoReduzido, useCelular } from '../lib/midia'
-import { PROPORCAO } from '../lib/cartao'
 import { SetaDireita, SetaEsquerda } from '../components/icones'
 import { Ima } from '../components/Vivos'
 import { Letreiro, type Sentido } from '../components/Letreiro'
@@ -46,7 +45,7 @@ const itens: GalleryItem[] = colecoes.map((c) => ({
   id: c.slug,
   src: c.capa,
   alt: `Ver peças da coleção ${c.nome}`,
-  aspect: PROPORCAO[c.slug],
+  aspect: c.proporcao,
   href: comBase(`/colecao/${c.slug}`),
   extra: <Convite c={c} />,
 }))

@@ -4,3 +4,4 @@ dist/
 dist-cloudflare/
 .dev.vars*
 teste-local.env
+*.tsbuildinfo

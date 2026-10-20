@@ -16,7 +16,6 @@ import { SpinningText } from '../components/core/spinning-text'
 import { Logo } from '../components/Logo'
 import { abrirMenu, irPara } from '../components/Cabecalho'
 import { Menu, SetaDiagonal } from '../components/icones'
-import { PROPORCAO } from '../lib/cartao'
 import { GuiaRolar } from '../components/Vivos'
 import { BotaoDesejos, BotaoSacola } from '../components/Gaveta'
 import { atrasoAbertura } from '../components/Cortina'
@@ -170,7 +169,7 @@ export function Apresentacao() {
 
         <div className="ap-fotos" aria-hidden="true">
           {/* o primeiro look chega aqui no fim da abertura, no mesmo lugar em que os looks começam */}
-          <div className="ap-look" style={{ '--ar': PROPORCAO[primeira.slug] } as React.CSSProperties}>
+          <div className="ap-look" style={{ '--ar': primeira.proporcao } as React.CSSProperties}>
             <img src={primeira.capa} alt="" draggable={false} />
           </div>
           <div className="ap-hero" style={{ aspectRatio: String(a.proporcao), '--ar': a.proporcao } as React.CSSProperties}>
@@ -185,7 +184,7 @@ export function Apresentacao() {
           </div>
         </div>
 
-        <GuiaRolar ar={PROPORCAO[primeira.slug]} escuro={primeira.tema === 'escuro'} />
+        <GuiaRolar ar={primeira.proporcao} escuro={primeira.tema === 'escuro'} />
 
         <div className="ap-ui">
           <motion.header
