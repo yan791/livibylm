@@ -5,11 +5,13 @@
 */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { api, enderecoSite, mensagemDe, type Colecao, type CorPeca, type Peca } from '../api'
-import { descartarFotos, enviarFoto } from '../imagem'
+import { descartarFotos, enviarFoto, pequena } from '../imagem'
 import { aoClicar, ir, segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, confirmar, FalhaCarga, Icone, Interruptor, useCarregar } from '../ui'
 
+/** tamanhos que aparecem como opção, nessa ordem; a peça nova já vem com a grade da Livi (sem o GG) */
 const PADRAO = ['PP', 'P', 'M', 'G', 'GG']
+const GRADE_NOVA = ['PP', 'P', 'M', 'G']
 const MAX_FOTOS = 10
 
 const CORES_RAPIDAS = [
@@ -94,7 +96,7 @@ const vazio = (colecaoId: number | null): Rascunho => ({
   descricao: '',
   tecido: '',
   cores: [],
-  tamanhos: [...PADRAO],
+  tamanhos: [...GRADE_NOVA],
   fotos: [],
   modeloAltura: '',
   modeloVeste: '',
@@ -432,7 +434,7 @@ function EditorFotos({
       <ul className="fotos">
         {fotos.map((src, i) => (
           <li key={src} className="foto">
-            <img src={src} alt={`Foto ${i + 1}`} />
+            <img src={pequena(src)} alt={`Foto ${i + 1}`} />
             {i === 0 && <span className="foto-capa">Capa</span>}
             <span className="foto-acoes">
               <button type="button" onClick={() => mover(i, -1)} disabled={i === 0} aria-label="Mover para a esquerda">

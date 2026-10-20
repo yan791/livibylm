@@ -2,11 +2,12 @@
   Lista de desejos: as peças que a cliente salvou no coração para ver depois,
   sem compromisso de compra. Nada abre sozinho ao salvar: um aviso discreto
   confirma e oferece "Ver lista". Daqui a peça pode ir para a sacola quando
-  ela decidir comprar.
+  ela decidir comprar: se a peça tem um tamanho só, vai direto; se não, a peça
+  abre para ela escolher o tamanho.
 */
 import { abrirGaveta, criarLista, detalhar } from './lista'
-import { adicionarNaSacola, naSacola, removerDaSacola } from './sacola'
-import { colecoes } from '../dados/colecoes'
+import { adicionarNaSacola, idDoItem, removerDaSacola, type ItemSacola } from './sacola'
+import { colecoes, corEsgotada, pecaEsgotada } from '../dados/colecoes'
 
 export type ItemDesejo = { colecao: string; peca: string }
 
@@ -17,6 +18,8 @@ const desejos = criarLista<ItemDesejo>('livi-desejos')
 
 export const useDesejos = desejos.usar
 export const nosDesejos = desejos.tem
+/** peças salvas que saíram do site desde a última visita */
+export const sairamDosDesejos = desejos.saiuDoSite
 
 /** salva ou tira a peça da lista; devolve se ela ficou salva */
 export function alternarDesejo(item: ItemDesejo) {
@@ -32,17 +35,22 @@ export function alternarDesejo(item: ItemDesejo) {
 
 export const removerDesejo = (peca: string) => desejos.salvar(desejos.ler().filter((i) => i.peca !== peca))
 
-/** leva a peça salva para a sacola (na primeira cor, com o tamanho a escolher); ela continua salva */
-export function desejoParaSacola(item: ItemDesejo) {
-  if (naSacola(item.peca)) return
+/**
+  leva a peça salva para a sacola (ela continua salva). Com um tamanho só, vai
+  direto, na primeira cor que tiver; com mais de um, devolve 'escolher' para a
+  peça abrir e a cliente escolher o tamanho
+*/
+export function desejoParaSacola(item: ItemDesejo): 'foi' | 'escolher' {
   const peca = colecoes.find((c) => c.slug === item.colecao)?.pecas.find((p) => p.slug === item.peca)
-  if (!peca) return
-  adicionarNaSacola({ colecao: item.colecao, peca: item.peca, cor: peca.cores[0].nome, tamanho: null })
+  if (!peca || pecaEsgotada(peca) || peca.tamanhos.length !== 1) return 'escolher'
+  const cor = peca.cores.find((c) => !corEsgotada(peca, c.nome)) ?? peca.cores[0]
+  adicionarNaSacola({ colecao: item.colecao, peca: item.peca, cor: cor.nome, tamanho: peca.tamanhos[0] })
+  return 'foi'
 }
 
-/** "Salvar para depois": tira a peça da sacola e guarda na lista de desejos */
-export function moverParaDesejos(item: ItemDesejo) {
-  removerDaSacola(item.peca)
+/** "Salvar para depois": tira o item da sacola e guarda a peça na lista de desejos */
+export function moverParaDesejos(item: Pick<ItemSacola, 'colecao' | 'peca' | 'cor' | 'tamanho'>) {
+  removerDaSacola(idDoItem(item))
   if (!desejos.tem(item.peca)) desejos.salvar([{ colecao: item.colecao, peca: item.peca }, ...desejos.ler()])
 }
 

@@ -7,7 +7,7 @@
 */
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { precoBR } from '../dados/colecoes'
+import { pecaEsgotada, precoBR } from '../dados/colecoes'
 import { site } from '../dados/site'
 import {
   EVENTO_DESEJO_SALVO,
@@ -16,15 +16,17 @@ import {
   desejoParaSacola,
   detalhar,
   removerDesejo,
+  sairamDosDesejos,
   useDesejos,
   type ItemDesejo,
 } from '../lib/desejos'
 import { useSacola } from '../lib/sacola'
 import { EVENTO_GAVETA } from '../lib/lista'
 import { abrirCatalogo, mostrarCatalogo } from '../lib/catalogo'
+import { fotoPequena } from '../lib/base'
 import { cn } from '../lib/cn'
 import { Coracao, IconeCabide, IconeSacola, SetaDiagonal } from './icones'
-import type { PropsPainel } from './Sacola'
+import { AvisoSaiu, type PropsPainel } from './Sacola'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -133,6 +135,7 @@ export function PainelDesejos({ fechar, irPara }: PropsPainel) {
   if (!itens.length)
     return (
       <div className="gaveta-vazia">
+        <AvisoSaiu n={sairamDosDesejos} onde="nos seus desejos" />
         <Coracao className="gaveta-vazia-icone" />
         <p className="gaveta-vazia-titulo">Nenhuma peça salva ainda</p>
         <p>Toque no coração das peças que você gostar. Elas ficam guardadas aqui para você ver com calma, sem compromisso.</p>
@@ -151,10 +154,16 @@ export function PainelDesejos({ fechar, irPara }: PropsPainel) {
 
   return (
     <>
+      <AvisoSaiu n={sairamDosDesejos} onde="nos seus desejos" />
       <ul className="gaveta-lista gaveta-desejos">
         <AnimatePresence initial={false}>
           {itens.map((i) => {
             const naSacola = sacola.some((s) => s.peca === i.peca.slug)
+            const esgotada = pecaEsgotada(i.peca)
+            const verPeca = () => {
+              fechar()
+              abrirCatalogo(i.colecao, i.peca.slug)
+            }
             return (
               <motion.li
                 key={i.peca.slug}
@@ -164,29 +173,31 @@ export function PainelDesejos({ fechar, irPara }: PropsPainel) {
                 exit={{ opacity: 0, x: 30, height: 0, marginBottom: 0 }}
                 transition={{ duration: 0.45, ease }}
               >
-                <button
-                  type="button"
-                  className="gaveta-foto"
-                  style={{ background: i.fundo }}
-                  onClick={() => {
-                    fechar()
-                    abrirCatalogo(i.colecao, i.peca.slug)
-                  }}
-                  aria-label={`Ver ${i.peca.nome}`}
-                >
-                  {i.peca.fotos[0] ? <img src={i.peca.fotos[0]} alt="" /> : <IconeCabide />}
+                <button type="button" className="gaveta-foto" style={{ background: i.fundo }} onClick={verPeca} aria-label={`Ver ${i.peca.nome}`}>
+                  {i.peca.fotos[0] ? <img src={fotoPequena(i.peca.fotos[0])} alt="" /> : <IconeCabide />}
                 </button>
                 <div className="gaveta-info">
                   <p className="gaveta-colecao">Coleção {i.colecaoNome}</p>
                   <p className="gaveta-nome">{i.peca.nome}</p>
-                  <p className="gaveta-detalhe">{precoBR(i.peca.preco)}</p>
-                  {naSacola ? (
+                  <p className="gaveta-detalhe">
+                    {precoBR(i.peca.preco)}
+                    {esgotada && <span className="gaveta-selo">Esgotada</span>}
+                  </p>
+                  {esgotada ? (
+                    <button type="button" className="gaveta-acao" onClick={verPeca}>
+                      Ver peça
+                    </button>
+                  ) : naSacola ? (
                     <button type="button" className="gaveta-acao feito" onClick={() => irPara('sacola')}>
                       Na sacola ✓
                     </button>
                   ) : (
-                    <button type="button" className="gaveta-acao" onClick={() => desejoParaSacola({ colecao: i.colecao, peca: i.peca.slug })}>
-                      <IconeSacola className="ico" /> Adicionar à sacola
+                    <button
+                      type="button"
+                      className="gaveta-acao"
+                      onClick={() => desejoParaSacola({ colecao: i.colecao, peca: i.peca.slug }) === 'escolher' && verPeca()}
+                    >
+                      <IconeSacola className="ico" /> {i.peca.tamanhos.length > 1 ? 'Escolher tamanho' : 'Adicionar à sacola'}
                     </button>
                   )}
                 </div>
@@ -205,7 +216,7 @@ export function PainelDesejos({ fechar, irPara }: PropsPainel) {
       </ul>
       <div className="gaveta-rodape gaveta-rodape-desejos">
         <p className="gaveta-nota">
-          Sua lista fica salva neste aparelho. Quando decidir, leve a peça para a sacola e escolha o tamanho por lá.
+          Sua lista fica salva neste aparelho. Quando decidir, escolha o tamanho e leve a peça para a sacola.
         </p>
       </div>
     </>
@@ -249,7 +260,7 @@ export function AvisoDesejo() {
             transition={{ duration: 0.5, ease }}
           >
             <span className="aviso-foto" style={{ background: d.fundo }}>
-              {d.peca.fotos[0] ? <img src={d.peca.fotos[0]} alt="" /> : <IconeCabide />}
+              {d.peca.fotos[0] ? <img src={fotoPequena(d.peca.fotos[0])} alt="" /> : <IconeCabide />}
             </span>
             <span className="aviso-texto">
               <strong>

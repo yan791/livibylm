@@ -22,10 +22,17 @@ import {
   registrarFalha,
   validarSenha,
 } from './seguranca'
-import { apagarFotosSemUso, guardarFoto, LIMITE_FOTO } from './fotos'
+import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
+import { limparCacheCatalogo } from './catalogo'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
+
+// qualquer alteração pelo painel aparece no site na hora (pelo menos neste servidor da Cloudflare)
+painel.use('*', async (c, next) => {
+  await next()
+  if (c.req.method !== 'GET') limparCacheCatalogo()
+})
 
 /* ---------- validação ---------- */
 
@@ -500,14 +507,25 @@ painel.post('/pecas/ordem', async (c) => {
 
 /* ---------- fotos ---------- */
 
-painel.post('/fotos', async (c) => {
+async function lerFoto(c: Context<Ambiente>) {
   if (Number(c.req.header('Content-Length') ?? 0) > LIMITE_FOTO) throw falha(413, 'Foto grande demais (até 8 MB).')
   const corpo = await c.req.arrayBuffer()
   if (!corpo.byteLength) throw falha(400, 'Nenhuma foto recebida.')
   if (corpo.byteLength > LIMITE_FOTO) throw falha(413, 'Foto grande demais (até 8 MB).')
-  const src = await guardarFoto(c.env.FOTOS, corpo)
+  return corpo
+}
+
+painel.post('/fotos', async (c) => {
+  const src = await guardarFoto(c.env.FOTOS, await lerFoto(c))
   if (!src) throw falha(415, 'Esse arquivo não é uma foto aceita. Use JPG, PNG ou WebP.')
   return c.json({ src }, 201)
+})
+
+/** versão pequena (vitrine e miniaturas) de uma foto grande já enviada: ?de=/fotos/p/... */
+painel.post('/fotos/pequena', async (c) => {
+  const ok = await guardarPequena(c.env.FOTOS, c.req.query('de') ?? '', await lerFoto(c))
+  if (!ok) throw falha(400, 'Não deu para guardar a versão pequena da foto.')
+  return c.json({ ok: true }, 201)
 })
 
 /** fotos enviadas numa peça que não chegou a ser salva */

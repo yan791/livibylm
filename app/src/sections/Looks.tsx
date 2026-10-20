@@ -17,7 +17,7 @@ import { SetaDireita, SetaEsquerda } from '../components/icones'
 import { Ima } from '../components/Vivos'
 import { Letreiro, type Sentido } from '../components/Letreiro'
 import { CircularGallery, type CircularGalleryHandle, type GalleryItem } from '../components/ui/circular-gallery'
-import { comBase } from '../lib/base'
+import { comBase, fotoPequena } from '../lib/base'
 
 /** convite dentro do cartão da frente: mostra que a foto é um botão e que há peças lá dentro */
 function Convite({ c }: { c: Colecao }) {
@@ -28,7 +28,7 @@ function Convite({ c }: { c: Colecao }) {
         {fotos.length > 0 && (
           <span className="lk-convite-pecas">
             {fotos.map((f) => (
-              <img key={f} src={f} alt="" loading="lazy" draggable={false} />
+              <img key={f} src={fotoPequena(f)} alt="" loading="lazy" draggable={false} />
             ))}
           </span>
         )}

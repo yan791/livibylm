@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react'
 import { api, mensagemDe, reais, type Colecao, type ResumoPeca } from '../api'
 import { aoClicar } from '../rota'
+import { pequena } from '../imagem'
 import { avisar, Carregando, FalhaCarga, Icone, useCarregar } from '../ui'
 
 const semAcento = (s: string) =>
@@ -138,7 +139,7 @@ export function Pecas() {
               {lista.map((p, i) => (
                 <li key={p.id} className="linha">
                   <a className="linha-link" href={`/painel/peca/${p.id}`} onClick={aoClicar(`/painel/peca/${p.id}`)}>
-                    <span className="miniatura">{p.foto ? <img src={p.foto} alt="" loading="lazy" /> : Icone.foto}</span>
+                    <span className="miniatura">{p.foto ? <img src={pequena(p.foto)} alt="" loading="lazy" /> : Icone.foto}</span>
                     <span className="linha-texto">
                       <strong>{p.nome}</strong>
                       <span>{reais(p.precoCentavos)}</span>

@@ -11,9 +11,26 @@
     <meta property="og:title" content="Livi by LM | Moda feminina autoral" />
     <meta property="og:description" content="Coleções autorais com caimento fluido. Atendimento pelo WhatsApp." />
     <meta property="og:image" content="/img/colecoes/velvet.webp" />
+    <!--
+      Enquanto o site e as peças carregam: na primeira visita (quando a cortina
+      vinho vai aparecer) a tela já começa vinho; nas outras, uma linha discreta
+      surge só se a espera passar de um instante. O React troca tudo ao abrir.
+    -->
+    <style>
+      .espera { position: fixed; inset: 0; display: grid; place-items: center; background: #f4efea; color: #4f0f10; }
+      html.primeira .espera { background: #4f0f10; color: #e6cdbf; }
+      .espera span { width: 64px; height: 1px; background: currentColor; opacity: 0; transform-origin: center; animation: espera-surge 0.4s 0.35s forwards, espera-pulsa 1.1s 0.75s ease-in-out infinite alternate; }
+      @keyframes espera-surge { to { opacity: 0.6; } }
+      @keyframes espera-pulsa { from { transform: scaleX(0.25); } to { transform: scaleX(1); } }
+    </style>
+    <script>
+      try {
+        if (location.pathname === '%BASE_URL%' && !sessionStorage.getItem('livi-cortina')) document.documentElement.classList.add('primeira')
+      } catch (e) {}
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="espera" aria-hidden="true"><span></span></div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

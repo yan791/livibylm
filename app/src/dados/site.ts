@@ -4,7 +4,7 @@
 */
 
 import { comBase } from '../lib/base'
-import { precoBR, type Colecao, type Peca } from './colecoes'
+import { precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
 
 export const site = {
   marca: 'Livi',
@@ -67,7 +67,16 @@ export function linkWhatsApp(mensagem = mensagens.geral) {
 export function mensagemPeca(colecao: Colecao, peca: Peca, cor: string, tamanho: string) {
   return [
     'Olá! Vim pelo site da Livi e tenho interesse nesta peça:',
-    [`*${peca.nome}*`, `Coleção ${colecao.nome}`, `Cor: ${cor}`, `Tamanho: ${tamanho}`, `Valor: ${precoBR(peca.preco)}`].join('\n'),
+    [`*${peca.nome}*`, `Coleção ${colecao.nome}`, `Cor: ${cor}`, `Tamanho: ${rotuloTamanho(tamanho)}`, `Valor: ${precoBR(peca.preco)}`].join('\n'),
     'Está disponível nesse tamanho?',
+  ].join('\n\n')
+}
+
+/** peça esgotada: a cliente pergunta se ela volta */
+export function mensagemEsgotada(colecao: Colecao, peca: Peca) {
+  return [
+    'Olá! Vim pelo site da Livi e gostei desta peça, que está esgotada:',
+    [`*${peca.nome}*`, `Coleção ${colecao.nome}`].join('\n'),
+    'Ela vai voltar?',
   ].join('\n\n')
 }

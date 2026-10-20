@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
 import { EVENTO_GAVETA, abrirGaveta, type Aba } from '../lib/lista'
-import { EVENTO_SACOLA_ADICIONOU, useSacola } from '../lib/sacola'
+import { EVENTO_SACOLA_ADICIONOU, unidades, useSacola } from '../lib/sacola'
 import { useDesejos } from '../lib/desejos'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
@@ -78,7 +78,7 @@ export function Gaveta() {
             <div className="gaveta-topo">
               <div className="gaveta-abas" role="tablist" aria-label="Suas listas">
                 {ABAS.map((a) => {
-                  const n = a.id === 'sacola' ? sacola.length : desejos.length
+                  const n = a.id === 'sacola' ? unidades(sacola) : desejos.length
                   const ativa = a.id === aba
                   return (
                     <button
@@ -170,7 +170,7 @@ function BotaoLista({
 const pecas = (n: number) => `${n} ${n === 1 ? 'peça' : 'peças'}`
 
 export function BotaoSacola({ className }: { className?: string }) {
-  const n = useSacola().length
+  const n = unidades(useSacola())
   return (
     <BotaoLista aba="sacola" n={n} evento={EVENTO_SACOLA_ADICIONOU} rotulo={`Sacola, ${pecas(n)}`} className={className}>
       <IconeSacola />

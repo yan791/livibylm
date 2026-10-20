@@ -8,10 +8,22 @@
 */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { acharColecao, colecoes, precoBR, type Colecao, type Peca } from '../dados/colecoes'
-import { linkWhatsApp, mensagemPeca } from '../dados/site'
+import {
+  acharColecao,
+  colecoes,
+  corEsgotada,
+  disponivel,
+  pecaEsgotada,
+  precoBR,
+  rotuloTamanho,
+  textoEncomenda,
+  type Colecao,
+  type Peca,
+} from '../dados/colecoes'
+import { linkWhatsApp, mensagemEsgotada, mensagemPeca } from '../dados/site'
 import { fecharCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
-import { abrirSacola, adicionarNaSacola, useSacola } from '../lib/sacola'
+import { abrirSacola, adicionarNaSacola, idDoItem, useSacola } from '../lib/sacola'
+import { fotoPequena } from '../lib/base'
 import { suportaTransicao } from '../lib/rota'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
@@ -215,9 +227,14 @@ function Trilho({ colecao }: { colecao: Colecao }) {
               <button type="button" className="cat-card-gatilho" onClick={() => verPeca(p.slug)} aria-label={`Ver ${p.nome}`}>
                 <span className="cat-card-foto">
                   {p.fotos[0] ? (
-                    <img src={p.fotos[0]} alt="" loading={i < 2 ? 'eager' : 'lazy'} draggable={false} />
+                    <img src={fotoPequena(p.fotos[0])} alt="" loading={i < 2 ? 'eager' : 'lazy'} draggable={false} />
                   ) : (
                     <Espaco rotulo="Espaço para foto da peça" />
+                  )}
+                  {pecaEsgotada(p) ? (
+                    <span className="cat-card-selo">Esgotado</span>
+                  ) : (
+                    p.sobEncomenda && <span className="cat-card-selo claro">Sob encomenda</span>
                   )}
                 </span>
                 <span className="cat-card-nome">{p.nome}</span>
@@ -241,24 +258,35 @@ function Trilho({ colecao }: { colecao: Colecao }) {
 
 /** a peça aberta: fotos, informações e compra */
 function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
-  const naSacola = useSacola().find((i) => i.peca === peca.slug)
-  const [nomeCor, setCor] = useState(naSacola?.cor ?? null)
-  const cor = peca.cores.find((c) => c.nome === nomeCor) ?? peca.cores[0]
-  const [tamanho, setTamanho] = useState<string | null>(naSacola?.tamanho ?? null)
+  const sacola = useSacola()
+  const esgotada = pecaEsgotada(peca)
+  const unico = peca.tamanhos.length === 1
+  // abre na primeira cor que ainda tem estoque
+  const primeiraCor = peca.cores.find((c) => !corEsgotada(peca, c.nome)) ?? peca.cores[0]
+  const [nomeCor, setCor] = useState(primeiraCor.nome)
+  const cor = peca.cores.find((c) => c.nome === nomeCor) ?? primeiraCor
+  const tem = (t: string) => disponivel(peca, cor.nome, t) > 0
+  const [escolhido, setTamanho] = useState<string | null>(null)
+  // peça de tamanho único já vem escolhida; trocando de cor, um tamanho que esgotou nela sai da escolha
+  const tamanho = escolhido && tem(escolhido) ? escolhido : unico && tem(peca.tamanhos[0]) ? peca.tamanhos[0] : null
+  const restam = tamanho ? disponivel(peca, cor.nome, tamanho) : 0
+  const naSacola = tamanho ? sacola.find((i) => idDoItem(i) === idDoItem({ peca: peca.slug, cor: cor.nome, tamanho })) : undefined
   const [aviso, setAviso] = useState(false)
   const [adicionou, setAdicionou] = useState(false)
   const posicao = colecao.pecas.indexOf(peca)
   const anterior = colecao.pecas[posicao - 1]
   const proxima = colecao.pecas[posicao + 1]
-  const mudouNaSacola = naSacola && (naSacola.cor !== cor.nome || naSacola.tamanho !== tamanho)
 
   const adicionar = () => {
-    if (naSacola && !mudouNaSacola) return abrirSacola()
+    if (esgotada) return
+    if (!tamanho) return setAviso(true)
+    if (naSacola) return abrirSacola()
     adicionarNaSacola({ colecao: colecao.slug, peca: peca.slug, cor: cor.nome, tamanho })
     setAdicionou(true)
   }
 
   const querer = () => {
+    if (esgotada) return window.open(linkWhatsApp(mensagemEsgotada(colecao, peca)), '_blank', 'noopener')
     if (!tamanho) return setAviso(true)
     window.open(linkWhatsApp(mensagemPeca(colecao, peca, cor.nome, tamanho)), '_blank', 'noopener')
   }
@@ -296,68 +324,95 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
           <h2 className="cat-nome">{peca.nome}</h2>
           <BotaoDesejo className="cat-nome-desejo" item={{ colecao: colecao.slug, peca: peca.slug }} />
         </div>
-        <p className="cat-preco">{precoBR(peca.preco)}</p>
+        <p className="cat-preco">
+          {precoBR(peca.preco)}
+          {esgotada && <span className="cat-selo">Esgotado</span>}
+        </p>
+        {peca.sobEncomenda && <p className="cat-encomenda">{textoEncomenda(peca)}</p>}
         <p className="cat-desc">{peca.descricao}</p>
 
-        <dl className="cat-ficha">
-          <div>
-            <dt>Tecido</dt>
-            <dd>{peca.tecido.includes('[confirmar]') ? <Ph>{peca.tecido}</Ph> : peca.tecido}</dd>
-          </div>
-        </dl>
+        {peca.tecido && (
+          <dl className="cat-ficha">
+            <div>
+              <dt>Tecido</dt>
+              <dd>{peca.tecido.includes('[confirmar]') ? <Ph>{peca.tecido}</Ph> : peca.tecido}</dd>
+            </div>
+          </dl>
+        )}
 
         <div className="cat-grupo">
           <p className="cat-rotulo">
             Cor <span>{cor.nome}</span>
+            {!esgotada && corEsgotada(peca, cor.nome) && <em className="cat-rotulo-aviso">Esgotada nessa cor</em>}
           </p>
           <div className="cat-cores">
-            {peca.cores.map((c) => (
-              <button
-                key={c.nome}
-                type="button"
-                className={cn('cat-cor', c.nome === cor.nome && 'ativa')}
-                style={{ '--c': c.hex } as React.CSSProperties}
-                onClick={() => setCor(c.nome)}
-                aria-label={c.nome}
-                aria-pressed={c.nome === cor.nome}
-              />
-            ))}
+            {peca.cores.map((c) => {
+              const sem = corEsgotada(peca, c.nome)
+              return (
+                <button
+                  key={c.nome}
+                  type="button"
+                  className={cn('cat-cor', c.nome === cor.nome && 'ativa', sem && 'esgotada')}
+                  style={{ '--c': c.hex } as React.CSSProperties}
+                  onClick={() => setCor(c.nome)}
+                  aria-label={sem ? `${c.nome}, esgotada` : c.nome}
+                  aria-pressed={c.nome === cor.nome}
+                  title={sem ? `${c.nome}: esgotada` : c.nome}
+                />
+              )
+            })}
           </div>
         </div>
 
         <div className={cn('cat-grupo', aviso && !tamanho && 'aviso')}>
-          <p className="cat-rotulo">Tamanho</p>
+          <p className="cat-rotulo">{unico ? 'Tamanho' : 'Escolha o tamanho'}</p>
           <div className="cat-tamanhos" role="radiogroup" aria-label="Tamanho">
-            {peca.tamanhos.map((t) => (
-              <button
-                key={t}
-                type="button"
-                role="radio"
-                aria-checked={tamanho === t}
-                className={cn(tamanho === t && 'ativo')}
-                onClick={() => {
-                  setTamanho(t)
-                  setAviso(false)
-                }}
-              >
-                {t}
-              </button>
-            ))}
+            {peca.tamanhos.map((t) => {
+              const sem = !tem(t)
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={tamanho === t}
+                  aria-disabled={sem}
+                  className={cn(tamanho === t && 'ativo', sem && 'esgotado')}
+                  title={sem ? 'Esgotado' : undefined}
+                  aria-label={sem ? `${rotuloTamanho(t)}, esgotado` : rotuloTamanho(t)}
+                  onClick={() => {
+                    if (sem) return
+                    setTamanho(t)
+                    setAviso(false)
+                  }}
+                >
+                  {rotuloTamanho(t)}
+                </button>
+              )
+            })}
           </div>
-          <p className="cat-modelo">
-            A modelo tem <Ph>{peca.modelo.altura}</Ph> e veste <Ph>{peca.modelo.veste}</Ph>.
-          </p>
-          {aviso && !tamanho && <p className="cat-aviso">Escolha um tamanho para pedir pelo WhatsApp.</p>}
+          {!peca.sobEncomenda && restam === 1 && <p className="cat-ultima">Última unidade nesse tamanho</p>}
+          {peca.modelo.altura && peca.modelo.veste && (
+            <p className="cat-modelo">
+              A modelo tem <Ph>{peca.modelo.altura}</Ph> e veste <Ph>{peca.modelo.veste}</Ph>.
+            </p>
+          )}
+          {aviso && !tamanho && <p className="cat-aviso">Escolha um tamanho para continuar.</p>}
         </div>
 
         <div className="cat-acoes">
-          <button type="button" className="pilula cheia" onClick={adicionar}>
-            {!naSacola ? 'Adicionar à sacola' : mudouNaSacola ? 'Atualizar na sacola' : 'Na sacola ✓'}
+          <button type="button" className="pilula cheia" onClick={adicionar} disabled={esgotada}>
+            {esgotada ? 'Esgotado' : naSacola ? 'Na sacola ✓' : 'Adicionar à sacola'}
           </button>
           <button type="button" className="pilula" onClick={querer}>
             <WhatsApp className="ico" />
             <span>
-              <span className="cat-acoes-extra">Pedir pelo </span>WhatsApp
+              {esgotada ? (
+                'Perguntar se volta'
+              ) : (
+                <>
+                  <span className="cat-acoes-extra">Pedir pelo </span>WhatsApp
+                </>
+              )}
             </span>
           </button>
         </div>
@@ -415,7 +470,7 @@ function Galeria({ peca }: { peca: Peca }) {
               aria-label={`Ver foto ${i + 1}`}
               aria-pressed={i === atual}
             >
-              <img src={f} alt="" draggable={false} />
+              <img src={fotoPequena(f)} alt="" draggable={false} />
             </button>
           ))}
         </div>

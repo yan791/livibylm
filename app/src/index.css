@@ -4237,3 +4237,201 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* ============================================================
+   ESTOQUE NA VITRINE (fase 2 da loja): esgotado, sob encomenda,
+   última unidade e quantidade na sacola
+   ============================================================ */
+
+.pilula:disabled,
+.pilula.desligada {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* selo no cartão da vitrine */
+.cat-card-foto {
+  position: relative;
+}
+
+.cat-card-selo {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--vinho);
+  color: var(--rose-claro);
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cat-card-selo.claro {
+  background: rgb(244 239 234 / 0.9);
+  color: var(--vinho);
+}
+
+.cat-card-gatilho:has(.cat-card-selo:not(.claro)) .cat-card-foto img {
+  filter: saturate(0.55) brightness(0.92);
+}
+
+/* peça aberta */
+.cat-preco {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cat-selo {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cat-encomenda {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.cat-rotulo-aviso {
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  opacity: 0.75;
+}
+
+/* cor esgotada: um risco atravessando a bolinha */
+.cat-cor.esgotada {
+  position: relative;
+  opacity: 0.55;
+}
+
+.cat-cor.esgotada::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 130%;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* tamanho esgotado: riscado e sem escolher */
+.cat-tamanhos button.esgotado {
+  opacity: 0.4;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.cat-tamanhos button.esgotado:hover {
+  border-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.cat-ultima {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--bordo);
+}
+
+.cat.tema-escuro .cat-ultima {
+  color: var(--rose-claro);
+}
+
+/* sacola: quantidade, item esgotado e avisos */
+.gaveta-qtd {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.gaveta-qtd button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgb(79 15 16 / 0.25);
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--vinho);
+  cursor: pointer;
+  transition: background-color 0.3s var(--ease);
+}
+
+.gaveta-qtd button:hover:not(:disabled) {
+  background: rgb(79 15 16 / 0.08);
+}
+
+.gaveta-qtd button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.gaveta-qtd span {
+  min-width: 1.4em;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--vinho);
+}
+
+.gaveta-qtd small {
+  font-size: 0.72rem;
+  color: var(--bordo);
+}
+
+.gaveta-esgotou {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--bordo);
+}
+
+.gaveta-lista li.esgotado .gaveta-foto img {
+  filter: grayscale(0.6);
+  opacity: 0.6;
+}
+
+.gaveta-lista li.esgotado .gaveta-detalhe {
+  text-decoration: line-through;
+}
+
+.gaveta-selo {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--vinho);
+  color: var(--rose-claro);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.gaveta-saiu {
+  margin: 14px 26px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(79 15 16 / 0.06);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--vinho);
+}
+
+.gaveta-vazia .gaveta-saiu {
+  margin: 0 0 8px;
+}

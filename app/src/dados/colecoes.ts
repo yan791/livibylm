@@ -26,6 +26,8 @@ export type Peca = {
    */
   fotos: string[]
   modelo: { altura: string; veste: string }
+  /** "Cor|Tamanho" -> quantas unidades a cliente pode levar (0 = esgotado; o servidor limita a 10) */
+  disponivel: Record<string, number>
   /** combinações sem estoque, no formato "Cor|Tamanho" */
   esgotados: string[]
   /** feita sob encomenda: sem controle de estoque, com prazo de produção */
@@ -58,11 +60,21 @@ async function buscar(): Promise<unknown> {
       /* segue para a busca no servidor */
     }
   }
+  return doServidor()
+}
+
+/** busca no servidor da loja; desiste em 8 s (a página avisa a visitante e oferece o WhatsApp) */
+async function doServidor(tentativa = 1): Promise<unknown> {
+  const parar = new AbortController()
+  const tempo = setTimeout(() => parar.abort(), 8000)
   try {
-    const r = await fetch(`${API}/api/catalogo`)
+    const r = await fetch(`${API}/api/catalogo`, { signal: parar.signal })
     return r.ok ? await r.json() : null
   } catch {
-    return null
+    // uma falha rápida de rede ganha mais uma chance; um tempo esgotado, não
+    return tentativa < 2 && !parar.signal.aborted ? doServidor(tentativa + 1) : null
+  } finally {
+    clearTimeout(tempo)
   }
 }
 
@@ -88,3 +100,27 @@ export function acharPeca(colecao: Colecao, slug?: string) {
 
 export const precoBR = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: Number.isInteger(v) ? 0 : 2 })
+
+/* ---------- estoque ---------- */
+
+/** o máximo de unidades iguais (mesma peça, cor e tamanho) num pedido */
+export const LIMITE_POR_ITEM = 10
+
+/** quantas unidades dessa cor e tamanho a cliente pode levar (0 = esgotado) */
+export function disponivel(peca: Peca, cor: string, tamanho: string) {
+  const n = peca.disponivel?.[`${cor}|${tamanho}`]
+  if (typeof n === 'number') return Math.min(LIMITE_POR_ITEM, n)
+  return peca.esgotados?.includes(`${cor}|${tamanho}`) ? 0 : LIMITE_POR_ITEM
+}
+
+export const corEsgotada = (peca: Peca, cor: string) => !peca.sobEncomenda && peca.tamanhos.every((t) => disponivel(peca, cor, t) <= 0)
+
+/** nenhuma cor em nenhum tamanho: a peça continua no site, com o selo "Esgotado" */
+export const pecaEsgotada = (peca: Peca) => !peca.sobEncomenda && peca.cores.every((c) => corEsgotada(peca, c.nome))
+
+/** "Único" aparece como "Tamanho único" */
+export const rotuloTamanho = (t: string) => (/^[uú]nico$/i.test(t.trim()) ? 'Tamanho único' : t)
+
+/** prazo da peça sob encomenda, como aparece no site */
+export const textoEncomenda = (peca: Peca) =>
+  peca.prazo ? `Sob encomenda: pronta em até ${peca.prazo.replace(/^até\s+/i, '')}` : 'Feita sob encomenda'

@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { api, mensagemDe, type Colecao } from '../api'
 import { aoClicar } from '../rota'
+import { pequena } from '../imagem'
 import { avisar, Carregando, FalhaCarga, Icone, useCarregar } from '../ui'
 
 export function Colecoes() {
@@ -46,7 +47,7 @@ export function Colecoes() {
           <li key={c.id} className="colecao">
             <a className="colecao-link" href={`/painel/colecao/${c.id}`} onClick={aoClicar(`/painel/colecao/${c.id}`)}>
               <span className="colecao-capa" style={{ background: c.fundo }}>
-                {c.capa ? <img src={c.capa} alt="" loading="lazy" /> : Icone.foto}
+                {c.capa ? <img src={pequena(c.capa)} alt="" loading="lazy" /> : Icone.foto}
               </span>
               <span className="linha-texto">
                 <small>{c.numero ? `Nº ${c.numero}` : 'Coleção'}</small>
