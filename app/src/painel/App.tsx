@@ -2,7 +2,7 @@
   Painel da loja: confere o login e monta a moldura (topo, navegação e a tela do endereço atual).
 */
 import { useEffect, useState } from 'react'
-import { api, EVENTO_SAIU, type Admin } from './api'
+import { api, definirSite, enderecoSite, EVENTO_SAIU, type Admin } from './api'
 import { aoClicar, ir, useTela, type Tela } from './rota'
 import { Avisos, avisar, Carregando, Confirmacao, Icone } from './ui'
 import { Convite, Entrar } from './acesso'
@@ -24,7 +24,13 @@ export function App() {
   const [admin, setAdmin] = useState<Admin | null | undefined>(undefined)
 
   useEffect(() => {
-    api<Admin>('GET', '/eu').then(setAdmin, () => setAdmin(null))
+    api<Admin>('GET', '/eu').then(
+      (a) => {
+        definirSite(a.site)
+        setAdmin(a)
+      },
+      () => setAdmin(null),
+    )
     const saiu = () => {
       setAdmin(null)
       avisar('Sua sessão terminou. Entre de novo.', 'erro')
@@ -34,6 +40,7 @@ export function App() {
   }, [])
 
   const entrou = (a: Admin) => {
+    definirSite(a.site)
     setAdmin(a)
     if (tela.nome === 'entrar' || tela.nome === 'convite') ir('/painel', { substituir: true, forcar: true })
   }
@@ -78,7 +85,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
           ))}
         </nav>
         <div className="topo-acoes">
-          <a className="topo-botao" href="/" target="_blank" rel="noreferrer" title="Abrir o site em outra aba">
+          <a className="topo-botao" href={`${enderecoSite}/`} target="_blank" rel="noreferrer" title="Abrir o site em outra aba">
             {Icone.externo}
             <span>Ver site</span>
           </a>

@@ -1,10 +1,11 @@
 /*
   Worker da Livi: publica o site, a API do painel e as fotos.
-    /api/catalogo     coleções e peças visíveis (o site usa)
+    /api/catalogo     coleções e peças visíveis (o site usa, inclusive o do GitHub Pages)
     /api/painel/...   painel da loja (login obrigatório, menos entrar e convite)
     /fotos/...        fotos enviadas pelo painel (R2)
     /painel/...       o painel em si
-    o resto           o site, já com o catálogo dentro do HTML
+    o resto           o site, já com o catálogo dentro do HTML; ou, se
+                      SITE_PUBLICO estiver definido, um redirecionamento para lá
 */
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
@@ -26,7 +27,11 @@ app.use('/api/*', async (c, next) => {
   c.header('Cache-Control', 'no-store')
 })
 
-app.get('/api/catalogo', async (c) => c.json(await lerCatalogo(c.env.DB)))
+// dados públicos: qualquer site pode ler (o do GitHub Pages lê daqui)
+app.get('/api/catalogo', async (c) => {
+  c.header('Access-Control-Allow-Origin', '*')
+  return c.json(await lerCatalogo(c.env.DB))
+})
 app.route('/api/painel', painel)
 app.all('/api/*', (c) => c.json({ erro: 'Endereço não encontrado.' }, 404))
 
@@ -50,6 +55,11 @@ app.get('/painel/*', paginaPainel)
   assim o site já abre com as peças, sem esperar outra requisição.
 */
 app.get('*', async (c) => {
+  // o site público mora em outro endereço (GitHub Pages): aqui fica só o painel
+  if (c.env.SITE_PUBLICO) {
+    const url = new URL(c.req.url)
+    return c.redirect(c.env.SITE_PUBLICO.replace(/\/$/, '') + url.pathname + url.search, 302)
+  }
   const r = await c.env.ASSETS.fetch(c.req.raw)
   if (!r.headers.get('content-type')?.includes('text/html')) return r
   let dados: string

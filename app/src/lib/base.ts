@@ -11,3 +11,13 @@ export const comBase = (caminho: string) => (caminho.startsWith('/') ? BASE + ca
 
 /** "/livibylm/colecao/velvet" -> "/colecao/velvet" */
 export const semBase = (caminho: string) => (caminho.startsWith(BASE) ? '/' + caminho.slice(BASE.length) : caminho)
+
+/*
+  Servidor da loja (Worker na Cloudflare). Vazio quando o site é publicado
+  pelo próprio Worker; no GitHub Pages vem de VITE_API (o endereço do Worker),
+  e o site busca lá as peças e as fotos enviadas pelo painel.
+*/
+export const API = (import.meta.env.VITE_API ?? '').replace(/\/$/, '')
+
+/** endereço de uma foto do catálogo: as do painel (/fotos/...) moram no servidor da loja */
+export const enderecoFoto = (caminho: string) => (caminho.startsWith('/fotos/') ? API + caminho : comBase(caminho))

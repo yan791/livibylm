@@ -38,9 +38,12 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      # o site fica numa subpasta com o nome do repositório (/livibylm/)
+      # o site fica numa subpasta com o nome do repositório (/livibylm/) e busca
+      # as peças no servidor da loja (Worker na Cloudflare, onde mora o painel)
       - name: Gerar o site
         run: npm run build -- --base=/${{ github.event.repository.name }}/
+        env:
+          VITE_API: ${{ vars.LIVI_API || 'https://livi.yanyago2529.workers.dev' }}
 
       # o GitHub Pages não conhece as rotas do site (/colecao/...): o 404 vira o
       # próprio site, que lê o endereço e abre a página certa

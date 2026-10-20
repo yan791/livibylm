@@ -3,7 +3,13 @@
   Se a sessão acabar no meio do uso, avisa o App, que volta para a tela de entrar.
 */
 
-export type Admin = { id: number; email: string; nome: string }
+export type Admin = { id: number; email: string; nome: string; site: string }
+
+/** endereço do site público (GitHub Pages); vazio = o próprio servidor do painel */
+export let enderecoSite = ''
+export const definirSite = (s: string) => {
+  enderecoSite = s.replace(/\/$/, '')
+}
 
 export type CorPeca = { id: string; nome: string; hex: string }
 

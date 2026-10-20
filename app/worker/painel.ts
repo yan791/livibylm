@@ -156,7 +156,7 @@ painel.post('/convite/:token', async (c) => {
 
 painel.use('*', exigirAdmin)
 
-painel.get('/eu', (c) => c.json(c.get('admin')))
+painel.get('/eu', (c) => c.json({ ...c.get('admin'), site: c.env.SITE_PUBLICO ?? '' }))
 
 /* ---------- coleções ---------- */
 

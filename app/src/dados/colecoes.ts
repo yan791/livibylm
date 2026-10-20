@@ -1,12 +1,14 @@
 /*
   COLEÇÕES E PEÇAS DA LIVI
-  Agora moram no banco da loja e são editadas pelo painel (/painel). O
-  servidor já manda tudo dentro da página (<script id="livi-catalogo">), então
-  o site abre com as peças prontas, sem esperar outra requisição.
+  Agora moram no banco da loja e são editadas pelo painel (/painel).
+  - Publicado pelo Worker: o catálogo já vem dentro da página (<script id="livi-catalogo">).
+  - Publicado no GitHub Pages: a página é fixa, então o site busca o catálogo
+    no servidor da loja ao abrir (index.html já começa esse download cedo).
+  Este módulo espera o catálogo (await no topo) antes de o resto do site rodar.
   As peças iniciais (nomes e preços fictícios) estão em migrations/0002_pecas_iniciais.sql.
 */
 
-import { comBase } from '../lib/base'
+import { API, enderecoFoto } from '../lib/base'
 
 export type Cor = { nome: string; hex: string }
 
@@ -47,22 +49,34 @@ export type Colecao = {
   pecas: Peca[]
 }
 
-/** o catálogo que veio dentro da página; [] se não veio (o main.tsx avisa a visitante) */
-function lerCatalogo(): Colecao[] {
+async function buscar(): Promise<unknown> {
+  const embutido = document.getElementById('livi-catalogo')?.textContent
+  if (embutido) {
+    try {
+      return JSON.parse(embutido)
+    } catch {
+      /* segue para a busca no servidor */
+    }
+  }
   try {
-    const dados = JSON.parse(document.getElementById('livi-catalogo')?.textContent ?? 'null') as Colecao[] | null
-    if (!Array.isArray(dados)) return []
-    return dados.map((c) => ({
-      ...c,
-      capa: comBase(c.capa),
-      pecas: c.pecas.map((p) => ({ ...p, fotos: p.fotos.map(comBase) })),
-    }))
+    const r = await fetch(`${API}/api/catalogo`)
+    return r.ok ? await r.json() : null
   } catch {
-    return []
+    return null
   }
 }
 
-export const colecoes: Colecao[] = lerCatalogo()
+/** o catálogo pronto para o site; [] se não chegou (o main.tsx avisa a visitante) */
+function preparar(dados: unknown): Colecao[] {
+  if (!Array.isArray(dados)) return []
+  return (dados as Colecao[]).map((c) => ({
+    ...c,
+    capa: c.capa ? enderecoFoto(c.capa) : '',
+    pecas: c.pecas.map((p) => ({ ...p, fotos: p.fotos.map(enderecoFoto) })),
+  }))
+}
+
+export const colecoes: Colecao[] = preparar(await buscar())
 
 export function acharColecao(slug?: string) {
   return colecoes.find((c) => c.slug === slug)

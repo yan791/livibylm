@@ -31,5 +31,8 @@
       "bucket_name": "livi-fotos"
     }
   ],
+  // site público (GitHub Pages): quem abre o endereço do Worker fora do /painel vai para lá.
+  // Vazio = o próprio Worker publica o site (ex.: quando houver domínio próprio aqui)
+  "vars": { "SITE_PUBLICO": "https://yan791.github.io/livibylm" },
   "observability": { "enabled": true }
 }

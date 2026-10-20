@@ -17,6 +17,8 @@ export async function servirFoto(bucket: R2Bucket, chave: string, pedido: Reques
   foto.writeHttpMetadata(headers)
   headers.set('ETag', foto.httpEtag)
   headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+  // o site do GitHub Pages também mostra essas fotos
+  headers.set('Access-Control-Allow-Origin', '*')
   // o navegador já tem essa foto (If-None-Match)
   if (!('body' in foto)) return new Response(null, { status: 304, headers })
   return new Response(foto.body, { headers })

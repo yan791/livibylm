@@ -4,7 +4,7 @@
   abrir ("antes"), para o servidor aplicar só a diferença.
 */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { api, mensagemDe, type Colecao, type CorPeca, type Peca } from '../api'
+import { api, enderecoSite, mensagemDe, type Colecao, type CorPeca, type Peca } from '../api'
 import { descartarFotos, enviarFoto } from '../imagem'
 import { aoClicar, ir, segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, confirmar, FalhaCarga, Icone, Interruptor, useCarregar } from '../ui'
@@ -257,7 +257,7 @@ function Formulario({
         </a>
         <h1>{id === 'nova' ? 'Nova peça' : r.nome || 'Peça sem nome'}</h1>
         {peca && colecao && peca.visivel && colecao.visivel && (
-          <a className="link-acao" href={`/colecao/${colecao.slug}/${peca.slug}`} target="_blank" rel="noreferrer">
+          <a className="link-acao" href={`${enderecoSite}/colecao/${colecao.slug}/${peca.slug}`} target="_blank" rel="noreferrer">
             {Icone.externo} Ver no site
           </a>
         )}
