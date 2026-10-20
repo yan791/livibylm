@@ -65,6 +65,17 @@ export type Peca = {
 
 export type Pessoa = { id: number; email: string; nome: string; ativo: boolean; ultimoAcesso: string | null; voce: boolean }
 
+export type Ajustes = {
+  vendasOnline: boolean
+  taxaMaceioCentavos: number
+  /** 1 = sem parcelamento */
+  parcelasSemJuros: number
+  /** 55 + DDD + número, só dígitos */
+  whatsapp: string
+  /** o pagamento pelo site já existe (só então as vendas pelo site podem ligar) */
+  pagamentoPronto: boolean
+}
+
 export class ErroApi extends Error {
   status: number
   constructor(status: number, mensagem: string) {
@@ -103,3 +114,18 @@ export const mensagemDe = (e: unknown) => (e instanceof Error ? e.message : 'Nã
 
 export const reais = (centavos: number) =>
   (centavos / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: centavos % 100 ? 2 : 0 })
+
+/** "1.234,56", "689,9" ou "689.90" em centavos; null se não for um valor */
+export function centavosDe(texto: string): number | null {
+  const t = texto.replace(/[^\d,.]/g, '')
+  if (!t) return null
+  let normal = t
+  if (t.includes(',')) normal = t.replace(/\./g, '').replace(',', '.')
+  else if (/\.\d{3}$/.test(t)) normal = t.replace(/\./g, '')
+  const n = Number(normal)
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null
+}
+
+/** valor para o campo de preço, sem o "R$" (ele fica fixo no campo) */
+export const textoDe = (centavos: number) =>
+  (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })

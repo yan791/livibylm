@@ -1,6 +1,6 @@
 /*
   Worker da Livi: publica o site, a API do painel e as fotos.
-    /api/catalogo     coleções e peças visíveis (o site usa, inclusive o do GitHub Pages)
+    /api/loja         coleções e peças visíveis e os ajustes públicos (o site usa, inclusive o do GitHub Pages)
     /api/painel/...   painel da loja (login obrigatório, menos entrar e convite)
     /fotos/...        fotos enviadas pelo painel (R2)
     /painel/...       o painel em si
@@ -9,7 +9,7 @@
 */
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
-import { lerCatalogo } from './catalogo'
+import { lerLoja } from './catalogo'
 import { painel } from './painel'
 import { servirFoto } from './fotos'
 import type { Ambiente } from './tipos'
@@ -28,9 +28,14 @@ app.use('/api/*', async (c, next) => {
 })
 
 // dados públicos: qualquer site pode ler (o do GitHub Pages lê daqui)
+app.get('/api/loja', async (c) => {
+  c.header('Access-Control-Allow-Origin', '*')
+  return c.json(await lerLoja(c.env.DB))
+})
+// só o catálogo, para páginas publicadas antes dos ajustes (pode sair depois que o GitHub Pages atualizar)
 app.get('/api/catalogo', async (c) => {
   c.header('Access-Control-Allow-Origin', '*')
-  return c.json(await lerCatalogo(c.env.DB))
+  return c.json((await lerLoja(c.env.DB)).colecoes)
 })
 app.route('/api/painel', painel)
 app.all('/api/*', (c) => c.json({ erro: 'Endereço não encontrado.' }, 404))
@@ -51,7 +56,7 @@ app.get('/painel', paginaPainel)
 app.get('/painel/*', paginaPainel)
 
 /*
-  Páginas do site: o catálogo vai dentro do HTML (<script id="livi-catalogo">),
+  Páginas do site: o catálogo e os ajustes vão dentro do HTML (<script id="livi-loja">),
   assim o site já abre com as peças, sem esperar outra requisição.
 */
 app.get('*', async (c) => {
@@ -64,7 +69,7 @@ app.get('*', async (c) => {
   if (!r.headers.get('content-type')?.includes('text/html')) return r
   let dados: string
   try {
-    dados = JSON.stringify(await lerCatalogo(c.env.DB))
+    dados = JSON.stringify(await lerLoja(c.env.DB))
   } catch (e) {
     // sem o banco, o site abre mesmo assim e avisa a visitante para tentar de novo
     console.error('catálogo indisponível', e)
@@ -74,7 +79,7 @@ app.get('*', async (c) => {
   const pagina = new HTMLRewriter()
     .on('head', {
       element(el) {
-        el.append(`<script id="livi-catalogo" type="application/json">${json}</script>`, { html: true })
+        el.append(`<script id="livi-loja" type="application/json">${json}</script>`, { html: true })
       },
     })
     .transform(r)

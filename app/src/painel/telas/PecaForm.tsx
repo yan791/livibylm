@@ -4,7 +4,7 @@
   abrir ("antes"), para o servidor aplicar só a diferença.
 */
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { api, enderecoSite, mensagemDe, type Colecao, type CorPeca, type Peca } from '../api'
+import { api, centavosDe, enderecoSite, mensagemDe, textoDe, type Colecao, type CorPeca, type Peca } from '../api'
 import { descartarFotos, enviarFoto, pequena } from '../imagem'
 import { aoClicar, ir, segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, confirmar, FalhaCarga, Icone, Interruptor, useCarregar } from '../ui'
@@ -48,20 +48,6 @@ type Rascunho = {
 }
 
 const chave = (cor: string, tamanho: string) => `${cor}|${tamanho}`
-
-/** "1.234,56", "689,9" ou "689.90" em centavos; null se não for um valor */
-function centavosDe(texto: string): number | null {
-  const t = texto.replace(/[^\d,.]/g, '')
-  if (!t) return null
-  let normal = t
-  if (t.includes(',')) normal = t.replace(/\./g, '').replace(',', '.')
-  else if (/\.\d{3}$/.test(t)) normal = t.replace(/\./g, '')
-  const n = Number(normal)
-  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null
-}
-
-const textoDe = (centavos: number) =>
-  (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
 
 const novoIdCor = (usados: CorPeca[]) => {
   for (;;) {

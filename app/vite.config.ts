@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 const API_LOCAL = 'http://127.0.0.1:8787'
 
 /*
-  No desenvolvimento, o Vite faz o papel do Worker: põe o catálogo dentro da
+  No desenvolvimento, o Vite faz o papel do Worker: põe o catálogo e os ajustes dentro da
   página inicial (como o Worker faz no site publicado) e manda qualquer
   endereço /painel/... para a página do painel.
 */
@@ -25,9 +25,9 @@ function lojaNoDev(): Plugin {
     async transformIndexHtml(html, ctx) {
       if (!ctx.filename.endsWith('index.html')) return html
       try {
-        const dados = await (await fetch(`${API_LOCAL}/api/catalogo`)).text()
+        const dados = await (await fetch(`${API_LOCAL}/api/loja`)).text()
         const json = dados.replace(/</g, '\\u003c')
-        return html.replace('</head>', `<script id="livi-catalogo" type="application/json">${json}</script></head>`)
+        return html.replace('</head>', `<script id="livi-loja" type="application/json">${json}</script></head>`)
       } catch {
         avisarSemApi()
         return html
@@ -44,7 +44,7 @@ function avisarSemApi() {
   Versão do GitHub Pages:
   - /painel (e o que vier depois) leva ao painel, que mora no servidor da
     loja. Roda antes de qualquer outra coisa da página, sem carregar o site.
-  - começa a baixar o catálogo junto com a página, antes do JavaScript.
+  - começa a baixar o catálogo e os ajustes junto com a página, antes do JavaScript.
 */
 function paginaDoGithub(api: string): Plugin {
   let base = '/'
@@ -61,7 +61,7 @@ function paginaDoGithub(api: string): Plugin {
         `location.replace(${JSON.stringify(api)}+'/'+p.slice(b.length)+location.search+location.hash)})()</script>`
       return html
         .replace('<head>', `<head>\n    ${painel}`)
-        .replace('</head>', `<link rel="preload" href="${api}/api/catalogo" as="fetch" crossorigin="anonymous" /></head>`)
+        .replace('</head>', `<link rel="preload" href="${api}/api/loja" as="fetch" crossorigin="anonymous" /></head>`)
     },
   }
 }

@@ -32,11 +32,14 @@ export function Interruptor({
   aoMudar,
   rotulo,
   dica,
+  bloqueado,
 }: {
   ligado: boolean
   aoMudar: (v: boolean) => void
   rotulo: string
   dica?: string
+  /** aparece, mas ainda não dá para mudar */
+  bloqueado?: boolean
 }) {
   return (
     <label className="interruptor">
@@ -44,7 +47,7 @@ export function Interruptor({
         <span>{rotulo}</span>
         {dica && <small>{dica}</small>}
       </span>
-      <input type="checkbox" role="switch" checked={ligado} onChange={(e) => aoMudar(e.target.checked)} />
+      <input type="checkbox" role="switch" checked={ligado} disabled={bloqueado} onChange={(e) => aoMudar(e.target.checked)} />
       <span className="interruptor-trilho" aria-hidden="true" />
     </label>
   )
@@ -232,6 +235,13 @@ export const Icone = {
     <>
       <circle cx="11" cy="11" r="6.5" />
       <path d="m20 20-4.2-4.2" />
+    </>,
+  ),
+  ajustes: svg(
+    <>
+      <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+      <circle cx="15" cy="7" r="2" />
+      <circle cx="9" cy="17" r="2" />
     </>,
   ),
 }

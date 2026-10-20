@@ -243,6 +243,11 @@ select {
   line-height: 1.45;
   color: var(--suave);
 }
+.campo-dica a {
+  color: var(--vinho);
+  font-weight: 500;
+  text-underline-offset: 3px;
+}
 
 .campos-lado {
   display: grid;
@@ -335,6 +340,12 @@ select {
 .interruptor input:focus-visible + .interruptor-trilho {
   outline: 2px solid var(--vinho);
   outline-offset: 2px;
+}
+.interruptor:has(input:disabled) {
+  cursor: not-allowed;
+}
+.interruptor input:disabled + .interruptor-trilho {
+  opacity: 0.45;
 }
 
 /* senha com "mostrar" */
@@ -655,7 +666,7 @@ select {
   bottom: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   height: calc(var(--abas) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: rgba(251, 248, 245, 0.94);

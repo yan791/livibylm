@@ -1,9 +1,10 @@
 /*
   COLEÇÕES E PEÇAS DA LIVI
-  Agora moram no banco da loja e são editadas pelo painel (/painel).
-  - Publicado pelo Worker: o catálogo já vem dentro da página (<script id="livi-catalogo">).
-  - Publicado no GitHub Pages: a página é fixa, então o site busca o catálogo
-    no servidor da loja ao abrir (index.html já começa esse download cedo).
+  Agora moram no banco da loja e são editadas pelo painel (/painel), junto
+  com os ajustes da loja (WhatsApp e parcelamento), que chegam no mesmo pacote.
+  - Publicado pelo Worker: tudo já vem dentro da página (<script id="livi-loja">).
+  - Publicado no GitHub Pages: a página é fixa, então o site busca no
+    servidor da loja ao abrir (index.html já começa esse download cedo).
   Este módulo espera o catálogo (await no topo) antes de o resto do site rodar.
   As peças iniciais (nomes e preços fictícios) estão em migrations/0002_pecas_iniciais.sql.
 */
@@ -51,8 +52,16 @@ export type Colecao = {
   pecas: Peca[]
 }
 
+/** ajustes da loja feitos no painel; vazios se o servidor não respondeu (o site usa os números de dados/site.ts) */
+export type Ajustes = {
+  /** 55 + DDD + número, só dígitos */
+  whatsapp: string
+  /** até quantas vezes sem juros (1 = sem parcelamento) */
+  parcelas: number
+}
+
 async function buscar(): Promise<unknown> {
-  const embutido = document.getElementById('livi-catalogo')?.textContent
+  const embutido = document.getElementById('livi-loja')?.textContent
   if (embutido) {
     try {
       return JSON.parse(embutido)
@@ -68,7 +77,7 @@ async function doServidor(tentativa = 1): Promise<unknown> {
   const parar = new AbortController()
   const tempo = setTimeout(() => parar.abort(), 8000)
   try {
-    const r = await fetch(`${API}/api/catalogo`, { signal: parar.signal })
+    const r = await fetch(`${API}/api/loja`, { signal: parar.signal })
     return r.ok ? await r.json() : null
   } catch {
     // uma falha rápida de rede ganha mais uma chance; um tempo esgotado, não
@@ -88,7 +97,18 @@ function preparar(dados: unknown): Colecao[] {
   }))
 }
 
-export const colecoes: Colecao[] = preparar(await buscar())
+function prepararAjustes(dados: unknown): Ajustes {
+  const a = (dados ?? {}) as Partial<Ajustes>
+  return {
+    whatsapp: typeof a.whatsapp === 'string' && /^\d{12,13}$/.test(a.whatsapp) ? a.whatsapp : '',
+    parcelas: typeof a.parcelas === 'number' && a.parcelas >= 1 ? Math.floor(a.parcelas) : 1,
+  }
+}
+
+const loja = ((await buscar()) ?? {}) as { colecoes?: unknown; ajustes?: unknown }
+
+export const colecoes: Colecao[] = preparar(loja.colecoes)
+export const ajustes: Ajustes = prepararAjustes(loja.ajustes)
 
 export function acharColecao(slug?: string) {
   return colecoes.find((c) => c.slug === slug)
@@ -120,6 +140,9 @@ export const pecaEsgotada = (peca: Peca) => !peca.sobEncomenda && peca.cores.eve
 
 /** "Único" aparece como "Tamanho único" */
 export const rotuloTamanho = (t: string) => (/^[uú]nico$/i.test(t.trim()) ? 'Tamanho único' : t)
+
+/** "em até 3x sem juros" embaixo do preço; vazio quando não há parcelamento */
+export const textoParcelas = () => (ajustes.parcelas > 1 ? `em até ${ajustes.parcelas}x sem juros` : '')
 
 /** prazo da peça sob encomenda, como aparece no site */
 export const textoEncomenda = (peca: Peca) =>

@@ -4,15 +4,18 @@
 */
 
 import { comBase } from '../lib/base'
-import { precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
+import { ajustes, precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
 
 export const site = {
   marca: 'Livi',
   assinatura: 'by LM',
   instagram: 'https://www.instagram.com/livibylm/',
   instagramArroba: '@livibylm',
-  /** número do WhatsApp da loja no formato internacional, só dígitos (55 + DDD + número) */
-  whatsapp: '5582998115324',
+  /**
+   * número do WhatsApp da loja (55 + DDD + número, só dígitos). Vem do painel
+   * (Ajustes); o daqui só vale se o servidor da loja não responder.
+   */
+  whatsapp: ajustes.whatsapp || '5582998115324',
   /** arquivo do logo. Enquanto for null, aparece um espaço reservado. */
   logo: null as string | null,
 

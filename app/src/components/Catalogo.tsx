@@ -17,6 +17,7 @@ import {
   precoBR,
   rotuloTamanho,
   textoEncomenda,
+  textoParcelas,
   type Colecao,
   type Peca,
 } from '../dados/colecoes'
@@ -328,6 +329,7 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
           {precoBR(peca.preco)}
           {esgotada && <span className="cat-selo">Esgotado</span>}
         </p>
+        {!esgotada && textoParcelas() && <p className="cat-parcelas">{textoParcelas()}</p>}
         {peca.sobEncomenda && <p className="cat-encomenda">{textoEncomenda(peca)}</p>}
         <p className="cat-desc">{peca.descricao}</p>
 

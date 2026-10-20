@@ -4296,6 +4296,13 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   text-transform: uppercase;
 }
 
+.cat-parcelas {
+  margin-top: 4px;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  opacity: 0.72;
+}
+
 .cat-encomenda {
   margin-top: 6px;
   font-family: var(--serif);

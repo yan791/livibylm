@@ -24,6 +24,7 @@ import {
 } from './seguranca'
 import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
 import { limparCacheCatalogo } from './catalogo'
+import { lerAjustes, numeroWhatsApp, PAGAMENTO_PRONTO, salvarAjustes } from './ajustes'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
@@ -595,4 +596,23 @@ painel.delete('/pessoas/:id', async (c) => {
   if (!ativos?.n) throw falha(400, 'O painel precisa de pelo menos uma pessoa com acesso.')
   await db.prepare('DELETE FROM admins WHERE id = ?1').bind(id).run()
   return c.json({ ok: true })
+})
+
+/* ---------- ajustes da loja ---------- */
+
+painel.get('/ajustes', async (c) => c.json({ ...(await lerAjustes(c.env.DB)), pagamentoPronto: PAGAMENTO_PRONTO }))
+
+painel.put('/ajustes', async (c) => {
+  const corpo = await lerCorpo(c)
+  const whatsapp = numeroWhatsApp(texto(corpo.whatsapp, 'o WhatsApp', 30, true))
+  if (!whatsapp) throw falha(400, 'Confira o WhatsApp: DDD e número, ex.: (82) 99811-5324.')
+  const ajustes = {
+    // sem o pagamento pronto, as vendas pelo site ficam desligadas
+    vendasOnline: PAGAMENTO_PRONTO && corpo.vendasOnline === true,
+    taxaMaceioCentavos: inteiro(corpo.taxaMaceioCentavos, 'Taxa de entrega', 0, 100_000),
+    parcelasSemJuros: inteiro(corpo.parcelasSemJuros, 'Parcelas', 1, 12),
+    whatsapp,
+  }
+  await salvarAjustes(c.env.DB, ajustes)
+  return c.json({ ...ajustes, pagamentoPronto: PAGAMENTO_PRONTO })
 })

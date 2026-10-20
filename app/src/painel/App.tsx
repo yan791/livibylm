@@ -11,11 +11,13 @@ import { PecaForm } from './telas/PecaForm'
 import { Colecoes } from './telas/Colecoes'
 import { ColecaoForm } from './telas/ColecaoForm'
 import { Pessoas } from './telas/Pessoas'
+import { Ajustes } from './telas/Ajustes'
 
 const NAV = [
   { caminho: '/painel', rotulo: 'Peças', icone: Icone.pecas, telas: ['pecas', 'peca'] },
   { caminho: '/painel/colecoes', rotulo: 'Coleções', icone: Icone.colecoes, telas: ['colecoes', 'colecao'] },
   { caminho: '/painel/pessoas', rotulo: 'Acesso', icone: Icone.pessoas, telas: ['pessoas'] },
+  { caminho: '/painel/ajustes', rotulo: 'Ajustes', icone: Icone.ajustes, telas: ['ajustes'] },
 ]
 
 export function App() {
@@ -102,6 +104,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
         {tela.nome === 'colecoes' && <Colecoes />}
         {tela.nome === 'colecao' && <ColecaoForm key={String(tela.id)} id={tela.id} />}
         {tela.nome === 'pessoas' && <Pessoas />}
+        {tela.nome === 'ajustes' && <Ajustes />}
       </main>
 
       <nav className="abas" aria-label="Seções do painel">

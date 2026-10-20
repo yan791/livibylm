@@ -1,24 +1,26 @@
 /*
-  O catálogo que o site mostra: só coleções e peças visíveis, no formato que o
-  site já usava em src/dados/colecoes.ts. O estoque sai limitado a 10 por
+  O que o site recebe ao abrir: o catálogo (só coleções e peças visíveis, no
+  formato que o site já usava em src/dados/colecoes.ts) e os ajustes públicos
+  da loja (WhatsApp e parcelamento). O estoque sai limitado a 10 por
   combinação (o site só precisa saber se tem, se é a última e até quanto a
   sacola deixa levar), nunca a quantidade real.
 
-  Cache: cada servidor da Cloudflare guarda o catálogo por alguns segundos, e
+  Cache: cada servidor da Cloudflare guarda isso por alguns segundos, e
   muitas visitas seguidas viram uma consulta só ao banco. Qualquer alteração
   feita pelo painel limpa o cache daquele servidor; nos outros, a mudança
   aparece em até CACHE_MS.
 */
 import type { CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
+import { ajustesPublicos, consultaAjustes, deLinha } from './ajustes'
 
 /** o máximo que o site enxerga de uma combinação (e que a sacola deixa levar) */
 export const LIMITE_VISIVEL = 10
 const CACHE_MS = 10_000
 
-type Catalogo = Awaited<ReturnType<typeof consultar>>
-let guardado: { dados: Catalogo; ate: number } | null = null
+type Loja = Awaited<ReturnType<typeof consultar>>
+let guardado: { dados: Loja; ate: number } | null = null
 
-export async function lerCatalogo(db: D1Database) {
+export async function lerLoja(db: D1Database) {
   if (guardado && guardado.ate > Date.now()) return guardado.dados
   const dados = await consultar(db)
   guardado = { dados, ate: Date.now() + CACHE_MS }
@@ -30,16 +32,24 @@ export const limparCacheCatalogo = () => {
 }
 
 async function consultar(db: D1Database) {
-  const [colecoes, pecas, estoque] = await db.batch([
+  const [colecoes, pecas, estoque, ajustes] = await db.batch([
     db.prepare('SELECT * FROM colecoes WHERE visivel = 1 ORDER BY ordem, id'),
     db.prepare('SELECT * FROM pecas WHERE visivel = 1 ORDER BY ordem, id'),
     db.prepare('SELECT e.* FROM estoque e JOIN pecas p ON p.id = e.peca_id WHERE p.visivel = 1'),
+    consultaAjustes(db),
   ])
   const linhasEstoque = estoque.results as LinhaEstoque[]
 
-  return (colecoes.results as LinhaColecao[])
+  return {
+    colecoes: montarColecoes(colecoes.results as LinhaColecao[], pecas.results as LinhaPeca[], linhasEstoque),
+    ajustes: ajustesPublicos(deLinha((ajustes.results as { valor: string }[])[0]?.valor)),
+  }
+}
+
+function montarColecoes(colecoes: LinhaColecao[], pecas: LinhaPeca[], linhasEstoque: LinhaEstoque[]) {
+  return colecoes
     .map((c) => {
-      const daColecao = (pecas.results as LinhaPeca[]).filter((p) => p.colecao_id === c.id).map((p) => pecaPublica(p, linhasEstoque))
+      const daColecao = pecas.filter((p) => p.colecao_id === c.id).map((p) => pecaPublica(p, linhasEstoque))
       return {
         slug: c.slug,
         nome: c.nome,
