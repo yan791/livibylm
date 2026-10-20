@@ -94,3 +94,9 @@ export function fecharCatalogo() {
   if (marca.deDentro) history.go(-marca.passos)
   else navegar('/', { substituir: true, semTransicao: true })
 }
+
+/** link antigo (a peça mudou de coleção ou saiu do site, a coleção saiu): troca pelo endereço certo, ou pela página inicial */
+export function corrigirEndereco(certo: EstadoCatalogo | null) {
+  if (certo) ir(certo, marcaAtual(), true)
+  else navegar('/', { substituir: true, semTransicao: true })
+}

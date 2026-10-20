@@ -9,11 +9,12 @@ import { avisar, Campo, Carregando, FalhaCarga, Interruptor, useCarregar } from 
 
 type Rascunho = { vendasOnline: boolean; taxa: string; parcelas: number; whatsapp: string }
 
-/** "(82) 99811-5324" ou "82998115324" vira 5582998115324; null se não parecer um celular com DDD (o servidor confere de novo) */
+/** "(82) 99811-5324" ou "82998115324" vira 5582998115324; null se não parecer um número do Brasil com DDD (mesma regra do servidor, worker/ajustes.ts) */
 function numeroWhatsApp(texto: string) {
-  let n = texto.replace(/\D/g, '')
+  if (/^\s*(\+|00)(?!\s*55)/.test(texto)) return null
+  let n = texto.replace(/\D/g, '').replace(/^0+/, '')
   if (n.length === 10 || n.length === 11) n = '55' + n
-  return /^55[1-9]\d{9,10}$/.test(n) ? n : null
+  return /^55[1-9]{2}(9\d{8}|[2-8]\d{7})$/.test(n) ? n : null
 }
 
 /** 5582998115324 vira "(82) 99811-5324" */

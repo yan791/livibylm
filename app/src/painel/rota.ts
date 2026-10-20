@@ -51,9 +51,17 @@ export function segurarSaida(f: (() => boolean) | null) {
   segurando = f
 }
 
+/** nada para salvar, ou a pessoa confirmou que pode perder (ex.: antes de sair do painel) */
+export const podeSair = () => !segurando || segurando()
+
+// fechar ou recarregar a aba com algo não salvo: o navegador pergunta antes
+window.addEventListener('beforeunload', (e) => {
+  if (segurando) e.preventDefault()
+})
+
 export function ir(caminho: string, o: { substituir?: boolean; forcar?: boolean } = {}) {
   if (caminho === atual()) return
-  if (!o.forcar && segurando && !segurando()) return
+  if (!o.forcar && !podeSair()) return
   segurando = null
   history[o.substituir ? 'replaceState' : 'pushState'](null, '', caminho)
   window.scrollTo(0, 0)

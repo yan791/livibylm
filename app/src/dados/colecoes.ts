@@ -126,11 +126,12 @@ export const precoBR = (v: number) =>
 /** o máximo de unidades iguais (mesma peça, cor e tamanho) num pedido */
 export const LIMITE_POR_ITEM = 10
 
-/** quantas unidades dessa cor e tamanho a cliente pode levar (0 = esgotado) */
+/**
+  quantas unidades dessa cor e tamanho a cliente pode levar (0 = esgotado). Uma
+  cor ou um tamanho que saiu da peça (ex.: item antigo na sacola) também dá 0
+*/
 export function disponivel(peca: Peca, cor: string, tamanho: string) {
-  const n = peca.disponivel?.[`${cor}|${tamanho}`]
-  if (typeof n === 'number') return Math.min(LIMITE_POR_ITEM, n)
-  return peca.esgotados?.includes(`${cor}|${tamanho}`) ? 0 : LIMITE_POR_ITEM
+  return Math.min(LIMITE_POR_ITEM, peca.disponivel?.[`${cor}|${tamanho}`] ?? 0)
 }
 
 export const corEsgotada = (peca: Peca, cor: string) => !peca.sobEncomenda && peca.tamanhos.every((t) => disponivel(peca, cor, t) <= 0)

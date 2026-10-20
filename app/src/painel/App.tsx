@@ -3,7 +3,7 @@
 */
 import { useEffect, useState } from 'react'
 import { api, definirSite, enderecoSite, EVENTO_SAIU, type Admin } from './api'
-import { aoClicar, ir, useTela, type Tela } from './rota'
+import { aoClicar, ir, podeSair, useTela, type Tela } from './rota'
 import { Avisos, avisar, Carregando, Confirmacao, Icone } from './ui'
 import { Convite, Entrar } from './acesso'
 import { Pecas } from './telas/Pecas'
@@ -68,6 +68,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
   }, [tela.nome])
 
   const sair = async () => {
+    if (!podeSair()) return
     await api('POST', '/sair').catch(() => {})
     aoSair()
     ir('/painel/entrar', { substituir: true, forcar: true })

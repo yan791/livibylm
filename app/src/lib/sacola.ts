@@ -6,9 +6,9 @@
   para ver depois ficam na lista de desejos, em lib/desejos.)
   Sacolas salvas no formato antigo (uma peça, sem quantidade) são convertidas.
 */
-import { colecoes, disponivel, LIMITE_POR_ITEM, precoBR, rotuloTamanho } from '../dados/colecoes'
+import { disponivel, LIMITE_POR_ITEM, precoBR, rotuloTamanho } from '../dados/colecoes'
 import { linkWhatsApp } from '../dados/site'
-import { abrirGaveta, criarLista, detalhar as detalharBase } from './lista'
+import { abrirGaveta, acharItem, criarLista, detalhar as detalharBase } from './lista'
 
 /** tamanho null: veio da sacola antiga ou dos desejos sem tamanho escolhido */
 export type ItemSacola = { colecao: string; peca: string; cor: string; tamanho: string | null; qtd: number }
@@ -29,7 +29,7 @@ const sacola = criarLista<ItemSacola>('livi-sacola-v2', {
     }),
 })
 
-const pecaDe = (i: Variante) => colecoes.find((c) => c.slug === i.colecao)?.pecas.find((p) => p.slug === i.peca)
+const pecaDe = (i: Variante) => acharItem(i)?.peca
 
 /** até quantas unidades desse item a cliente pode levar (0 = esgotou; sem tamanho, ainda não dá para saber) */
 export function limiteDe(i: Variante) {

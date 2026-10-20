@@ -4,7 +4,7 @@
 */
 
 import { comBase } from '../lib/base'
-import { ajustes, precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
+import { ajustes, colecoes, precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
 
 export const site = {
   marca: 'Livi',
@@ -24,8 +24,8 @@ export const site = {
     marca: 'LIVI',
     esquerda: 'Coleção',
     direita: 'Velvet',
-    /** coleção atual: o menu "Coleções" abre o catálogo por ela */
-    colecao: 'velvet',
+    /** coleção atual: o menu "Coleções" abre o catálogo por ela (se ela sair do site pelo painel, abre a primeira) */
+    colecao: colecoes.some((c) => c.slug === 'velvet') ? 'velvet' : (colecoes[0]?.slug ?? ''),
     /** foto da abertura: recorte (sem fundo) e a mesma foto com fundo */
     recorte: comBase('/img/hero/modelo2-recorte.webp'),
     foto: comBase('/img/hero/modelo2-foto.webp'),

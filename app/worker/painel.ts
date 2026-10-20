@@ -65,8 +65,15 @@ function inteiro(v: unknown, campo: string, min: number, max: number) {
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
-const FOTO = /^\/(fotos\/p\/[0-9a-f-]{36}\.(webp|jpg|png|avif)|img\/[\w\-/.]+\.(webp|jpg|jpeg|png|avif))$/
+const FOTO = /^\/(fotos\/p\/[0-9a-f-]{36}\.(webp|jpg|png|avif)|img\/(?!.*\.\.)[\w\-/.]+\.(webp|jpg|jpeg|png|avif))$/
 const EMAIL = /^[^\s@'"]+@[^\s@'"]+\.[^\s@'"]+$/
+
+/** o número no endereço (/pecas/12); qualquer outra coisa é "não encontrada" */
+function idDe(c: Context<Ambiente>, oque: 'Peça' | 'Coleção' | 'Pessoa') {
+  const id = Number(c.req.param('id'))
+  if (!Number.isInteger(id) || id < 1) throw falha(404, `${oque} não encontrada.`)
+  return id
+}
 
 function cor(v: unknown, campo: string) {
   if (typeof v !== 'string' || !HEX.test(v)) throw falha(400, `${campo}: escolha uma cor válida.`)
@@ -224,7 +231,7 @@ painel.post('/colecoes', async (c) => {
 
 painel.put('/colecoes/:id', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Coleção')
   const antes = await db.prepare('SELECT * FROM colecoes WHERE id = ?1').bind(id).first<LinhaColecao>()
   if (!antes) throw falha(404, 'Coleção não encontrada.')
   const v = lerColecao(await lerCorpo(c))
@@ -241,7 +248,7 @@ painel.put('/colecoes/:id', async (c) => {
 
 painel.delete('/colecoes/:id', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Coleção')
   const linha = await db
     .prepare('SELECT capa, (SELECT COUNT(*) FROM pecas WHERE colecao_id = ?1) AS pecas FROM colecoes WHERE id = ?1')
     .bind(id)
@@ -296,11 +303,12 @@ function lerPeca(corpo: Corpo) {
       }
     }),
   )
+  if (corpo.precoCentavos === 0) throw falha(400, 'O preço não pode ser zero.')
 
   return {
     colecaoId: inteiro(corpo.colecaoId, 'Coleção', 1, 1e9),
     nome: texto(corpo.nome, 'o nome da peça', 120, true),
-    precoCentavos: inteiro(corpo.precoCentavos, 'Preço', 0, 10_000_000),
+    precoCentavos: inteiro(corpo.precoCentavos, 'Preço', 1, 10_000_000),
     descricao: texto(corpo.descricao, 'A descrição', 1500),
     tecido: texto(corpo.tecido, 'O tecido', 120),
     cores,
@@ -369,7 +377,7 @@ painel.get('/pecas', async (c) => {
 })
 
 painel.get('/pecas/:id', async (c) => {
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Peça')
   const [peca, estoque] = await c.env.DB.batch([
     c.env.DB.prepare('SELECT * FROM pecas WHERE id = ?1').bind(id),
     c.env.DB.prepare('SELECT * FROM estoque WHERE peca_id = ?1').bind(id),
@@ -419,7 +427,7 @@ painel.post('/pecas', async (c) => {
 
 painel.put('/pecas/:id', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Peça')
   const antes = await db.prepare('SELECT * FROM pecas WHERE id = ?1').bind(id).first<LinhaPeca>()
   if (!antes) throw falha(404, 'Peça não encontrada.')
   const v = lerPeca(await lerCorpo(c))
@@ -489,7 +497,7 @@ painel.put('/pecas/:id', async (c) => {
 
 painel.delete('/pecas/:id', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Peça')
   const p = await db.prepare('SELECT fotos FROM pecas WHERE id = ?1').bind(id).first<{ fotos: string }>()
   if (!p) throw falha(404, 'Peça não encontrada.')
   await db.prepare('DELETE FROM pecas WHERE id = ?1').bind(id).run()
@@ -583,15 +591,16 @@ painel.post('/pessoas', async (c) => {
 /** link novo: para o primeiro acesso ou para trocar uma senha esquecida */
 painel.post('/pessoas/:id/link', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Pessoa')
   if (!(await db.prepare('SELECT 1 FROM admins WHERE id = ?1').bind(id).first())) throw falha(404, 'Pessoa não encontrada.')
   return c.json(await novoConvite(db, id, c.req.header('Origin')!))
 })
 
 painel.delete('/pessoas/:id', async (c) => {
   const db = c.env.DB
-  const id = Number(c.req.param('id'))
+  const id = idDe(c, 'Pessoa')
   if (id === c.get('admin').id) throw falha(400, 'Você não pode tirar o seu próprio acesso.')
+  if (!(await db.prepare('SELECT 1 FROM admins WHERE id = ?1').bind(id).first())) throw falha(404, 'Pessoa não encontrada.')
   const ativos = await db.prepare('SELECT COUNT(*) AS n FROM admins WHERE senha IS NOT NULL AND id != ?1').bind(id).first<{ n: number }>()
   if (!ativos?.n) throw falha(400, 'O painel precisa de pelo menos uma pessoa com acesso.')
   await db.prepare('DELETE FROM admins WHERE id = ?1').bind(id).run()

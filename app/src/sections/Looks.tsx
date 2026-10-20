@@ -15,6 +15,7 @@ import { mostrarCatalogo, useCatalogo } from '../lib/catalogo'
 import { movimentoReduzido, useCelular } from '../lib/midia'
 import { SetaDireita, SetaEsquerda } from '../components/icones'
 import { Ima } from '../components/Vivos'
+import { Espaco } from '../components/Espaco'
 import { Letreiro, type Sentido } from '../components/Letreiro'
 import { CircularGallery, type CircularGalleryHandle, type GalleryItem } from '../components/ui/circular-gallery'
 import { comBase, fotoPequena } from '../lib/base'
@@ -48,7 +49,17 @@ const itens: GalleryItem[] = colecoes.map((c) => ({
   aspect: c.proporcao,
   href: comBase(`/colecao/${c.slug}`),
   extra: <Convite c={c} />,
+  semFoto: <SemFoto c={c} />,
 }))
+
+/** coleção que ainda não tem nenhuma foto (nem capa, nem foto de peça): o cartão fica na cor dela */
+export function SemFoto({ c }: { c: Colecao }) {
+  return (
+    <span className={`cg-sem-foto tema-${c.tema}`} style={{ background: c.fundo }}>
+      <Espaco rotulo="Fotos em breve" />
+    </span>
+  )
+}
 
 /** rola até as coleções já com o anel aberto (o fim da entrada), e não até o começo dela */
 export function irParaColecoes() {

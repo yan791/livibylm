@@ -57,9 +57,14 @@ export async function salvarAjustes(db: D1Database, a: Ajustes) {
 /** só o que o site precisa saber */
 export const ajustesPublicos = (a: Ajustes) => ({ whatsapp: a.whatsapp, parcelas: a.parcelasSemJuros })
 
-/** "(82) 99811-5324", "82998115324" ou "+55 82 9..." viram 5582998115324; null se não parecer um celular com DDD */
+/**
+  "(82) 99811-5324", "(082) 99811-5324", "82998115324" ou "+55 82 9..." viram 5582998115324;
+  null se não parecer um celular (9 + 8 dígitos) ou fixo (8 dígitos) do Brasil com DDD
+*/
 export function numeroWhatsApp(texto: string) {
-  let n = texto.replace(/\D/g, '')
+  // número de outro país (+1, 0044...) não serve
+  if (/^\s*(\+|00)(?!\s*55)/.test(texto)) return null
+  let n = texto.replace(/\D/g, '').replace(/^0+/, '')
   if (n.length === 10 || n.length === 11) n = '55' + n
-  return /^55[1-9]\d{9,10}$/.test(n) ? n : null
+  return /^55[1-9]{2}(9\d{8}|[2-8]\d{7})$/.test(n) ? n : null
 }

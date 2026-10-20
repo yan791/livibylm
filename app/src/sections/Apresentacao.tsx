@@ -20,7 +20,7 @@ import { GuiaRolar } from '../components/Vivos'
 import { BotaoDesejos, BotaoSacola } from '../components/Gaveta'
 import { atrasoAbertura } from '../components/Cortina'
 import { comBase } from '../lib/base'
-import { irParaColecoes } from './Looks'
+import { irParaColecoes, SemFoto } from './Looks'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -170,7 +170,7 @@ export function Apresentacao() {
         <div className="ap-fotos" aria-hidden="true">
           {/* o primeiro look chega aqui no fim da abertura, no mesmo lugar em que os looks começam */}
           <div className="ap-look" style={{ '--ar': primeira.proporcao } as React.CSSProperties}>
-            <img src={primeira.capa} alt="" draggable={false} />
+            {primeira.capa ? <img src={primeira.capa} alt="" draggable={false} /> : <SemFoto c={primeira} />}
           </div>
           <div className="ap-hero" style={{ aspectRatio: String(a.proporcao), '--ar': a.proporcao } as React.CSSProperties}>
             <motion.div

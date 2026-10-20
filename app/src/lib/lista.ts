@@ -4,7 +4,10 @@
   no navegador (localStorage), acompanha mudanças feitas em outra aba e avisa
   o React pelo useSyncExternalStore.
   Ao abrir o site, peças que saíram do catálogo são tiradas da lista, e
-  saiuDoSite conta quantas foram (a gaveta avisa a cliente).
+  saiuDoSite conta quantas foram (a gaveta avisa a cliente). Peça que mudou
+  de coleção continua na lista (o endereço da peça é único na loja). Se o
+  catálogo não chegou (servidor fora do ar, internet ruim), a lista fica
+  como está.
   Uma lista pode mudar de formato: "antiga" é a chave do formato anterior e
   "migrar" converte o que estava salvo lá.
   A gaveta lateral mostra as duas, uma em cada aba.
@@ -14,7 +17,23 @@ import { colecoes } from '../dados/colecoes'
 
 export type ItemBase = { colecao: string; peca: string }
 
-const existe = (i: ItemBase) => colecoes.some((c) => c.slug === i.colecao && c.pecas.some((p) => p.slug === i.peca))
+/** a peça do item e a coleção onde ela está agora (mesmo se mudou de coleção) */
+export function acharItem(i: ItemBase) {
+  for (const c of colecoes) {
+    const p = c.pecas.find((x) => x.slug === i.peca)
+    if (p) return { colecao: c, peca: p }
+  }
+  return null
+}
+
+/** tira as peças que saíram do site e põe cada uma na coleção onde ela está agora */
+function arrumar<T extends ItemBase>(lista: T[]): T[] {
+  if (!colecoes.length) return lista
+  return lista.flatMap((i) => {
+    const achado = acharItem(i)
+    return achado ? [achado.colecao.slug === i.colecao ? i : { ...i, colecao: achado.colecao.slug }] : []
+  })
+}
 
 export function criarLista<T extends ItemBase>(chave: string, o: { antiga?: string; migrar?: (velhos: unknown[]) => T[] } = {}) {
   const ouvintes = new Set<() => void>()
@@ -49,16 +68,16 @@ export function criarLista<T extends ItemBase>(chave: string, o: { antiga?: stri
     avisar()
   }
 
-  // peças que saíram do site desde a última visita
-  const ficam = itens.filter(existe)
+  // peças que saíram do site (ou mudaram de coleção) desde a última visita
+  const ficam = arrumar(itens)
   const saiuDoSite = itens.length - ficam.length
-  if (saiuDoSite) salvar(ficam)
+  if (JSON.stringify(ficam) !== JSON.stringify(itens)) salvar(ficam)
 
   // a mesma lista aberta em outra aba
   if (typeof window !== 'undefined')
     window.addEventListener('storage', (e) => {
       if (e.key !== chave) return
-      itens = carregar().filter(existe)
+      itens = arrumar(carregar())
       avisar()
     })
 
@@ -81,9 +100,8 @@ export function criarLista<T extends ItemBase>(chave: string, o: { antiga?: stri
 /** dados completos de cada item (nome, preço, fotos), a partir do catálogo */
 export function detalhar<T extends ItemBase>(lista: T[]) {
   return lista.flatMap((i) => {
-    const c = colecoes.find((x) => x.slug === i.colecao)
-    const p = c?.pecas.find((x) => x.slug === i.peca)
-    return c && p ? [{ ...i, colecaoNome: c.nome, fundo: c.fundo, peca: p }] : []
+    const achado = acharItem(i)
+    return achado ? [{ ...i, colecao: achado.colecao.slug, colecaoNome: achado.colecao.nome, fundo: achado.colecao.fundo, peca: achado.peca }] : []
   })
 }
 

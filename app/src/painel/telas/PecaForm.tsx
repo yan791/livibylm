@@ -148,19 +148,21 @@ function Formulario({
   const mudar = (f: (r: Rascunho) => Rascunho) => setR(f)
   const campo = <K extends keyof Rascunho>(k: K) => (v: Rascunho[K]) => mudar((x) => ({ ...x, [k]: v }))
 
-  useEffect(() => setR(inicial), [inicial])
+  /*
+    Depois de salvar, o botão espera a peça voltar do servidor: o estoque vai
+    como diferença sobre o "antes", e um segundo toque com o "antes" velho
+    somaria a mesma diferença duas vezes.
+  */
+  const [esperando, setEsperando] = useState(false)
+  useEffect(() => {
+    setR(inicial)
+    setEsperando(false)
+  }, [inicial])
 
   const alterado = JSON.stringify(r) !== JSON.stringify(inicial)
   useEffect(() => {
     segurarSaida(alterado ? () => window.confirm('Sair sem salvar as alterações desta peça?') : null)
-    const antesDeSair = (e: BeforeUnloadEvent) => {
-      if (alterado) e.preventDefault()
-    }
-    window.addEventListener('beforeunload', antesDeSair)
-    return () => {
-      segurarSaida(null)
-      window.removeEventListener('beforeunload', antesDeSair)
-    }
+    return () => segurarSaida(null)
   }, [alterado])
 
   // fotos enviadas que não ficaram em nenhuma peça salva são apagadas ao sair (o servidor confere)
@@ -171,12 +173,13 @@ function Formulario({
 
   const salvar = async (e: FormEvent) => {
     e.preventDefault()
+    if (salvando || esperando) return
     setErro('')
     const precoCentavos = centavosDe(r.preco)
     const problema =
       (!r.colecaoId && 'Escolha a coleção.') ||
       (!r.nome.trim() && 'Preencha o nome da peça.') ||
-      (precoCentavos === null && 'Preencha o preço (ex.: 459,90).') ||
+      (!precoCentavos && 'Preencha o preço (ex.: 459,90).') ||
       (r.cores.length === 0 && 'Adicione pelo menos uma cor.') ||
       (r.cores.some((c) => !c.nome.trim()) && 'Dê um nome para cada cor.') ||
       (r.tamanhos.length === 0 && 'Escolha pelo menos um tamanho.') ||
@@ -211,6 +214,7 @@ function Formulario({
       } else {
         await api('PUT', `/pecas/${id}`, corpo)
         avisar('Alterações salvas.')
+        setEsperando(true)
         aoSalvar()
       }
     } catch (x) {
@@ -362,7 +366,7 @@ function Formulario({
         <p className={erro ? 'erro' : 'barra-estado'} role={erro ? 'alert' : undefined}>
           {erro || (alterado ? 'Alterações não salvas' : id === 'nova' ? '' : 'Tudo salvo')}
         </p>
-        <button className="botao" disabled={salvando || (!alterado && id !== 'nova')}>
+        <button className="botao" disabled={salvando || esperando || (!alterado && id !== 'nova')}>
           {salvando ? 'Salvando…' : id === 'nova' ? 'Cadastrar peça' : 'Salvar'}
         </button>
       </div>

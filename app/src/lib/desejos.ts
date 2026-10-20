@@ -5,9 +5,9 @@
   ela decidir comprar: se a peça tem um tamanho só, vai direto; se não, a peça
   abre para ela escolher o tamanho.
 */
-import { abrirGaveta, criarLista, detalhar } from './lista'
+import { abrirGaveta, acharItem, criarLista, detalhar } from './lista'
 import { adicionarNaSacola, idDoItem, removerDaSacola, type ItemSacola } from './sacola'
-import { colecoes, corEsgotada, pecaEsgotada } from '../dados/colecoes'
+import { corEsgotada, pecaEsgotada } from '../dados/colecoes'
 
 export type ItemDesejo = { colecao: string; peca: string }
 
@@ -41,10 +41,11 @@ export const removerDesejo = (peca: string) => desejos.salvar(desejos.ler().filt
   peça abrir e a cliente escolher o tamanho
 */
 export function desejoParaSacola(item: ItemDesejo): 'foi' | 'escolher' {
-  const peca = colecoes.find((c) => c.slug === item.colecao)?.pecas.find((p) => p.slug === item.peca)
-  if (!peca || pecaEsgotada(peca) || peca.tamanhos.length !== 1) return 'escolher'
+  const achado = acharItem(item)
+  const peca = achado?.peca
+  if (!achado || !peca || pecaEsgotada(peca) || peca.tamanhos.length !== 1) return 'escolher'
   const cor = peca.cores.find((c) => !corEsgotada(peca, c.nome)) ?? peca.cores[0]
-  adicionarNaSacola({ colecao: item.colecao, peca: item.peca, cor: cor.nome, tamanho: peca.tamanhos[0] })
+  adicionarNaSacola({ colecao: achado.colecao.slug, peca: item.peca, cor: cor.nome, tamanho: peca.tamanhos[0] })
   return 'foi'
 }
 

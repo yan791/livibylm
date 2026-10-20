@@ -978,6 +978,19 @@ img {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* coleção sem nenhuma foto ainda (cartão do carrossel e primeiro look da abertura) */
+.cg-sem-foto {
+  position: absolute;
+  inset: 0;
+  display: grid;
+}
+
+.cg-sem-foto .espaco {
+  height: 100%;
+  border: 0;
+  border-radius: inherit;
+}
+
 .cg-cartao img {
   display: block;
   width: 100%;

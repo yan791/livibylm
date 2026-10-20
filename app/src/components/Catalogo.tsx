@@ -22,7 +22,7 @@ import {
   type Peca,
 } from '../dados/colecoes'
 import { linkWhatsApp, mensagemEsgotada, mensagemPeca } from '../dados/site'
-import { fecharCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
+import { corrigirEndereco, fecharCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
 import { abrirSacola, adicionarNaSacola, idDoItem, useSacola } from '../lib/sacola'
 import { fotoPequena } from '../lib/base'
 import { suportaTransicao } from '../lib/rota'
@@ -40,6 +40,14 @@ export function Catalogo() {
   const estado = useCatalogo()
   const colecao = estado ? acharColecao(estado.colecao) : undefined
   const peca = colecao && estado?.peca ? colecao.pecas.find((p) => p.slug === estado.peca) : undefined
+  const enderecoErrado = Boolean(estado && (!colecao || (estado.peca && !peca)))
+
+  // link antigo: a peça pode ter mudado de coleção; se saiu do site, fica a vitrine (ou a página, se a coleção saiu)
+  useLayoutEffect(() => {
+    if (!estado || !enderecoErrado) return
+    const onde = estado.peca ? colecoes.find((c) => c.pecas.some((p) => p.slug === estado.peca)) : undefined
+    corrigirEndereco(onde ? { colecao: onde.slug, peca: estado.peca } : colecao ? { colecao: colecao.slug, peca: null } : null)
+  }, [estado, enderecoErrado, colecao])
 
   // trava a rolagem da página por baixo e põe no título da aba a coleção ou a peça aberta
   useLayoutEffect(() => {

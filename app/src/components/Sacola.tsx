@@ -83,6 +83,9 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
             // tamanhos que ainda têm nessa cor (para escolher ou trocar)
             const opcoes = i.peca.tamanhos.filter((t) => disponivel(i.peca, i.cor, t) > 0)
             const escolher = !i.tamanho || i.esgotado
+            // a loja tirou a cor ou o tamanho da peça depois que ela foi para a sacola
+            const corSaiu = !i.peca.cores.some((c) => c.nome === i.cor)
+            const tamanhoSaiu = Boolean(i.tamanho) && !i.peca.tamanhos.includes(i.tamanho!)
             return (
               <motion.li
                 key={i.id}
@@ -116,9 +119,13 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
                     <p className="gaveta-esgotou">
                       {pecaEsgotada(i.peca)
                         ? 'Esta peça esgotou.'
-                        : opcoes.length
-                          ? 'Esgotou nesse tamanho. Escolha outro:'
-                          : 'Esgotou nessa cor. Veja as outras cores na peça.'}
+                        : corSaiu
+                          ? 'Essa cor não está mais no site. Veja as outras cores na peça.'
+                          : opcoes.length
+                            ? tamanhoSaiu
+                              ? 'Esse tamanho não está mais no site. Escolha outro:'
+                              : 'Esgotou nesse tamanho. Escolha outro:'
+                            : 'Esgotou nessa cor. Veja as outras cores na peça.'}
                     </p>
                   )}
                   {!i.tamanho && <p className="gaveta-esgotou">Escolha o tamanho:</p>}
@@ -184,7 +191,9 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
           {semTamanho
             ? `${semTamanho === 1 ? 'Uma peça está' : `${semTamanho} peças estão`} sem tamanho e não vão na mensagem: escolha acima.`
             : esgotados
-              ? `${esgotados === 1 ? 'Uma peça esgotou' : `${esgotados} peças esgotaram`} e ficou fora do total.`
+              ? esgotados === 1
+                ? 'Uma peça não está disponível e ficou fora do total.'
+                : `${esgotados} peças não estão disponíveis e ficaram fora do total.`
               : 'As peças seguem na mensagem, e o pagamento e a entrega são combinados na conversa.'}
         </p>
       </div>

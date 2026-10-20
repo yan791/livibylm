@@ -21,6 +21,8 @@ export type GalleryItem = {
   href?: string;
   /** conteúdo extra por cima da foto (ex.: um convite para abrir); o CSS decide quando aparece */
   extra?: React.ReactNode;
+  /** o que aparece no lugar da foto quando src está vazio */
+  semFoto?: React.ReactNode;
 };
 
 export type CircularGalleryHandle = {
@@ -369,14 +371,18 @@ const CircularGallery = forwardRef<CircularGalleryHandle, CircularGalleryProps>(
                   onPointerEnter={(e) => e.pointerType === 'mouse' && (s.emCima = true)}
                   onPointerLeave={() => (s.emCima = false)}
                 >
-                  <img
-                    src={item.src}
-                    alt=""
-                    draggable={false}
-                    loading={k === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    style={{ objectPosition: item.pos ?? 'center' }}
-                  />
+                  {item.src ? (
+                    <img
+                      src={item.src}
+                      alt=""
+                      draggable={false}
+                      loading={k === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      style={{ objectPosition: item.pos ?? 'center' }}
+                    />
+                  ) : (
+                    item.semFoto
+                  )}
                   {item.extra}
                 </a>
               </div>
