@@ -58,6 +58,8 @@ export type Ajustes = {
   whatsapp: string
   /** até quantas vezes sem juros (1 = sem parcelamento) */
   parcelas: number
+  /** compras pelo site ligadas no painel: a sacola mostra "Finalizar compra" */
+  vendasOnline: boolean
 }
 
 async function buscar(): Promise<unknown> {
@@ -102,6 +104,7 @@ function prepararAjustes(dados: unknown): Ajustes {
   return {
     whatsapp: typeof a.whatsapp === 'string' && /^\d{12,13}$/.test(a.whatsapp) ? a.whatsapp : '',
     parcelas: typeof a.parcelas === 'number' && a.parcelas >= 1 ? Math.floor(a.parcelas) : 1,
+    vendasOnline: a.vendasOnline === true,
   }
 }
 

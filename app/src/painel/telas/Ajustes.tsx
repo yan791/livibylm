@@ -1,13 +1,27 @@
 /*
-  Ajustes da loja, que valem para o site inteiro: vendas pelo site, taxa de
-  entrega em Maceió, parcelamento e o WhatsApp que recebe as mensagens.
+  Ajustes da loja, que valem para o site inteiro: vendas pelo site, entrega
+  (taxa em Maceió e os Correios por região), parcelamento e o WhatsApp que
+  recebe as mensagens.
 */
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { ESTADOS_DA_REGIAO, REGIOES, type Regiao, type Servico, type TabelaFrete } from '../../../worker/frete'
 import { api, centavosDe, mensagemDe, telefone, textoDe, type Ajustes as DadosAjustes } from '../api'
 import { segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, FalhaCarga, Interruptor, useCarregar } from '../ui'
 
-type Rascunho = { vendasOnline: boolean; taxa: string; parcelas: number; whatsapp: string }
+/** os preços da tabela como a pessoa digita ("25" ou "25,90"); vazio = não envia */
+type FreteTexto = Record<Regiao, Record<Servico, string>>
+type Rascunho = { vendasOnline: boolean; taxa: string; parcelas: number; whatsapp: string; frete: FreteTexto }
+
+const SERVICOS = [
+  { id: 'pac', nome: 'PAC' },
+  { id: 'sedex', nome: 'SEDEX' },
+] as const
+
+const freteTexto = (t: TabelaFrete) =>
+  Object.fromEntries(
+    REGIOES.map(({ id }) => [id, { pac: t[id].pac === null ? '' : textoDe(t[id].pac), sedex: t[id].sedex === null ? '' : textoDe(t[id].sedex) }]),
+  ) as FreteTexto
 
 /** "(82) 99811-5324" ou "82998115324" vira 5582998115324; null se não parecer um número do Brasil com DDD (mesma regra do servidor, worker/ajustes.ts) */
 function numeroWhatsApp(texto: string) {
@@ -22,6 +36,7 @@ const rascunhoDe = (a: DadosAjustes): Rascunho => ({
   taxa: textoDe(a.taxaMaceioCentavos),
   parcelas: a.parcelasSemJuros,
   whatsapp: telefone(a.whatsapp),
+  frete: freteTexto(a.freteCorreios),
 })
 
 export function Ajustes() {
@@ -39,7 +54,9 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
   const campo = <K extends keyof Rascunho>(k: K) => (v: Rascunho[K]) => setR((x) => ({ ...x, [k]: v }))
 
   useEffect(() => setR(inicial), [inicial])
-  const alterado = (Object.keys(inicial) as (keyof Rascunho)[]).some((k) => inicial[k] !== r[k])
+  const alterado = JSON.stringify(inicial) !== JSON.stringify(r)
+  const precoFrete = (regiao: Regiao, servico: Servico) => (v: string) =>
+    setR((x) => ({ ...x, frete: { ...x.frete, [regiao]: { ...x.frete[regiao], [servico]: v } } }))
   useEffect(() => {
     segurarSaida(alterado ? () => window.confirm('Sair sem salvar os ajustes?') : null)
     return () => segurarSaida(null)
@@ -53,9 +70,21 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
     const taxa = centavosDe(r.taxa)
     if (taxa === null) return setErro('Preencha a taxa de entrega em Maceió (ex.: 15).')
     if (!numero) return setErro('Confira o WhatsApp: DDD e número, ex.: (82) 99811-5324.')
+    const freteCorreios = {} as TabelaFrete
+    for (const { id, nome } of REGIOES) {
+      const linha = { pac: null, sedex: null } as Record<Servico, number | null>
+      for (const s of SERVICOS) {
+        const t = r.frete[id][s.id].trim()
+        if (!t) continue
+        const c = centavosDe(t)
+        if (!c) return setErro(`Confira o preço do ${s.nome} para ${nome} (ex.: 25 ou 25,90), ou deixe em branco.`)
+        linha[s.id] = c
+      }
+      freteCorreios[id] = linha
+    }
     setSalvando(true)
     try {
-      await api('PUT', '/ajustes', { vendasOnline: r.vendasOnline, taxaMaceioCentavos: taxa, parcelasSemJuros: r.parcelas, whatsapp: numero })
+      await api('PUT', '/ajustes', { vendasOnline: r.vendasOnline, taxaMaceioCentavos: taxa, parcelasSemJuros: r.parcelas, whatsapp: numero, freteCorreios })
       avisar('Ajustes salvos. O site já usa os novos.')
       aoSalvar()
     } catch (x) {
@@ -107,6 +136,49 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
             </span>
           )}
         </Campo>
+      </section>
+
+      <section className="cartao">
+        <h2>Correios, fora de Maceió</h2>
+        <p className="campo-dica">
+          Um preço de PAC e um de SEDEX para cada região. A cliente digita o CEP e vê o valor na hora, e ele entra no total da
+          compra. Deixe em branco o que você não quer oferecer naquela região. O pedido pago aparece em Pedidos com o endereço
+          para você postar.
+        </p>
+        <div className="frete-tabela" role="table" aria-label="Preços dos Correios por região">
+          <div className="frete-linha frete-cabeca" role="row">
+            <span role="columnheader">Região</span>
+            {SERVICOS.map((s) => (
+              <span key={s.id} role="columnheader">
+                {s.nome}
+              </span>
+            ))}
+          </div>
+          {REGIOES.map(({ id, nome }) => (
+            <div key={id} className="frete-linha" role="row">
+              <span className="frete-regiao" role="rowheader">
+                {nome}
+                <small>{ESTADOS_DA_REGIAO[id]}</small>
+              </span>
+              {SERVICOS.map((s) => (
+                <span key={s.id} className="preco" role="cell">
+                  <span aria-hidden="true">R$</span>
+                  <input
+                    inputMode="decimal"
+                    aria-label={`${s.nome} para ${nome}`}
+                    value={r.frete[id][s.id]}
+                    onChange={(e) => precoFrete(id, s.id)(e.target.value)}
+                    onBlur={() => {
+                      const c = centavosDe(r.frete[id][s.id])
+                      if (c) precoFrete(id, s.id)(textoDe(c))
+                    }}
+                    placeholder="—"
+                  />
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="cartao">

@@ -26,6 +26,7 @@ import { agora } from './seguranca'
 import { limparCacheCatalogo } from './catalogo'
 import { conferirPagamento, criarLink, ErroInfinitePay } from './infinitepay'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
+import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
 
 /** quanto tempo as peças ficam seguras esperando o pagamento */
 export const RESERVA_MINUTOS = 30
@@ -304,26 +305,38 @@ function lerCliente(v: unknown) {
   return { nome, whatsapp, email, cpf }
 }
 
-/** CEPs de Maceió: 57000-000 a 57099-999 */
-const deMaceio = (cep: string) => cep >= '57000000' && cep <= '57099999'
-
-/** entrega e frete. Por enquanto só Maceió (taxa única dos Ajustes); os Correios entram na parte 4.3 */
+/** entrega e frete: Maceió (taxa única) ou Correios, PAC ou SEDEX, pela tabela por região dos Ajustes (worker/frete.ts) */
 function lerEntrega(v: unknown, ajustes: Ajustes) {
   const o = objeto(v)
-  if (o.tipo !== 'maceio') throw falha(400, 'Por enquanto, a entrega pelo site é só em Maceió.')
+  const tipo = o.tipo
+  if (!ehTipoEntrega(tipo)) throw falha(400, 'Escolha a forma de entrega.')
   const cep = texto(o.cep, 'o CEP', 10, true).replace(/\D/g, '')
   if (cep.length !== 8) throw falha(400, 'Confira o CEP: são 8 números.')
-  if (!deMaceio(cep)) throw falha(400, 'Esse CEP não é de Maceió. Para outras cidades, fale com a gente pelo WhatsApp.')
+  // o estado sai do CEP, nunca do que o navegador mandou
+  const uf = ufDoCep(cep)
+  if (!uf) throw falha(400, 'Confira o CEP: ele não parece ser do Brasil.')
+  // o preço sai da tabela de agora, nunca do que o navegador mandou
+  const opcao = opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios).find((x) => x.tipo === tipo)
+  if (!opcao)
+    throw falha(
+      400,
+      tipo === 'maceio'
+        ? 'Esse CEP não é de Maceió. Escolha a entrega pelos Correios ou fale com a gente pelo WhatsApp.'
+        : deMaceio(cep)
+          ? 'Para Maceió, escolha a entrega em Maceió.'
+          : `Ainda não enviamos por ${NOME_ENTREGA[tipo]} para esse CEP. Escolha outra entrega ou fale com a gente pelo WhatsApp.`,
+    )
+  const correios = tipo !== 'maceio'
   return {
-    entrega: 'maceio',
+    entrega: tipo,
     cep,
     rua: texto(o.rua, 'a rua', 120, true),
     numero: texto(o.numero, 'o número', 20, true),
     complemento: texto(o.complemento, 'O complemento', 80),
     bairro: texto(o.bairro, 'o bairro', 80, true),
-    cidade: 'Maceió',
-    uf: 'AL',
-    freteCentavos: ajustes.taxaMaceioCentavos,
+    cidade: correios ? texto(o.cidade, 'a cidade', 80, true) : 'Maceió',
+    uf,
+    freteCentavos: opcao.centavos,
   }
 }
 
@@ -404,6 +417,15 @@ export const compras = new Hono<Ambiente>()
 // o site do GitHub Pages mora em outro endereço
 compras.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST'], allowHeaders: ['Content-Type'], maxAge: 86400 }))
 
+/** as entregas possíveis para um CEP, com o preço (a sacola pergunta antes de fechar a compra) */
+compras.get('/frete', async (c) => {
+  const cep = (c.req.query('cep') ?? '').replace(/\D/g, '')
+  const uf = ufDoCep(cep)
+  if (!uf) throw falha(400, 'Confira o CEP: são 8 números.')
+  const ajustes = await lerAjustes(c.env.DB)
+  return c.json({ uf, opcoes: opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios) })
+})
+
 compras.post('/', async (c) => {
   const db = c.env.DB
   const ajustes = await lerAjustes(db)
@@ -417,6 +439,8 @@ compras.post('/', async (c) => {
   const corpo = await lerCorpo(c)
   const cliente = lerCliente(corpo.cliente)
   const entrega = lerEntrega(corpo.entrega, ajustes)
+  if (entrega.entrega !== 'maceio' && !cliente.cpf)
+    throw falha(400, 'Para enviar pelos Correios, preencha o CPF: ele vai na declaração de conteúdo do pacote.')
   const itens = await conferirDisponivel(db, await itensDaSacola(db, corpo.itens))
 
   const abertos = await db
@@ -443,7 +467,7 @@ compras.post('/', async (c) => {
       codigo,
       itens: [
         ...itens.map((i) => ({ descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}`, quantidade: i.quantidade, precoCentavos: i.precoCentavos })),
-        ...(entrega.freteCentavos > 0 ? [{ descricao: 'Entrega em Maceió', quantidade: 1, precoCentavos: entrega.freteCentavos }] : []),
+        ...(entrega.freteCentavos > 0 ? [{ descricao: NOME_ENTREGA[entrega.entrega], quantidade: 1, precoCentavos: entrega.freteCentavos }] : []),
       ],
       voltar: `${site}/pedido/${codigo}`,
       aviso: `${origem}/api/pagamento/aviso`,

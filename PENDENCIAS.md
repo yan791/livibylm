@@ -1,6 +1,6 @@
 # Loja Livi: o que falta (etapa 4 em diante)
 
-Atualizado em 21/10/2026, depois do commit `c1443e6` (partes 4.1, 4.2 e 4.4).
+Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra na sacola com frete por região).
 
 ## O que já está pronto e publicado
 
@@ -22,32 +22,18 @@ Atualizado em 21/10/2026, depois do commit `c1443e6` (partes 4.1, 4.2 e 4.4).
 
 **As compras pelo site continuam travadas.** `PAGAMENTO_PRONTO = false` em `app/worker/ajustes.ts`. Até isso mudar, `POST /api/pedidos` responde 409 e a sacola segue mandando o pedido pelo WhatsApp.
 
-## Parte 4.3: compra no site (formulário na sacola)
+## Parte 4.3: compra no site (formulário na sacola), feita
 
-**Frete fora de Maceió: tabela fixa** (decidido com a Livia em 21/10). Ela cadastra no painel um preço de PAC e outro de SEDEX por região; o site mostra o valor na hora pelo CEP, e ele entra no link de pagamento. Sem SuperFrete. Ela mesma posta nos Correios: vê o pedido pago no painel, com o endereço, e marca como enviado com o rastreio.
+**Frete fora de Maceió: tabela fixa** (decidido com a Livia em 21/10). Sem SuperFrete: ela mesma posta nos Correios, vendo o pedido pago no painel com o endereço e o CPF, e marca como enviado com o rastreio.
 
-A cliente nunca espera ninguém confirmar o frete: o valor aparece na hora.
+- **Sacola** (`app/src/components/Compra.tsx`): com as vendas ligadas, "Finalizar compra" abre o formulário ali mesmo (nome, WhatsApp, e-mail, CEP). O CEP traz a rua, o bairro e a cidade pelo ViaCEP e as entregas possíveis com o preço; nos Correios entram a cidade e o CPF. A cliente vai para o pagamento da InfinitePay e volta para `/pedido/<código>`. "Prefiro pelo WhatsApp" continua como opção.
+- **Frete** (`app/worker/frete.ts`): o CEP dá o estado e a região (Alagoas fora de Maceió tem linha própria). `GET /api/pedidos/frete?cep=` devolve as opções e os preços, e o `POST /api/pedidos` refaz a conta: o frete e o estado nunca vêm do navegador. Correios exige CPF, e o item do link vai como "Correios PAC" ou "Correios SEDEX".
+- **Painel, Ajustes**: tabela com um preço de PAC e um de SEDEX por região. Em branco, a região não tem aquele serviço pelo site, e a cliente vê o aviso para falar pelo WhatsApp.
+- **Testes** (`app/test/frete.test.ts`): região pelo CEP, tabela salva no painel, compra pelos Correios cobrando o frete da tabela, CPF obrigatório e as combinações recusadas.
 
-O que fazer:
-1. **Formulário na sacola** (`app/src/components/Sacola.tsx`):
-   - campos: nome, WhatsApp, e-mail, CPF, CEP (o endereço pode vir do ViaCEP), rua, número, complemento e bairro, mais a escolha da entrega;
-   - mandar `POST {API}/api/pedidos` com este corpo:
-     ```json
-     {
-       "itens": [{ "peca": "<slug>", "cor": "<nome da cor>", "tamanho": "M", "qtd": 1 }],
-       "cliente": { "nome": "", "whatsapp": "", "email": "", "cpf": "" },
-       "entrega": { "tipo": "maceio", "cep": "", "rua": "", "numero": "", "complemento": "", "bairro": "" }
-     }
-     ```
-   - a resposta traz `{ codigo, pagar }`: é só mandar a cliente para `pagar`;
-   - os erros vêm em `{ erro }`, com uma mensagem pronta para mostrar (peça esgotou, CEP fora de Maceió...);
-   - a sacola esvazia sozinha quando a página do pedido vê o pagamento (`tirarCompradas` em `app/src/lib/sacola.ts`).
-2. **Mostrar o botão "Finalizar compra" só com as vendas ligadas.** Hoje o site não sabe se as vendas estão ligadas: incluir `vendasOnline` em `ajustesPublicos` (`app/worker/ajustes.ts`) e ler em `app/src/dados/colecoes.ts`.
-3. **Correios no servidor.** `lerEntrega` em `app/worker/pedidos.ts` só aceita `maceio`. Para PAC e SEDEX:
-   - calcular o frete no servidor;
-   - exigir o CPF (a declaração de conteúdo dos Correios pede);
-   - trocar a descrição do item de frete que vai para a InfinitePay (hoje é "Entrega em Maceió").
-4. **Opcional:** um anti-robô (Cloudflare Turnstile). Já existem limites: 10 pedidos por hora por IP e 3 pedidos esperando pagamento por WhatsApp.
+Falta:
+1. **A Livia preencher a tabela de frete** em Ajustes. Até lá, fora de Maceió o site manda a cliente para o WhatsApp.
+2. **Opcional:** um anti-robô (Cloudflare Turnstile). Já existem limites: 10 pedidos por hora por IP e 3 pedidos esperando pagamento por WhatsApp.
 
 ## Parte 4.5: abrir as vendas
 
@@ -74,7 +60,7 @@ Já respondidas (21/10):
 - frete fora de Maceió: tabela fixa por região, com PAC e SEDEX (ver a parte 4.3).
 
 Ainda faltam:
-- os preços da tabela de frete;
+- os preços da tabela de frete (ela mesma preenche em Ajustes, no painel);
 - política de troca;
 - se mostra o CPF no rodapé ou abre um MEI;
 - ok para a compra de teste.

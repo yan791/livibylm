@@ -1,12 +1,14 @@
 /*
   Aba "Sacola" da gaveta: as peças que a cliente quer comprar, cada uma com
-  cor, tamanho e quantidade, o total e o envio de tudo numa mensagem pelo
-  WhatsApp. Um item pode voltar para a lista de desejos ("Salvar para depois").
+  cor, tamanho e quantidade, e o total. Com as vendas ligadas no painel, ela
+  finaliza a compra ali mesmo (components/Compra); senão, envia tudo numa
+  mensagem pelo WhatsApp. Um item pode voltar para a lista de desejos ("Salvar para depois").
   Item sem tamanho (de uma sacola antiga) pede o tamanho ali mesmo; item que
   esgotou fica marcado, fora do total, com os tamanhos que ainda têm.
 */
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { disponivel, pecaEsgotada, precoBR, rotuloTamanho } from '../dados/colecoes'
+import { ajustes, disponivel, pecaEsgotada, precoBR, rotuloTamanho } from '../dados/colecoes'
 import { site } from '../dados/site'
 import {
   detalhar,
@@ -24,6 +26,7 @@ import { fotoPequena } from '../lib/base'
 import type { Aba } from '../lib/lista'
 import { cn } from '../lib/cn'
 import { Coracao, Fechar, IconeCabide, IconeSacola, SetaDiagonal, WhatsApp } from './icones'
+import { Compra } from './Compra'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -47,6 +50,9 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
   const total = validos.reduce((s, i) => s + i.peca.preco * i.qtd, 0)
   const semTamanho = itens.filter((i) => !i.tamanho).length
   const esgotados = itens.filter((i) => i.esgotado).length
+  const [finalizando, setFinalizando] = useState(false)
+
+  if (finalizando && validos.length) return <Compra itens={validos} voltar={() => setFinalizando(false)} />
 
   if (!itens.length)
     return (
@@ -178,7 +184,16 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
           </span>
           <strong>{precoBR(total)}</strong>
         </p>
-        {validos.length > 0 ? (
+        {validos.length > 0 && ajustes.vendasOnline ? (
+          <>
+            <button type="button" className="pilula cheia" onClick={() => setFinalizando(true)}>
+              Finalizar compra
+            </button>
+            <a className="pilula" href={linkSacola(lista)} target="_blank" rel="noreferrer">
+              <WhatsApp className="ico" /> Prefiro pelo WhatsApp
+            </a>
+          </>
+        ) : validos.length > 0 ? (
           <a className="pilula cheia" href={linkSacola(lista)} target="_blank" rel="noreferrer">
             <WhatsApp className="ico" /> Enviar pelo WhatsApp <SetaDiagonal className="seta" />
           </a>
@@ -194,7 +209,9 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
               ? esgotados === 1
                 ? 'Uma peça não está disponível e ficou fora do total.'
                 : `${esgotados} peças não estão disponíveis e ficaram fora do total.`
-              : 'As peças seguem na mensagem, e o pagamento e a entrega são combinados na conversa.'}
+              : ajustes.vendasOnline
+                ? 'Entrega em Maceió ou pelos Correios. O valor aparece pelo CEP antes de pagar.'
+                : 'As peças seguem na mensagem, e o pagamento e a entrega são combinados na conversa.'}
         </p>
       </div>
     </>
