@@ -23,7 +23,7 @@ import {
   quando,
   SITUACOES,
 } from '../pedidos'
-import { avisar, Carregando, confirmar, FalhaCarga, Icone, useCarregar } from '../ui'
+import { avisar, Carregando, confirmar, FalhaCarga, Icone, perguntar, useCarregar } from '../ui'
 
 /** a aba "Pedidos" atualiza o número de pedidos pra enviar */
 export const EVENTO_PEDIDOS = 'painel:pedidos-mudaram'
@@ -84,12 +84,29 @@ function Tela({ inicial, whatsappLoja }: { inicial: Pedido; whatsappLoja: string
   const enviar = () => agir('enviado', { rastreio }, p.situacao === 'enviado' ? 'Código de rastreio salvo.' : 'Pedido marcado como enviado.')
 
   const cancelar = async () => {
-    const partes = [
-      p.estoqueBaixado ? 'As peças voltam para o estoque.' : '',
-      pago && p.origem === 'site' ? 'O dinheiro não volta sozinho: devolva pelo app da InfinitePay.' : '',
-    ].filter(Boolean)
-    const ok = await confirmar({ titulo: `Cancelar o pedido nº ${p.id}?`, texto: partes.join(' ') || undefined, botao: 'Cancelar pedido', desistir: 'Manter pedido', perigo: true })
-    if (ok) agir('cancelar', {}, 'Pedido cancelado.')
+    // só pergunta do estoque se alguma peça já saiu dele (as sob encomenda nunca saem)
+    const comEstoque = p.estoqueBaixado && p.itens.some((i) => !i.sobEncomenda)
+    // já enviado, a peça está com a cliente: por padrão não volta, até ela devolver
+    const despachado = p.situacao === 'enviado' || p.situacao === 'entregue'
+    const { ok, marcada } = await perguntar({
+      titulo: `Cancelar o pedido nº ${p.id}?`,
+      texto: pago && p.origem === 'site' ? 'O dinheiro não volta sozinho: devolva pelo app da InfinitePay.' : undefined,
+      opcao: comEstoque
+        ? {
+            rotulo: 'Devolver as peças ao estoque',
+            dica: despachado
+              ? 'As peças foram enviadas. Marque só se já voltaram e estão boas para vender; se não, ajuste o estoque na peça quando voltarem.'
+              : 'Desmarque se alguma peça não volta para a venda, como uma que veio com defeito.',
+            marcada: !despachado,
+          }
+        : undefined,
+      botao: 'Cancelar pedido',
+      desistir: 'Manter pedido',
+      perigo: true,
+    })
+    if (!ok) return
+    const devolver = !comEstoque || marcada
+    agir('cancelar', { devolverEstoque: devolver }, devolver ? 'Pedido cancelado.' : 'Pedido cancelado. As peças ficaram fora do estoque.')
   }
 
   const endereco = enderecoLinhas(p)
@@ -312,6 +329,7 @@ function Tela({ inicial, whatsappLoja }: { inicial: Pedido; whatsappLoja: string
           {p.canceladoEm && (
             <li>
               <span>Cancelado</span> {quando(p.canceladoEm)}
+              {p.estoqueBaixado && p.itens.some((i) => !i.sobEncomenda) && ', sem devolver as peças ao estoque'}
             </li>
           )}
         </ol>

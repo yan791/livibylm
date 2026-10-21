@@ -91,17 +91,30 @@ export function Avisos() {
 
 /* ---------- confirmação ---------- */
 
-/** desistir = texto do botão que fecha sem fazer nada (padrão: "Cancelar") */
-type Pergunta = { titulo: string; texto?: string; botao: string; desistir?: string; perigo?: boolean; responder: (v: boolean) => void }
+/**
+  desistir = texto do botão que fecha sem fazer nada (padrão: "Cancelar");
+  opcao = uma caixa de marcar junto da pergunta, que volta na resposta
+*/
+type Pergunta = {
+  titulo: string
+  texto?: string
+  botao: string
+  desistir?: string
+  perigo?: boolean
+  opcao?: { rotulo: string; dica?: string; marcada: boolean }
+  responder: (v: boolean, marcada: boolean) => void
+}
 let pergunta: Pergunta | null = null
 const ouvintesPergunta = new Set<() => void>()
 
-export function confirmar(o: Omit<Pergunta, 'responder'>) {
-  return new Promise<boolean>((responder) => {
-    pergunta = { ...o, responder }
+export function perguntar(o: Omit<Pergunta, 'responder'>) {
+  return new Promise<{ ok: boolean; marcada: boolean }>((resolver) => {
+    pergunta = { ...o, responder: (ok, marcada) => resolver({ ok, marcada }) }
     ouvintesPergunta.forEach((f) => f())
   })
 }
+
+export const confirmar = (o: Omit<Pergunta, 'responder' | 'opcao'>) => perguntar(o).then((r) => r.ok)
 
 export function Confirmacao() {
   const atual = useSyncExternalStore(
@@ -112,6 +125,7 @@ export function Confirmacao() {
     () => pergunta,
   )
   const ref = useRef<HTMLDialogElement>(null)
+  const caixa = useRef<HTMLInputElement>(null)
   useEffect(() => {
     const d = ref.current
     if (!d) return
@@ -120,7 +134,7 @@ export function Confirmacao() {
   }, [atual])
 
   const responder = (v: boolean) => {
-    atual?.responder(v)
+    atual?.responder(v, caixa.current?.checked ?? false)
     pergunta = null
     ouvintesPergunta.forEach((f) => f())
   }
@@ -131,6 +145,15 @@ export function Confirmacao() {
         <>
           <h2>{atual.titulo}</h2>
           {atual.texto && <p>{atual.texto}</p>}
+          {atual.opcao && (
+            <label className="confirmacao-opcao">
+              <input ref={caixa} type="checkbox" defaultChecked={atual.opcao.marcada} />
+              <span>
+                {atual.opcao.rotulo}
+                {atual.opcao.dica && <small>{atual.opcao.dica}</small>}
+              </span>
+            </label>
+          )}
           <div className="confirmacao-botoes">
             <button type="button" className="botao botao-claro" onClick={() => responder(false)}>
               {atual.desistir ?? 'Cancelar'}

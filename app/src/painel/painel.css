@@ -529,6 +529,30 @@ select {
   color: var(--suave);
   line-height: 1.5;
 }
+.confirmacao-opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio-p);
+  cursor: pointer;
+  line-height: 1.4;
+}
+.confirmacao-opcao input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  accent-color: var(--vinho);
+}
+.confirmacao-opcao small {
+  display: block;
+  margin-top: 4px;
+  color: var(--suave);
+  font-size: 13px;
+}
 .confirmacao-botoes {
   display: flex;
   justify-content: flex-end;

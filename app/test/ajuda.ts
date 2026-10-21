@@ -98,11 +98,11 @@ export async function painel(token: string, metodo: string, caminho: string, cor
   return resposta
 }
 
-/** chama a API de compras como o site chamaria; em localhost, onde TESTE_VENDAS deixa comprar com as vendas desligadas */
-export async function site(metodo: string, caminho: string, corpo?: unknown) {
+/** chama a API pública em localhost, onde TESTE_VENDAS deixa comprar com as vendas desligadas */
+async function publica(metodo: string, caminho: string, corpo?: unknown) {
   const ctx = createExecutionContext()
   const resposta = await app.fetch(
-    new Request(`http://localhost/api/pedidos${caminho}`, {
+    new Request(`http://localhost${caminho}`, {
       method: metodo,
       headers: corpo === undefined ? {} : { 'Content-Type': 'application/json' },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
@@ -113,6 +113,12 @@ export async function site(metodo: string, caminho: string, corpo?: unknown) {
   await waitOnExecutionContext(ctx)
   return resposta
 }
+
+/** chama a API de compras como o site chamaria */
+export const site = (metodo: string, caminho: string, corpo?: unknown) => publica(metodo, `/api/pedidos${caminho}`, corpo)
+
+/** manda o aviso (webhook) que a InfinitePay manda quando aprova um pagamento */
+export const aviso = (corpo: unknown) => publica('POST', '/api/pagamento/aviso', corpo)
 
 type EstoquePainel = { cor: string; tamanho: string; quantidade: number; reservado: number }
 

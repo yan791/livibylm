@@ -521,6 +521,9 @@ compras.post('/:codigo/conferir', async (c) => {
 /**
   Aviso da InfinitePay. Responde 200 quando terminou (ou quando não há o que
   fazer) e 400 quando algo falhou do nosso lado ou do dela, para ela mandar de novo.
+  Também 400 quando a conferência ainda diz que não foi pago: ela só avisa
+  pagamento aprovado, então pode ser só atraso, e a cliente talvez nem volte ao
+  site para conferir de novo. Um aviso forjado também cai aqui, sem aprovar nada.
 */
 export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise<unknown> }; json: (d: unknown, s?: 200 | 400) => Response }) {
   let d: Corpo
@@ -542,6 +545,7 @@ export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise
       fatura: typeof d.invoice_slug === 'string' ? d.invoice_slug.slice(0, 100) : '',
       recibo: d.receipt_url,
     })
+    if (r === 'nao_pago') return c.json({ ok: false, resultado: r }, 400)
     return c.json({ ok: true, resultado: r })
   } catch (e) {
     console.error('aviso da InfinitePay', e)
