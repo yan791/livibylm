@@ -1,0 +1,8 @@
+{
+  // testes: o mesmo runtime do Worker, mais os tipos do cloudflare:test
+  "extends": "../worker/tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/vitest-plugin/types"]
+  },
+  "include": ["./**/*.ts", "../worker/**/*.ts"]
+}

@@ -24,8 +24,9 @@ import {
 import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
 import { limparCacheCatalogo } from './catalogo'
 import { lerAjustes, numeroWhatsApp, PAGAMENTO_PRONTO, salvarAjustes } from './ajustes'
-import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
+import { chaveVariante, consultaReservas, estoqueReservado, mapaReservas, type LinhaReserva } from './reservas'
 import { painelPedidos } from './painel-pedidos'
+import { RESERVA_MINUTOS } from './pedidos'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
@@ -433,34 +434,43 @@ painel.put('/pecas/:id', async (c) => {
     estoque.push(db.prepare('DELETE FROM estoque WHERE peca_id = ?1 AND cor = ?2 AND tamanho = ?3').bind(id, e.cor, e.tamanho))
 
   const mudouColecao = antes.colecao_id !== v.colecaoId
-  await db.batch([
-    db
-      .prepare(
-        `UPDATE pecas SET colecao_id = ?1, nome = ?2, preco_centavos = ?3, descricao = ?4, tecido = ?5, cores = ?6,
-         tamanhos = ?7, fotos = ?8, modelo_altura = ?9, modelo_veste = ?10, sob_encomenda = ?11, prazo_encomenda = ?12,
-         visivel = ?13, atualizado_em = datetime('now'),
-         ordem = CASE WHEN ?14 THEN (SELECT COALESCE(MAX(ordem), 0) + 1 FROM pecas WHERE colecao_id = ?1) ELSE ordem END
-         WHERE id = ?15`,
+  try {
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE pecas SET colecao_id = ?1, nome = ?2, preco_centavos = ?3, descricao = ?4, tecido = ?5, cores = ?6,
+           tamanhos = ?7, fotos = ?8, modelo_altura = ?9, modelo_veste = ?10, sob_encomenda = ?11, prazo_encomenda = ?12,
+           visivel = ?13, atualizado_em = datetime('now'),
+           ordem = CASE WHEN ?14 THEN (SELECT COALESCE(MAX(ordem), 0) + 1 FROM pecas WHERE colecao_id = ?1) ELSE ordem END
+           WHERE id = ?15`,
+        )
+        .bind(
+          v.colecaoId,
+          v.nome,
+          v.precoCentavos,
+          v.descricao,
+          v.tecido,
+          JSON.stringify(v.cores),
+          JSON.stringify(v.tamanhos),
+          JSON.stringify(v.fotos),
+          v.modeloAltura,
+          v.modeloVeste,
+          v.sobEncomenda ? 1 : 0,
+          v.prazoEncomenda,
+          v.visivel ? 1 : 0,
+          mudouColecao ? 1 : 0,
+          id,
+        ),
+      ...estoque,
+    ])
+  } catch (e) {
+    if (estoqueReservado(e))
+      throw falha(
+        409,
+        'Há unidades desta peça reservadas para quem está pagando no site agora (o "reserv." na grade). O estoque não pode ficar abaixo disso, nem a cor ou o tamanho sair da peça, até o pagamento ser confirmado ou a reserva vencer.',
       )
-      .bind(
-        v.colecaoId,
-        v.nome,
-        v.precoCentavos,
-        v.descricao,
-        v.tecido,
-        JSON.stringify(v.cores),
-        JSON.stringify(v.tamanhos),
-        JSON.stringify(v.fotos),
-        v.modeloAltura,
-        v.modeloVeste,
-        v.sobEncomenda ? 1 : 0,
-        v.prazoEncomenda,
-        v.visivel ? 1 : 0,
-        mudouColecao ? 1 : 0,
-        id,
-      ),
-    ...estoque,
-  ])
+    throw e
+  }
 
   const saiu = (JSON.parse(antes.fotos) as string[]).filter((f) => !v.fotos.includes(f))
   if (saiu.length) c.executionCtx.waitUntil(apagarFotosSemUso(db, c.env.FOTOS, saiu))
@@ -472,7 +482,13 @@ painel.delete('/pecas/:id', async (c) => {
   const id = idDe(c, 'Peça')
   const p = await db.prepare('SELECT fotos FROM pecas WHERE id = ?1').bind(id).first<{ fotos: string }>()
   if (!p) throw falha(404, 'Peça não encontrada.')
-  await db.prepare('DELETE FROM pecas WHERE id = ?1').bind(id).run()
+  try {
+    await db.prepare('DELETE FROM pecas WHERE id = ?1').bind(id).run()
+  } catch (e) {
+    if (estoqueReservado(e))
+      throw falha(409, `Alguém está pagando esta peça no site agora. Espere o pagamento ou o fim da reserva (até ${RESERVA_MINUTOS} minutos) para apagar.`)
+    throw e
+  }
   c.executionCtx.waitUntil(apagarFotosSemUso(db, c.env.FOTOS, JSON.parse(p.fotos)))
   return c.json({ ok: true })
 })

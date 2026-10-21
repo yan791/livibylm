@@ -1,0 +1,31 @@
+# Confere os tipos e roda os testes do Worker e do banco (npm test) a cada push
+# e a cada pull request. Não publica nada: só avisa se algo quebrou.
+name: Testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Conferir os tipos
+        run: npm run verificar
+
+      - name: Testes
+        run: npm test
