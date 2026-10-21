@@ -3,9 +3,8 @@
   Abertas: entrar e usar um link de acesso (convite). O resto exige login.
 */
 import { Hono, type Context } from 'hono'
-import { HTTPException } from 'hono/http-exception'
-import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import type { Ambiente, CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
+import { EMAIL, falha, idDe, inteiro, lerCorpo, texto, type Corpo } from './validar'
 import {
   abrirSessao,
   agora,
@@ -25,6 +24,8 @@ import {
 import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
 import { limparCacheCatalogo } from './catalogo'
 import { lerAjustes, numeroWhatsApp, PAGAMENTO_PRONTO, salvarAjustes } from './ajustes'
+import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
+import { painelPedidos } from './painel-pedidos'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
@@ -37,43 +38,8 @@ painel.use('*', async (c, next) => {
 
 /* ---------- validação ---------- */
 
-const falha = (status: ContentfulStatusCode, mensagem: string) => new HTTPException(status, { message: mensagem })
-
-type Corpo = Record<string, unknown>
-
-async function lerCorpo(c: Context<Ambiente>): Promise<Corpo> {
-  try {
-    const v = await c.req.json()
-    if (v && typeof v === 'object' && !Array.isArray(v)) return v as Corpo
-  } catch {
-    /* cai no erro abaixo */
-  }
-  throw falha(400, 'Pedido inválido.')
-}
-
-function texto(v: unknown, campo: string, max: number, obrigatorio = false) {
-  if (v != null && typeof v !== 'string') throw falha(400, `${campo}: valor inválido.`)
-  const t = (v ?? '').trim()
-  if (obrigatorio && !t) throw falha(400, `Preencha ${campo}.`)
-  if (t.length > max) throw falha(400, `${campo} pode ter até ${max} caracteres.`)
-  return t
-}
-
-function inteiro(v: unknown, campo: string, min: number, max: number) {
-  if (typeof v !== 'number' || !Number.isInteger(v) || v < min || v > max) throw falha(400, `${campo}: valor inválido.`)
-  return v
-}
-
 const HEX = /^#[0-9a-f]{6}$/i
 const FOTO = /^\/(fotos\/p\/[0-9a-f-]{36}\.(webp|jpg|png|avif)|img\/(?!.*\.\.)[\w\-/.]+\.(webp|jpg|jpeg|png|avif))$/
-const EMAIL = /^[^\s@'"]+@[^\s@'"]+\.[^\s@'"]+$/
-
-/** o número no endereço (/pecas/12); qualquer outra coisa é "não encontrada" */
-function idDe(c: Context<Ambiente>, oque: 'Peça' | 'Coleção' | 'Pessoa') {
-  const id = Number(c.req.param('id'))
-  if (!Number.isInteger(id) || id < 1) throw falha(404, `${oque} não encontrada.`)
-  return id
-}
 
 function cor(v: unknown, campo: string) {
   if (typeof v !== 'string' || !HEX.test(v)) throw falha(400, `${campo}: escolha uma cor válida.`)
@@ -172,6 +138,8 @@ painel.post('/convite/:token', async (c) => {
 painel.use('*', exigirAdmin)
 
 painel.get('/eu', (c) => c.json({ ...c.get('admin'), site: c.env.SITE_PUBLICO ?? '' }))
+
+painel.route('/pedidos', painelPedidos)
 
 /* ---------- coleções ---------- */
 
@@ -323,7 +291,8 @@ function lerPeca(corpo: Corpo) {
   }
 }
 
-const pecaParaPainel = (p: LinhaPeca, estoque: LinhaEstoque[]) => ({
+/** reservado = unidades seguras agora em compras do site esperando pagamento */
+const pecaParaPainel = (p: LinhaPeca, estoque: LinhaEstoque[], reservas: Map<string, number>) => ({
   id: p.id,
   colecaoId: p.colecao_id,
   slug: p.slug,
@@ -340,7 +309,9 @@ const pecaParaPainel = (p: LinhaPeca, estoque: LinhaEstoque[]) => ({
   prazoEncomenda: p.prazo_encomenda,
   visivel: p.visivel === 1,
   ordem: p.ordem,
-  estoque: estoque.filter((e) => e.peca_id === p.id).map(({ cor, tamanho, quantidade }) => ({ cor, tamanho, quantidade })),
+  estoque: estoque
+    .filter((e) => e.peca_id === p.id)
+    .map(({ cor, tamanho, quantidade }) => ({ cor, tamanho, quantidade, reservado: reservas.get(chaveVariante(p.id, cor, tamanho)) ?? 0 })),
 })
 
 async function existeColecao(db: D1Database, id: number) {
@@ -378,13 +349,14 @@ painel.get('/pecas', async (c) => {
 
 painel.get('/pecas/:id', async (c) => {
   const id = idDe(c, 'Peça')
-  const [peca, estoque] = await c.env.DB.batch([
+  const [peca, estoque, reservas] = await c.env.DB.batch([
     c.env.DB.prepare('SELECT * FROM pecas WHERE id = ?1').bind(id),
     c.env.DB.prepare('SELECT * FROM estoque WHERE peca_id = ?1').bind(id),
+    consultaReservas(c.env.DB),
   ])
   const p = (peca.results as LinhaPeca[])[0]
   if (!p) throw falha(404, 'Peça não encontrada.')
-  return c.json(pecaParaPainel(p, estoque.results as LinhaEstoque[]))
+  return c.json(pecaParaPainel(p, estoque.results as LinhaEstoque[], mapaReservas(reservas.results as LinhaReserva[])))
 })
 
 painel.post('/pecas', async (c) => {

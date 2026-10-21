@@ -96,6 +96,31 @@ export const removerDaSacola = (id: string) => sacola.salvar(sacola.ler().filter
 
 export const abrirSacola = () => abrirGaveta('sacola')
 
+const CHAVE_PAGOS = 'livi-pedidos-pagos'
+
+/** pedido pago: as peças compradas saem da sacola (uma vez só por pedido, mesmo recarregando a página) */
+export function tirarCompradas(codigo: string, itens: { peca: string; cor: string; tamanho: string; quantidade: number }[]) {
+  let feitos: string[] = []
+  try {
+    feitos = JSON.parse(localStorage.getItem(CHAVE_PAGOS) ?? '[]')
+  } catch {
+    /* sem como lembrar: tira assim mesmo */
+  }
+  if (feitos.includes(codigo)) return
+  let lista = sacola.ler()
+  for (const i of itens) {
+    if (!i.peca) continue
+    const id = idDoItem({ peca: i.peca, cor: i.cor, tamanho: i.tamanho })
+    lista = lista.flatMap((x) => (idDoItem(x) !== id ? [x] : x.qtd > i.quantidade ? [{ ...x, qtd: x.qtd - i.quantidade }] : []))
+  }
+  sacola.salvar(lista)
+  try {
+    localStorage.setItem(CHAVE_PAGOS, JSON.stringify([...feitos, codigo].slice(-20)))
+  } catch {
+    /* fica sem lembrar */
+  }
+}
+
 /** dados completos de cada item, com o limite de agora e se esgotou (id e limite saem antes de "peca" virar a peça inteira) */
 export function detalhar(lista: ItemSacola[]) {
   return detalharBase(lista.map((i) => ({ ...i, id: idDoItem(i), limite: limiteDe(i) }))).map((i) => ({

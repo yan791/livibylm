@@ -91,7 +91,8 @@ export function Avisos() {
 
 /* ---------- confirmação ---------- */
 
-type Pergunta = { titulo: string; texto?: string; botao: string; perigo?: boolean; responder: (v: boolean) => void }
+/** desistir = texto do botão que fecha sem fazer nada (padrão: "Cancelar") */
+type Pergunta = { titulo: string; texto?: string; botao: string; desistir?: string; perigo?: boolean; responder: (v: boolean) => void }
 let pergunta: Pergunta | null = null
 const ouvintesPergunta = new Set<() => void>()
 
@@ -132,7 +133,7 @@ export function Confirmacao() {
           {atual.texto && <p>{atual.texto}</p>}
           <div className="confirmacao-botoes">
             <button type="button" className="botao botao-claro" onClick={() => responder(false)}>
-              Cancelar
+              {atual.desistir ?? 'Cancelar'}
             </button>
             <button type="button" className={`botao ${atual.perigo ? 'botao-perigo' : ''}`} onClick={() => responder(true)} autoFocus>
               {atual.botao}
@@ -242,6 +243,31 @@ export const Icone = {
       <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
       <circle cx="15" cy="7" r="2" />
       <circle cx="9" cy="17" r="2" />
+    </>,
+  ),
+  pedidos: svg(
+    <>
+      <path d="M5 8h14l-1.2 11.1a1 1 0 0 1-1 .9H7.2a1 1 0 0 1-1-.9Z" />
+      <path d="M9 10V7a3 3 0 0 1 6 0v3" />
+    </>,
+  ),
+  whatsapp: svg(<path d="M4 20l1.2-3.9A8 8 0 1 1 8 19Zm5-11.5c-.3 2.6 2.4 5.6 5.5 6l1-1.5-1.8-1-.9.8c-1-.4-2-1.4-2.4-2.4l.8-.9-1-1.8Z" />),
+  copiar: svg(
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </>,
+  ),
+  imprimir: svg(
+    <>
+      <path d="M7 9V4h10v5M7 17H5a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2" />
+      <rect x="7" y="14" width="10" height="6" rx="1" />
+    </>,
+  ),
+  aviso: svg(
+    <>
+      <path d="M12 4 2.8 19.5h18.4Z" />
+      <path d="M12 10v4.5M12 17v.2" />
     </>,
   ),
 }

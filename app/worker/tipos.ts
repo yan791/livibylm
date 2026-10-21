@@ -39,3 +39,60 @@ export type LinhaPeca = {
 }
 
 export type LinhaEstoque = { peca_id: number; cor: string; tamanho: string; quantidade: number }
+
+export type Situacao = 'aguardando' | 'expirado' | 'pago' | 'sem_estoque' | 'enviado' | 'entregue' | 'cancelado'
+
+export type LinhaPedido = {
+  id: number
+  codigo: string
+  origem: 'site' | 'fora'
+  situacao: Situacao
+  reserva_ate: number
+  estoque_baixado: number
+  nome: string
+  whatsapp: string
+  email: string
+  cpf: string
+  entrega: string
+  cep: string
+  rua: string
+  numero: string
+  complemento: string
+  bairro: string
+  cidade: string
+  uf: string
+  itens_centavos: number
+  frete_centavos: number
+  total_centavos: number
+  pagamento: string
+  parcelas: number
+  pago_centavos: number
+  link_pagamento: string
+  fatura: string
+  transacao: string
+  recibo: string
+  rastreio: string
+  observacao: string
+  criado_em: string
+  pago_em: string | null
+  enviado_em: string | null
+  entregue_em: string | null
+  cancelado_em: string | null
+}
+
+export type LinhaItemPedido = {
+  id: number
+  pedido_id: number
+  peca_id: number | null
+  cor: string
+  tamanho: string
+  quantidade: number
+  preco_centavos: number
+  sob_encomenda: number
+  nome: string
+  cor_nome: string
+  colecao_nome: string
+  foto: string
+  /** endereço da peça no site, quando a consulta junta com pecas (null se a peça foi apagada) */
+  peca_slug?: string | null
+}

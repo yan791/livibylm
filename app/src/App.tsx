@@ -13,6 +13,7 @@ import { AvisoDesejo } from './components/Desejos'
 import { Catalogo } from './components/Catalogo'
 import { Cortina } from './components/Cortina'
 import { movimentoReduzido } from './lib/midia'
+import { Pedido } from './paginas/Pedido'
 
 export default function App() {
   const caminho = useCaminho()
@@ -30,8 +31,15 @@ export default function App() {
       <AvisoDesejo />
       {/* /colecao/... abre o catálogo por cima da página inicial, que fica sempre montada */}
       <Catalogo />
-      <Cortina />
-      <Home rota={rota} />
+      {rota.nome === 'pedido' ? (
+        // a página de uma compra fica sozinha, sem a página inicial por baixo
+        <Pedido key={rota.codigo} codigo={rota.codigo} />
+      ) : (
+        <>
+          <Cortina />
+          <Home rota={rota} />
+        </>
+      )}
     </MotionConfig>
   )
 }

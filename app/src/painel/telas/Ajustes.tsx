@@ -3,7 +3,7 @@
   entrega em Maceió, parcelamento e o WhatsApp que recebe as mensagens.
 */
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { api, centavosDe, mensagemDe, textoDe, type Ajustes as DadosAjustes } from '../api'
+import { api, centavosDe, mensagemDe, telefone, textoDe, type Ajustes as DadosAjustes } from '../api'
 import { segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, FalhaCarga, Interruptor, useCarregar } from '../ui'
 
@@ -15,12 +15,6 @@ function numeroWhatsApp(texto: string) {
   let n = texto.replace(/\D/g, '').replace(/^0+/, '')
   if (n.length === 10 || n.length === 11) n = '55' + n
   return /^55[1-9]{2}(9\d{8}|[2-8]\d{7})$/.test(n) ? n : null
-}
-
-/** 5582998115324 vira "(82) 99811-5324" */
-function telefone(n: string) {
-  const m = n.match(/^55(\d{2})(\d{4,5})(\d{4})$/)
-  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : n
 }
 
 const rascunhoDe = (a: DadosAjustes): Rascunho => ({

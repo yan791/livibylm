@@ -666,7 +666,7 @@ select {
   bottom: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   height: calc(var(--abas) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
   background: rgba(251, 248, 245, 0.94);
@@ -1338,6 +1338,7 @@ select {
 }
 .estoque-celula {
   display: grid;
+  align-content: start;
   gap: 4px;
   text-align: center;
   font-size: 13px;
@@ -1358,6 +1359,11 @@ select {
 .estoque-celula input.zerado {
   color: #b5a497;
   background: var(--creme);
+}
+.estoque-reserva {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--alerta);
 }
 
 /* barra de salvar */
@@ -1482,4 +1488,349 @@ select {
 /* botões dentro de cartões ficam do tamanho do texto */
 .cartao > .botao {
   justify-self: start;
+}
+
+/* ============================================================
+   PEDIDOS
+   ============================================================ */
+
+/* número de pedidos pra enviar, na aba e no menu do topo */
+.nav-numero {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 6px;
+  border-radius: 999px;
+  background: var(--vinho);
+  color: var(--creme);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.abas-icone {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.abas-icone .nav-numero {
+  position: absolute;
+  top: -6px;
+  left: 14px;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--papel);
+}
+.chip-numero {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.selo-ok {
+  background: rgba(47, 107, 69, 0.13);
+  color: var(--ok);
+}
+.selo-perigo {
+  background: rgba(163, 23, 43, 0.12);
+  color: var(--perigo);
+}
+.selo-grande {
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 14px;
+}
+
+.alerta {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--raio-p);
+  background: rgba(163, 23, 43, 0.08);
+  color: var(--perigo);
+  line-height: 1.45;
+}
+.alerta svg {
+  flex: none;
+  margin-top: 1px;
+}
+.alerta-calmo {
+  background: rgba(54, 14, 0, 0.05);
+  color: var(--texto);
+}
+.alerta-calmo svg {
+  color: var(--suave);
+}
+
+.acoes-pedido .envio {
+  display: grid;
+  gap: 12px;
+}
+.acoes-pedido .campo input {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.acoes-pedido > .botao {
+  justify-self: start;
+}
+
+/* rótulo e valor */
+.dados,
+.totais {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.dado {
+  display: grid;
+  grid-template-columns: 112px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+.dado dt {
+  font-size: 14px;
+  color: var(--suave);
+}
+.dado dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.dado dd small {
+  color: var(--suave);
+}
+.dado a {
+  color: var(--vinho);
+  text-underline-offset: 3px;
+}
+.totais {
+  padding-top: 12px;
+  border-top: 1px solid var(--linha);
+}
+.totais .dado {
+  grid-template-columns: 1fr auto;
+  font-variant-numeric: tabular-nums;
+}
+.dado-forte dt,
+.dado-forte dd {
+  color: var(--texto);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.mensagens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mensagens .botao {
+  min-height: 42px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.entrega-tipo {
+  font-weight: 500;
+}
+.endereco {
+  display: grid;
+  gap: 2px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.itens-pedido {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.itens-pedido li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.itens-pedido .linha-texto {
+  flex: 1;
+}
+.itens-pedido .linha-texto strong {
+  font-size: 16px;
+}
+.item-total {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.historico {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 0 18px;
+  color: var(--suave);
+}
+.historico span {
+  color: var(--texto);
+  font-weight: 500;
+}
+
+/* registrar venda */
+.escolher-peca {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--raio-p);
+  background: rgba(54, 14, 0, 0.035);
+}
+.escolher-peca > .botao-texto {
+  justify-self: start;
+}
+.escolher-peca .chip {
+  display: inline-flex;
+  align-items: center;
+}
+.escolher-peca .chip-tamanho {
+  flex-direction: column;
+  justify-content: center;
+  min-height: 52px;
+  padding: 6px 14px;
+  line-height: 1.15;
+}
+.escolher-peca .chip small {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--suave);
+}
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.itens-venda li {
+  align-items: flex-start;
+}
+.venda-campos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.qtd {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--linha-forte);
+  border-radius: 999px;
+  background: #fff;
+}
+.qtd button {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  color: var(--vinho);
+}
+.qtd button:disabled {
+  opacity: 0.3;
+}
+.qtd span {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.preco-pequeno {
+  width: 140px;
+}
+.preco-pequeno input {
+  min-height: 42px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+.segmentos-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* folha para separar as peças: só existe na impressão */
+.folha {
+  display: none;
+}
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  .topo,
+  .abas,
+  .avisos,
+  .barra-salvar,
+  .confirmacao,
+  .tela-pedido > :not(.folha) {
+    display: none !important;
+  }
+  .moldura,
+  .conteudo {
+    padding: 0;
+  }
+  .folha {
+    display: grid;
+    gap: 18px;
+    color: #000;
+    font-size: 13pt;
+  }
+  .folha header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #000;
+  }
+  .folha header div {
+    text-align: right;
+  }
+  .folha-marca {
+    font-family: var(--serif);
+    font-size: 30pt;
+    font-variation-settings: 'opsz' 48;
+    line-height: 1;
+  }
+  .folha-numero {
+    font-size: 16pt;
+    font-weight: 600;
+  }
+  .folha-cliente {
+    display: grid;
+    gap: 2px;
+  }
+  .folha table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .folha th,
+  .folha td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #999;
+    text-align: left;
+  }
+  .folha th {
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .folha-caixa {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid #000;
+  }
+  .folha-nota {
+    font-style: italic;
+  }
+  .folha footer {
+    padding-top: 10px;
+    border-top: 1px solid #000;
+    text-align: center;
+  }
 }

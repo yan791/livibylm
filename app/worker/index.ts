@@ -1,6 +1,8 @@
 /*
   Worker da Livi: publica o site, a API do painel e as fotos.
     /api/loja         coleções e peças visíveis e os ajustes públicos (o site usa, inclusive o do GitHub Pages)
+    /api/pedidos/...  compras pelo site (worker/pedidos.ts)
+    /api/pagamento/aviso  aviso da InfinitePay de pagamento aprovado
     /api/painel/...   painel da loja (login obrigatório, menos entrar e convite)
     /fotos/...        fotos enviadas pelo painel (R2)
     /painel/...       o painel em si
@@ -11,6 +13,7 @@ import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { lerLoja } from './catalogo'
 import { painel } from './painel'
+import { avisoDePagamento, compras } from './pedidos'
 import { servirFoto } from './fotos'
 import type { Ambiente } from './tipos'
 
@@ -38,6 +41,8 @@ app.get('/api/catalogo', async (c) => {
   return c.json((await lerLoja(c.env.DB)).colecoes)
 })
 app.route('/api/painel', painel)
+app.route('/api/pedidos', compras)
+app.post('/api/pagamento/aviso', (c) => avisoDePagamento(c))
 app.all('/api/*', (c) => c.json({ erro: 'Endereço não encontrado.' }, 404))
 
 app.get('/fotos/*', (c) => servirFoto(c.env.FOTOS, c.req.path.slice('/fotos/'.length), c.req.raw))

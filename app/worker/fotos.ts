@@ -65,13 +65,15 @@ export async function guardarPequena(bucket: R2Bucket, srcGrande: string, corpo:
   return true
 }
 
-/** apaga do R2 as fotos (e a versão pequena delas) que nenhuma peça ou coleção usa mais */
+/** apaga do R2 as fotos (e a versão pequena delas) que nenhuma peça, coleção ou pedido usa mais */
 export async function apagarFotosSemUso(db: D1Database, bucket: R2Bucket, enderecos: string[]) {
   for (const src of new Set(enderecos)) {
     const chave = src.startsWith('/fotos/') ? src.slice('/fotos/'.length) : ''
     if (!CHAVE_GRANDE.test(chave)) continue
     const emUso = await db
-      .prepare('SELECT 1 FROM pecas WHERE instr(fotos, ?1) > 0 UNION ALL SELECT 1 FROM colecoes WHERE capa = ?2 LIMIT 1')
+      .prepare(
+        'SELECT 1 FROM pecas WHERE instr(fotos, ?1) > 0 UNION ALL SELECT 1 FROM colecoes WHERE capa = ?2 UNION ALL SELECT 1 FROM pedido_itens WHERE foto = ?2 LIMIT 1',
+      )
       .bind(`"${src}"`, src)
       .first()
     if (!emUso) await bucket.delete([chave, pequenaDe(chave)])

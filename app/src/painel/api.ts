@@ -60,7 +60,8 @@ export type Peca = {
   prazoEncomenda: string
   visivel: boolean
   ordem: number
-  estoque: { cor: string; tamanho: string; quantidade: number }[]
+  /** reservado = unidades seguras agora em compras do site esperando pagamento */
+  estoque: { cor: string; tamanho: string; quantidade: number; reservado: number }[]
 }
 
 export type Pessoa = { id: number; email: string; nome: string; ativo: boolean; ultimoAcesso: string | null; voce: boolean }
@@ -74,6 +75,72 @@ export type Ajustes = {
   whatsapp: string
   /** o pagamento pelo site já existe (só então as vendas pelo site podem ligar) */
   pagamentoPronto: boolean
+}
+
+export type Situacao = 'aguardando' | 'expirado' | 'pago' | 'sem_estoque' | 'enviado' | 'entregue' | 'cancelado'
+
+export type ResumoPedido = {
+  id: number
+  /** 'site' = compra pelo site; 'fora' = venda registrada no painel */
+  origem: 'site' | 'fora'
+  situacao: Situacao
+  /** até quando as peças ficam seguras (ms), para quem ainda não pagou */
+  reservaAte: number
+  nome: string
+  totalCentavos: number
+  entrega: string
+  criadoEm: string
+  pagoEm: string | null
+  unidades: number
+  foto: string
+  /** nome da primeira peça */
+  primeira: string
+}
+
+export type Pedido = Omit<ResumoPedido, 'unidades' | 'foto' | 'primeira'> & {
+  codigo: string
+  estoqueBaixado: boolean
+  whatsapp: string
+  email: string
+  cpf: string
+  endereco: { cep: string; rua: string; numero: string; complemento: string; bairro: string; cidade: string; uf: string }
+  itensCentavos: number
+  freteCentavos: number
+  pagamento: string
+  parcelas: number
+  pagoCentavos: number
+  recibo: string
+  rastreio: string
+  observacao: string
+  enviadoEm: string | null
+  entregueEm: string | null
+  canceladoEm: string | null
+  itens: {
+    id: number
+    pecaId: number | null
+    nome: string
+    cor: string
+    tamanho: string
+    quantidade: number
+    precoCentavos: number
+    colecao: string
+    foto: string
+    sobEncomenda: boolean
+  }[]
+}
+
+/** uma peça para escolher ao registrar uma venda; livre = "idDaCor|Tamanho" -> quantas dá para vender agora */
+export type OpcaoVenda = {
+  id: number
+  nome: string
+  colecao: string
+  precoCentavos: number
+  foto: string
+  visivel: boolean
+  sobEncomenda: boolean
+  cores: CorPeca[]
+  tamanhos: string[]
+  livre: Record<string, number>
 }
 
 export class ErroApi extends Error {
@@ -124,6 +191,12 @@ export function centavosDe(texto: string): number | null {
   else if (/\.\d{3}$/.test(t)) normal = t.replace(/\./g, '')
   const n = Number(normal)
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) : null
+}
+
+/** 5582998115324 vira "(82) 99811-5324" */
+export function telefone(n: string) {
+  const m = n.match(/^55(\d{2})(\d{4,5})(\d{4})$/)
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : n
 }
 
 /** valor para o campo de preço, sem o "R$" (ele fica fixo no campo) */

@@ -1,9 +1,10 @@
 /*
   O que o site recebe ao abrir: o catálogo (só coleções e peças visíveis, no
   formato que o site já usava em src/dados/colecoes.ts) e os ajustes públicos
-  da loja (WhatsApp e parcelamento). O estoque sai limitado a 10 por
-  combinação (o site só precisa saber se tem, se é a última e até quanto a
-  sacola deixa levar), nunca a quantidade real.
+  da loja (WhatsApp e parcelamento). O disponível de cada combinação é o
+  estoque menos o que está reservado em compras esperando pagamento,
+  limitado a 10 (o site só precisa saber se tem, se é a última e até quanto
+  a sacola deixa levar), nunca a quantidade real.
 
   Cache: cada servidor da Cloudflare guarda isso por alguns segundos, e
   muitas visitas seguidas viram uma consulta só ao banco. Qualquer alteração
@@ -12,6 +13,7 @@
 */
 import type { CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
 import { ajustesPublicos, consultaAjustes, deLinha } from './ajustes'
+import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 
 /** o máximo que o site enxerga de uma combinação (e que a sacola deixa levar) */
 export const LIMITE_VISIVEL = 10
@@ -32,24 +34,26 @@ export const limparCacheCatalogo = () => {
 }
 
 async function consultar(db: D1Database) {
-  const [colecoes, pecas, estoque, ajustes] = await db.batch([
+  const [colecoes, pecas, estoque, ajustes, reservas] = await db.batch([
     db.prepare('SELECT * FROM colecoes WHERE visivel = 1 ORDER BY ordem, id'),
     db.prepare('SELECT * FROM pecas WHERE visivel = 1 ORDER BY ordem, id'),
     db.prepare('SELECT e.* FROM estoque e JOIN pecas p ON p.id = e.peca_id WHERE p.visivel = 1'),
     consultaAjustes(db),
+    consultaReservas(db),
   ])
   const linhasEstoque = estoque.results as LinhaEstoque[]
+  const seguras = mapaReservas(reservas.results as LinhaReserva[])
 
   return {
-    colecoes: montarColecoes(colecoes.results as LinhaColecao[], pecas.results as LinhaPeca[], linhasEstoque),
+    colecoes: montarColecoes(colecoes.results as LinhaColecao[], pecas.results as LinhaPeca[], linhasEstoque, seguras),
     ajustes: ajustesPublicos(deLinha((ajustes.results as { valor: string }[])[0]?.valor)),
   }
 }
 
-function montarColecoes(colecoes: LinhaColecao[], pecas: LinhaPeca[], linhasEstoque: LinhaEstoque[]) {
+function montarColecoes(colecoes: LinhaColecao[], pecas: LinhaPeca[], linhasEstoque: LinhaEstoque[], seguras: Map<string, number>) {
   return colecoes
     .map((c) => {
-      const daColecao = pecas.filter((p) => p.colecao_id === c.id).map((p) => pecaPublica(p, linhasEstoque))
+      const daColecao = pecas.filter((p) => p.colecao_id === c.id).map((p) => pecaPublica(p, linhasEstoque, seguras))
       return {
         slug: c.slug,
         nome: c.nome,
@@ -67,11 +71,12 @@ function montarColecoes(colecoes: LinhaColecao[], pecas: LinhaPeca[], linhasEsto
     .filter((c) => c.pecas.length > 0)
 }
 
-function pecaPublica(p: LinhaPeca, estoque: LinhaEstoque[]) {
+function pecaPublica(p: LinhaPeca, estoque: LinhaEstoque[], seguras: Map<string, number>) {
   const cores = JSON.parse(p.cores) as CorPeca[]
   const tamanhos = JSON.parse(p.tamanhos) as string[]
   const quantidade = (cor: string, tamanho: string) =>
-    estoque.find((e) => e.peca_id === p.id && e.cor === cor && e.tamanho === tamanho)?.quantidade ?? 0
+    (estoque.find((e) => e.peca_id === p.id && e.cor === cor && e.tamanho === tamanho)?.quantidade ?? 0) -
+    (seguras.get(chaveVariante(p.id, cor, tamanho)) ?? 0)
   /** "Cor|Tamanho" -> quantas a cliente pode levar (sob encomenda: sempre o limite) */
   const disponivel: Record<string, number> = {}
   for (const cor of cores)

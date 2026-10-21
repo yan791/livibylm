@@ -4455,3 +4455,231 @@ html[data-movimento='reduzido'] .lk-bloco-info {
 .gaveta-vazia .gaveta-saiu {
   margin: 0 0 8px;
 }
+
+/* ============================================================
+   PÁGINA DO PEDIDO (/pedido/<código>): para onde a cliente volta
+   depois de pagar na InfinitePay
+   ============================================================ */
+
+.pedido {
+  min-height: 100svh;
+  padding: 112px 20px 72px;
+  background:
+    radial-gradient(90% 50% at 50% 0%, rgb(230 205 191 / 0.55), transparent 70%),
+    var(--creme);
+  color: var(--chocolate);
+}
+
+.pedido-caixa {
+  display: grid;
+  gap: 22px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.pedido-titulo {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.3rem, 8vw, 3.6rem);
+  font-variation-settings: 'opsz' 60;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--vinho);
+  text-wrap: balance;
+}
+
+.pedido-texto {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 34em;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--taupe);
+}
+
+.pedido-carregando {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--taupe);
+}
+
+.pedido-giro {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  border-radius: 50%;
+  border: 2px solid rgb(79 15 16 / 0.18);
+  border-top-color: var(--vinho);
+  animation: pedido-giro 0.8s linear infinite;
+}
+.pedido-carregando .pedido-giro {
+  margin-top: 0;
+}
+
+@keyframes pedido-giro {
+  to {
+    rotate: 1turn;
+  }
+}
+
+.pedido-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* pago > postado > entregue */
+.pedido-etapas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pedido-etapas li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--taupe-claro);
+}
+.pedido-etapas li span {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid var(--taupe-claro);
+  background: var(--creme);
+}
+.pedido-etapas li + li::before {
+  content: '';
+  position: absolute;
+  top: 6.5px;
+  right: 50%;
+  width: 100%;
+  height: 1.5px;
+  background: rgb(125 101 81 / 0.3);
+}
+.pedido-etapas li.feita {
+  color: var(--vinho);
+}
+.pedido-etapas li.feita span {
+  border-color: var(--vinho);
+  background: var(--vinho);
+}
+.pedido-etapas li.feita::before {
+  background: var(--vinho);
+}
+
+.pedido-rastreio {
+  line-height: 1.6;
+}
+.pedido-rastreio strong {
+  letter-spacing: 0.06em;
+}
+.pedido-rastreio a,
+.pedido-recibo {
+  color: var(--vinho);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: rgb(79 15 16 / 0.3);
+}
+
+.pedido-resumo {
+  display: grid;
+  gap: 18px;
+  margin-top: 10px;
+  padding: 24px;
+  border-radius: 20px;
+  background: rgb(251 248 245 / 0.8);
+  border: 1px solid rgb(79 15 16 / 0.1);
+}
+.pedido-resumo ul {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pedido-resumo li {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 14px;
+  align-items: center;
+}
+.pedido-foto {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  aspect-ratio: 3 / 4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--creme-2);
+  color: var(--taupe-claro);
+}
+.pedido-foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pedido-foto svg {
+  width: 24px;
+  height: 24px;
+}
+.pedido-item {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.pedido-item strong {
+  font-weight: 500;
+}
+.pedido-item span {
+  font-size: 0.9rem;
+  color: var(--taupe);
+}
+.pedido-valor {
+  font-variant-numeric: tabular-nums;
+}
+.pedido-resumo dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgb(79 15 16 / 0.12);
+}
+.pedido-resumo dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--taupe);
+}
+.pedido-resumo dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.pedido-resumo .pedido-total {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--chocolate);
+}
+.pedido-recibo {
+  justify-self: start;
+  font-size: 0.95rem;
+}
+
+@media (min-width: 900px) {
+  .pedido {
+    padding-top: 150px;
+  }
+}

@@ -336,7 +336,12 @@ function Formulario({
         ) : r.cores.length === 0 || r.tamanhos.length === 0 ? (
           <p className="campo-dica">Escolha as cores e os tamanhos para preencher o estoque.</p>
         ) : (
-          <GradeEstoque r={r} mudar={(k, n) => mudar((x) => ({ ...x, estoque: { ...x.estoque, [k]: n } }))} total={total} />
+          <GradeEstoque
+            r={r}
+            mudar={(k, n) => mudar((x) => ({ ...x, estoque: { ...x.estoque, [k]: n } }))}
+            total={total}
+            reservas={Object.fromEntries((peca?.estoque ?? []).map((x) => [chave(x.cor, x.tamanho), x.reservado]))}
+          />
         )}
       </section>
 
@@ -592,8 +597,22 @@ function EditorTamanhos({ tamanhos, aoMudar }: { tamanhos: string[]; aoMudar: (t
 
 /* ---------- estoque ---------- */
 
-/** um bloco por cor, com os tamanhos lado a lado: cabe no celular com qualquer número de tamanhos */
-function GradeEstoque({ r, mudar, total }: { r: Rascunho; mudar: (k: string, n: number) => void; total: number }) {
+/**
+  um bloco por cor, com os tamanhos lado a lado: cabe no celular com qualquer número de tamanhos.
+  reservas = unidades seguras em compras do site esperando pagamento (quando a peça abriu)
+*/
+function GradeEstoque({
+  r,
+  mudar,
+  total,
+  reservas,
+}: {
+  r: Rascunho
+  mudar: (k: string, n: number) => void
+  total: number
+  reservas: Record<string, number>
+}) {
+  const reservadas = Object.values(reservas).reduce((s, n) => s + n, 0)
   return (
     <>
       <div className="estoque">
@@ -626,6 +645,7 @@ function GradeEstoque({ r, mudar, total }: { r: Rascunho; mudar: (k: string, n: 
                         onChange={(e) => mudar(k, Math.max(0, Math.min(9999, Math.floor(Number(e.target.value) || 0))))}
                         aria-label={`${c.nome || 'Cor'}, tamanho ${t}`}
                       />
+                      {reservas[k] > 0 && <small className="estoque-reserva">{reservas[k]} reserv.</small>}
                     </label>
                   )
                 })}
@@ -636,6 +656,8 @@ function GradeEstoque({ r, mudar, total }: { r: Rascunho; mudar: (k: string, n: 
       </div>
       <p className="campo-dica">
         Total: <strong>{total}</strong> {total === 1 ? 'unidade' : 'unidades'}. Com 0, a opção aparece como esgotada no site.
+        {reservadas > 0 &&
+          ` ${reservadas === 1 ? '1 unidade está reservada' : `${reservadas} unidades estão reservadas`} para quem está pagando no site agora: ela continua no estoque e só sai quando o pagamento for confirmado.`}
       </p>
     </>
   )

@@ -33,6 +33,8 @@
   ],
   // site público (GitHub Pages): quem abre o endereço do Worker fora do /painel vai para lá.
   // Vazio = o próprio Worker publica o site (ex.: quando houver domínio próprio aqui)
-  "vars": { "SITE_PUBLICO": "https://yan791.github.io/livibylm" },
+  // INFINITEPAY_HANDLE: a InfiniteTag da loja, que recebe os pagamentos do site (sem o $).
+  // Uma chave de API, se um dia existir, vai só como segredo: npx wrangler secret put INFINITEPAY_CHAVE
+  "vars": { "SITE_PUBLICO": "https://yan791.github.io/livibylm", "INFINITEPAY_HANDLE": "liviamoraesloureiro" },
   "observability": { "enabled": true }
 }

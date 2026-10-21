@@ -12,8 +12,12 @@ import { Colecoes } from './telas/Colecoes'
 import { ColecaoForm } from './telas/ColecaoForm'
 import { Pessoas } from './telas/Pessoas'
 import { Ajustes } from './telas/Ajustes'
+import { Pedidos } from './telas/Pedidos'
+import { EVENTO_PEDIDOS, PedidoDetalhe } from './telas/PedidoDetalhe'
+import { NovaVenda } from './telas/NovaVenda'
 
 const NAV = [
+  { caminho: '/painel/pedidos', rotulo: 'Pedidos', icone: Icone.pedidos, telas: ['pedidos', 'pedido', 'venda'] },
   { caminho: '/painel', rotulo: 'Peças', icone: Icone.pecas, telas: ['pecas', 'peca'] },
   { caminho: '/painel/colecoes', rotulo: 'Coleções', icone: Icone.colecoes, telas: ['colecoes', 'colecao'] },
   { caminho: '/painel/pessoas', rotulo: 'Acesso', icone: Icone.pessoas, telas: ['pessoas'] },
@@ -62,10 +66,41 @@ export function App() {
   )
 }
 
+/** quantos pedidos pagos esperam envio (o número na aba Pedidos); confere de novo ao trocar de tela */
+function usePraEnviar(tela: Tela) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    let vivo = true
+    const contar = () =>
+      api<{ paraEnviar: number }>('GET', '/pedidos/contagem').then(
+        (r) => vivo && setN(r.paraEnviar),
+        () => {},
+      )
+    contar()
+    window.addEventListener(EVENTO_PEDIDOS, contar)
+    // a aba aberta: novos pedidos aparecem sem recarregar
+    const relogio = setInterval(contar, 60_000)
+    return () => {
+      vivo = false
+      window.removeEventListener(EVENTO_PEDIDOS, contar)
+      clearInterval(relogio)
+    }
+  }, [tela.nome])
+  return n
+}
+
 function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: () => void }) {
+  const praEnviar = usePraEnviar(tela)
   useEffect(() => {
     if (tela.nome === 'entrar') ir('/painel', { substituir: true, forcar: true })
   }, [tela.nome])
+
+  const marca = (caminho: string) =>
+    caminho === '/painel/pedidos' && praEnviar > 0 ? (
+      <span className="nav-numero" aria-label={`${praEnviar} pra enviar`}>
+        {praEnviar > 99 ? '99+' : praEnviar}
+      </span>
+    ) : null
 
   const sair = async () => {
     if (!podeSair()) return
@@ -84,6 +119,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
           {NAV.map((n) => (
             <a key={n.caminho} href={n.caminho} onClick={aoClicar(n.caminho)} aria-current={n.telas.includes(tela.nome) ? 'page' : undefined}>
               {n.rotulo}
+              {marca(n.caminho)}
             </a>
           ))}
         </nav>
@@ -106,12 +142,18 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
         {tela.nome === 'colecao' && <ColecaoForm key={String(tela.id)} id={tela.id} />}
         {tela.nome === 'pessoas' && <Pessoas />}
         {tela.nome === 'ajustes' && <Ajustes />}
+        {tela.nome === 'pedidos' && <Pedidos />}
+        {tela.nome === 'pedido' && <PedidoDetalhe key={tela.id} id={tela.id} />}
+        {tela.nome === 'venda' && <NovaVenda />}
       </main>
 
       <nav className="abas" aria-label="Seções do painel">
         {NAV.map((n) => (
           <a key={n.caminho} href={n.caminho} onClick={aoClicar(n.caminho)} aria-current={n.telas.includes(tela.nome) ? 'page' : undefined}>
-            {n.icone}
+            <span className="abas-icone">
+              {n.icone}
+              {marca(n.caminho)}
+            </span>
             <span>{n.rotulo}</span>
           </a>
         ))}
