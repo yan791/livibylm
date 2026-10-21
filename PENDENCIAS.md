@@ -24,11 +24,9 @@ Atualizado em 21/10/2026, depois do commit `c1443e6` (partes 4.1, 4.2 e 4.4).
 
 ## Parte 4.3: compra no site (formulário na sacola)
 
-Depende de uma decisão: **como cobrar o frete fora de Maceió.**
-- **Tabela fixa:** a Livia cadastra no painel um preço de PAC e SEDEX por região. Está dentro do orçamento.
-- **SuperFrete:** preço exato pelo CEP e etiqueta pelo painel. A SuperFrete não cobra mensalidade, mas é trabalho a mais, fora do orçamento.
+**Frete fora de Maceió: tabela fixa** (decidido com a Livia em 21/10). Ela cadastra no painel um preço de PAC e outro de SEDEX por região; o site mostra o valor na hora pelo CEP, e ele entra no link de pagamento. Sem SuperFrete. Ela mesma posta nos Correios: vê o pedido pago no painel, com o endereço, e marca como enviado com o rastreio.
 
-A cliente nunca espera ninguém confirmar o frete: nos dois casos o valor aparece na hora.
+A cliente nunca espera ninguém confirmar o frete: o valor aparece na hora.
 
 O que fazer:
 1. **Formulário na sacola** (`app/src/components/Sacola.tsx`):
@@ -65,16 +63,20 @@ O que fazer:
    - trocar `PAGAMENTO_PRONTO` para `true` (`app/worker/ajustes.ts`);
    - publicar (`npm run publicar` dentro de `app`);
    - a Livia liga "Vender pelo site" em Ajustes no painel.
-4. **Opcional, a chave de API da InfinitePay.** Ela só entra como segredo: `npx wrangler secret put INFINITEPAY_CHAVE`, e o código já manda no cabeçalho `X-Api-Key` quando existir. Com ela daria para usar `valid_until` e `single_payment` (link que vence junto com a reserva). Não foram usados porque a documentação pública não diz o formato.
+4. **Opcional, a chave de API da InfinitePay.** Ela só entra como segredo: `npx wrangler secret put INFINITEPAY_CHAVE`, e o código já manda no cabeçalho `X-Api-Key` quando existir. Com ela daria para usar `valid_until` e `single_payment` (link que vence junto com a reserva). Não foram usados porque a documentação pública não diz o formato. **A Livia já tem a chave** (o Arthur confirmou em 21/10): falta cadastrar e conferir o formato de `valid_until` na compra de teste.
 
-## Respostas que faltam da Livia
+## Respostas da Livia
 
+Já respondidas (21/10):
+- sem desconto no Pix;
+- sem retirada: não há loja física;
+- reserva de 30 minutos, como está em `RESERVA_MINUTOS` (`app/worker/pedidos.ts`);
+- frete fora de Maceió: tabela fixa por região, com PAC e SEDEX (ver a parte 4.3).
+
+Ainda faltam:
+- os preços da tabela de frete;
 - política de troca;
 - se mostra o CPF no rodapé ou abre um MEI;
-- desconto no Pix (sim ou não, e quanto);
-- retirada no ateliê (sim ou não);
-- tempo de reserva: hoje são 30 minutos, em `RESERVA_MINUTOS` (`app/worker/pedidos.ts`);
-- frete fora de Maceió: tabela fixa (e os preços) ou SuperFrete (com conta no CPF dela, token e peso e medidas das embalagens);
 - ok para a compra de teste.
 
 ## Outras pendências
@@ -94,6 +96,10 @@ O que fazer:
   - acompanhar pedido pelo site.
 
 ## Como testar no PC
+
+Os testes automáticos rodam sozinhos, sem `npm run api`: `npm test` dentro de `app`. Eles usam um banco local novo a cada teste, com as migrations aplicadas, e rodam também no GitHub a cada push (`.github/workflows/testes.yml`). O `npm run publicar` não publica se algum falhar.
+
+O teste completo, com a InfinitePay de mentira:
 
 1. Rodar `npm run api` e `npm run dev` dentro de `app`.
 2. Pôr no `app/.dev.vars` (não vai para o git):
