@@ -10,7 +10,7 @@ Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra
   - O site e a tela da peça no painel descontam as peças reservadas.
 - **4.2 Aba Pedidos no painel.**
   - Lista por situação, com o número de pedidos pra enviar na aba.
-  - Detalhe do pedido: marcar como pago, enviado (com rastreio), entregue ou cancelado (as peças voltam pro estoque).
+  - Detalhe do pedido: marcar como pago, enviado (com rastreio), entregue ou cancelado. Ao cancelar, o painel pergunta se as peças voltam pro estoque (já vem desmarcado se o pedido foi enviado).
   - Mensagens prontas no WhatsApp, copiar endereço e folha para imprimir.
   - Registrar venda feita fora do site: já funciona e baixa o estoque na hora.
 - **4.4 Pagamento pela InfinitePay** (`app/worker/pedidos.ts` e `app/worker/infinitepay.ts`).
@@ -18,6 +18,7 @@ Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra
   - `POST /api/pagamento/aviso` recebe o aviso (webhook).
   - A página `/pedido/<código>` do site é para onde a cliente volta depois de pagar.
   - O pedido só vira pago depois do `payment_check`, e só no valor exato.
+  - Se o aviso chega e o `payment_check` ainda diz que não pagou, o Worker responde 400 para a InfinitePay mandar de novo.
   - Pagamento que chega depois de a reserva vencer, sem a peça, vira "pago sem estoque".
 
 **As compras pelo site continuam travadas.** `PAGAMENTO_PRONTO = false` em `app/worker/ajustes.ts`. Até isso mudar, `POST /api/pedidos` responde 409 e a sacola segue mandando o pedido pelo WhatsApp.

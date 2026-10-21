@@ -8,7 +8,7 @@
     POST /:id/pago         marca como pago à mão (o dinheiro apareceu no app da InfinitePay)
     POST /:id/enviado      marca como enviado, com o código de rastreio (mandar de novo troca o código)
     POST /:id/entregue     marca como entregue
-    POST /:id/cancelar     cancela; se o estoque já tinha baixado, as peças voltam
+    POST /:id/cancelar     cancela; se o estoque já tinha baixado, as peças voltam (com devolverEstoque: false, ficam fora)
     PUT  /:id/observacao   anotação interna da loja
 */
 import { Hono } from 'hono'
@@ -279,9 +279,19 @@ painelPedidos.post('/:id/entregue', (c) =>
   mudar(c, `UPDATE pedidos SET situacao = 'entregue', entregue_em = datetime('now') WHERE id = ?1 AND situacao IN ('pago', 'sem_estoque', 'enviado')`),
 )
 
-painelPedidos.post('/:id/cancelar', (c) =>
-  mudar(c, `UPDATE pedidos SET situacao = 'cancelado', estoque_baixado = 0, cancelado_em = datetime('now') WHERE id = ?1 AND situacao != 'cancelado'`),
-)
+painelPedidos.post('/:id/cancelar', async (c) => {
+  const corpo = await lerCorpo(c)
+  if (corpo.devolverEstoque !== undefined && typeof corpo.devolverEstoque !== 'boolean') throw falha(400, 'Pedido inválido.')
+  // estoque_baixado de 1 para 0 devolve as peças (gatilho do banco); mantido em 1, elas ficam fora:
+  // a peça voltou com defeito, se perdeu no envio ou ainda está com a cliente
+  const devolver = corpo.devolverEstoque !== false
+  return mudar(
+    c,
+    `UPDATE pedidos SET situacao = 'cancelado', estoque_baixado = CASE WHEN ?2 = 1 THEN 0 ELSE estoque_baixado END, cancelado_em = datetime('now')
+     WHERE id = ?1 AND situacao != 'cancelado'`,
+    devolver ? 1 : 0,
+  )
+})
 
 painelPedidos.put('/:id/observacao', async (c) => {
   const corpo = await lerCorpo(c)
