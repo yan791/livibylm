@@ -7,8 +7,9 @@
     "dev": "vite",
     "api": "node scripts/preparar-api.mjs && wrangler d1 migrations apply livi --local && wrangler dev --port 8787",
     "build": "tsc -p . && vite build",
-    "verificar": "tsc -p . && tsc -p worker",
-    "publicar": "tsc -p . && tsc -p worker && vite build --outDir dist-cloudflare --emptyOutDir && wrangler d1 migrations apply livi --remote && wrangler deploy",
+    "verificar": "tsc -p . && tsc -p worker && tsc -p test",
+    "test": "vitest run",
+    "publicar": "tsc -p . && tsc -p worker && tsc -p test && vitest run && vite build --outDir dist-cloudflare --emptyOutDir && wrangler d1 migrations apply livi --remote && wrangler deploy",
     "convite": "node scripts/convite.mjs",
     "preview": "vite preview"
   },
@@ -27,6 +28,7 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.4.6",
     "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -35,6 +37,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vite": "^8.3.1",
+    "vitest": "^5.0.5",
     "wrangler": "^4.151.3"
   }
 }

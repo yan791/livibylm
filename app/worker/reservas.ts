@@ -20,3 +20,6 @@ export const chaveVariante = (pecaId: number | null, cor: string, tamanho: strin
 export function mapaReservas(linhas: LinhaReserva[]) {
   return new Map(linhas.map((r) => [chaveVariante(r.peca_id, r.cor, r.tamanho), r.n]))
 }
+
+/** o banco recusou deixar o estoque abaixo do reservado, ou tirar algo reservado (gatilhos em migrations/0004) */
+export const estoqueReservado = (e: unknown) => /estoque_reservado/.test(String(e instanceof Error ? e.message : e))
