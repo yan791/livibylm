@@ -3,6 +3,7 @@
   configuracoes (chave 'ajustes', valor em JSON); o que ainda não foi salvo
   usa o PADRAO daqui.
 */
+import { TABELA_VAZIA, tabelaDe, type TabelaFrete } from './frete'
 
 /** pagamento pelo site (InfinitePay). Enquanto for false, as vendas pelo site não ligam e a sacola segue pelo WhatsApp */
 export const PAGAMENTO_PRONTO = false
@@ -14,6 +15,8 @@ export type Ajustes = {
   parcelasSemJuros: number
   /** 55 + DDD + número, só dígitos */
   whatsapp: string
+  /** PAC e SEDEX por região, para fora de Maceió (worker/frete.ts) */
+  freteCorreios: TabelaFrete
 }
 
 export const PADRAO: Ajustes = {
@@ -21,6 +24,7 @@ export const PADRAO: Ajustes = {
   taxaMaceioCentavos: 1500,
   parcelasSemJuros: 3,
   whatsapp: '5582998115324',
+  freteCorreios: TABELA_VAZIA,
 }
 
 const CHAVE = 'ajustes'
@@ -40,6 +44,7 @@ export function deLinha(valor: string | null | undefined): Ajustes {
     taxaMaceioCentavos: typeof v.taxaMaceioCentavos === 'number' ? v.taxaMaceioCentavos : PADRAO.taxaMaceioCentavos,
     parcelasSemJuros: typeof v.parcelasSemJuros === 'number' ? v.parcelasSemJuros : PADRAO.parcelasSemJuros,
     whatsapp: typeof v.whatsapp === 'string' && v.whatsapp ? v.whatsapp : PADRAO.whatsapp,
+    freteCorreios: tabelaDe(v.freteCorreios),
   }
 }
 
@@ -54,8 +59,8 @@ export async function salvarAjustes(db: D1Database, a: Ajustes) {
     .run()
 }
 
-/** só o que o site precisa saber */
-export const ajustesPublicos = (a: Ajustes) => ({ whatsapp: a.whatsapp, parcelas: a.parcelasSemJuros })
+/** só o que o site precisa saber (o frete ele pergunta pelo CEP, em /api/pedidos/frete) */
+export const ajustesPublicos = (a: Ajustes) => ({ whatsapp: a.whatsapp, parcelas: a.parcelasSemJuros, vendasOnline: a.vendasOnline })
 
 /**
   "(82) 99811-5324", "(082) 99811-5324", "82998115324" ou "+55 82 9..." viram 5582998115324;

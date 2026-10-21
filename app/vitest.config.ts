@@ -14,7 +14,12 @@ export default defineConfig(async () => {
       cloudflareTest({
         wrangler: { configPath: './wrangler.jsonc' },
         miniflare: {
-          bindings: { TEST_MIGRATIONS: migrations, SENHA_PEPPER: 'pepper-so-dos-testes-com-mais-de-32-caracteres' },
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            SENHA_PEPPER: 'pepper-so-dos-testes-com-mais-de-32-caracteres',
+            // compras com as vendas desligadas, só em localhost (como no "npm run api")
+            TESTE_VENDAS: 'sim',
+          },
         },
       }),
     ],

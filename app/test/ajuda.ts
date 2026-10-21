@@ -69,7 +69,10 @@ export const pedido = (codigo: string) =>
 /** abre uma sessão do painel direto no banco e devolve o token do cookie */
 export async function entrar() {
   const token = novoToken()
-  const admin = await env.DB.prepare(`INSERT INTO admins (email, nome, senha) VALUES ('livia@exemplo.com', 'Livia', 'x') RETURNING id`).first<number>('id')
+  // um e-mail por sessão: o mesmo teste pode entrar mais de uma vez
+  const admin = await env.DB.prepare(`INSERT INTO admins (email, nome, senha) VALUES (?1, 'Livia', 'x') RETURNING id`)
+    .bind(`livia-${token.slice(0, 8)}@exemplo.com`)
+    .first<number>('id')
   await env.DB.prepare('INSERT INTO sessoes (token_hash, admin_id, expira_em) VALUES (?1, ?2, ?3)').bind(await hashToken(token), admin, agora() + 3600).run()
   return token
 }
@@ -86,6 +89,22 @@ export async function painel(token: string, metodo: string, caminho: string, cor
         Cookie: `livi_sessao=${token}`,
         ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
+    }),
+    env,
+    ctx,
+  )
+  await waitOnExecutionContext(ctx)
+  return resposta
+}
+
+/** chama a API de compras como o site chamaria; em localhost, onde TESTE_VENDAS deixa comprar com as vendas desligadas */
+export async function site(metodo: string, caminho: string, corpo?: unknown) {
+  const ctx = createExecutionContext()
+  const resposta = await app.fetch(
+    new Request(`http://localhost/api/pedidos${caminho}`, {
+      method: metodo,
+      headers: corpo === undefined ? {} : { 'Content-Type': 'application/json' },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
     }),
     env,

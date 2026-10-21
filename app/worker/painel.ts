@@ -26,6 +26,7 @@ import { limparCacheCatalogo } from './catalogo'
 import { lerAjustes, numeroWhatsApp, PAGAMENTO_PRONTO, salvarAjustes } from './ajustes'
 import { chaveVariante, consultaReservas, estoqueReservado, mapaReservas, type LinhaReserva } from './reservas'
 import { painelPedidos } from './painel-pedidos'
+import { REGIOES, type TabelaFrete } from './frete'
 import { RESERVA_MINUTOS } from './pedidos'
 
 export const painel = new Hono<Ambiente>()
@@ -597,6 +598,18 @@ painel.delete('/pessoas/:id', async (c) => {
 
 /* ---------- ajustes da loja ---------- */
 
+/** PAC e SEDEX por região: vazio (null) = não envia por esse serviço para lá */
+function lerTabelaFrete(v: unknown): TabelaFrete {
+  const o = v && typeof v === 'object' ? (v as Corpo) : {}
+  return Object.fromEntries(
+    REGIOES.map(({ id, nome }) => {
+      const r = (o[id] && typeof o[id] === 'object' ? o[id] : {}) as Corpo
+      const preco = (x: unknown, servico: string) => (x == null ? null : inteiro(x, `${servico} para ${nome}`, 1, 100_000))
+      return [id, { pac: preco(r.pac, 'PAC'), sedex: preco(r.sedex, 'SEDEX') }]
+    }),
+  ) as TabelaFrete
+}
+
 painel.get('/ajustes', async (c) => c.json({ ...(await lerAjustes(c.env.DB)), pagamentoPronto: PAGAMENTO_PRONTO }))
 
 painel.put('/ajustes', async (c) => {
@@ -609,6 +622,7 @@ painel.put('/ajustes', async (c) => {
     taxaMaceioCentavos: inteiro(corpo.taxaMaceioCentavos, 'Taxa de entrega', 0, 100_000),
     parcelasSemJuros: inteiro(corpo.parcelasSemJuros, 'Parcelas', 1, 12),
     whatsapp,
+    freteCorreios: lerTabelaFrete(corpo.freteCorreios),
   }
   await salvarAjustes(c.env.DB, ajustes)
   return c.json({ ...ajustes, pagamentoPronto: PAGAMENTO_PRONTO })

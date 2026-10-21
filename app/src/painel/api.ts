@@ -3,6 +3,8 @@
   Se a sessão acabar no meio do uso, avisa o App, que volta para a tela de entrar.
 */
 
+import type { TabelaFrete } from '../../worker/frete'
+
 export type Admin = { id: number; email: string; nome: string; site: string }
 
 /** endereço do site público (GitHub Pages); vazio = o próprio servidor do painel */
@@ -68,6 +70,8 @@ export type Pessoa = { id: number; email: string; nome: string; ativo: boolean; 
 
 export type Ajustes = {
   vendasOnline: boolean
+  /** PAC e SEDEX por região, em centavos; null = não envia por esse serviço para lá */
+  freteCorreios: TabelaFrete
   taxaMaceioCentavos: number
   /** 1 = sem parcelamento */
   parcelasSemJuros: number
