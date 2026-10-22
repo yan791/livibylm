@@ -7,9 +7,12 @@ import { Logo } from './Logo'
 import { Instagram, SetaDiagonal, WhatsApp } from './icones'
 import { comBase } from '../lib/base'
 import { LinkPolitica } from '../paginas/Politica'
+import { useMeusPedidos } from '../lib/meus-pedidos'
+import { abrirGaveta } from '../lib/lista'
 
 export function Rodape({ rota }: { rota: Rota }) {
   const loja = ajustes.loja
+  const temPedidos = useMeusPedidos().length > 0
   return (
     <footer className="rodape">
       <div className="rodape-marca">
@@ -54,6 +57,17 @@ export function Rodape({ rota }: { rota: Rota }) {
         <a href={site.instagram} target="_blank" rel="noreferrer">
           <Instagram className="ico" /> {site.instagramArroba}
         </a>
+        {temPedidos && (
+          <a
+            href={comBase('/')}
+            onClick={(e) => {
+              e.preventDefault()
+              abrirGaveta('pedidos')
+            }}
+          >
+            Meus pedidos
+          </a>
+        )}
         {/* as políticas aparecem quando a loja preenche os dados dela no painel (Ajustes) */}
         {loja && (
           <>

@@ -3,6 +3,7 @@
   Rotas abertas (o site do GitHub Pages também chama):
     POST /api/pedidos                    monta o pedido com os preços do banco, segura as peças e devolve o link de pagamento
     GET  /api/pedidos/:codigo            situação do pedido (página /pedido/... do site)
+    POST /api/pedidos/consulta           vários pedidos de uma vez (aba "Pedidos" da gaveta: os feitos naquele aparelho)
     POST /api/pedidos/:codigo/conferir   a cliente voltou da InfinitePay: confere o pagamento
     POST /api/pagamento/aviso            aviso (webhook) da InfinitePay de pagamento aprovado
   O painel cuida dos pedidos em worker/painel-pedidos.ts.
@@ -274,6 +275,10 @@ export async function processarPagamento(env: Env, p: LinhaPedido, d: { transaca
 export const AVISOS_POR_PEDIDO = 20
 /** consultas de frete por IP em 15 minutos: a cliente digita o CEP poucas vezes */
 export const FRETES_POR_IP = 60
+/** consultas da aba "Pedidos" por IP em 15 minutos: ela abre a gaveta algumas vezes */
+export const CONSULTAS_POR_IP = 120
+/** pedidos numa consulta só (o site guarda os últimos 30 do aparelho) */
+export const MAX_CONSULTA = 30
 
 /** quantas vezes algo aconteceu (pedidos de um IP, conferências de um pedido) dentro da janela */
 async function usou(db: D1Database, chave: string, janela: number) {
@@ -391,10 +396,20 @@ async function itensDaSacola(db: D1Database, v: unknown): Promise<ItemNovo[]> {
 }
 
 /** o que a página do pedido mostra: nada de CPF, e-mail, telefone ou endereço */
+/** "2026-10-22 14:52:10" (UTC, como o banco guarda) em milissegundos; null se não aconteceu */
+const emMs = (t: string | null) => (t ? Date.parse(t.replace(' ', 'T') + 'Z') : null)
+
 function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
   const situacao = situacaoDe(p)
   return {
+    codigo: p.codigo,
     numero: p.id,
+    /** quando o pedido foi feito, pago, enviado, entregue e cancelado (ms; null = ainda não) */
+    criadoEm: emMs(p.criado_em)!,
+    pagoEm: emMs(p.pago_em),
+    enviadoEm: emMs(p.enviado_em),
+    entregueEm: emMs(p.entregue_em),
+    canceladoEm: emMs(p.cancelado_em),
     situacao,
     nome: p.nome.split(/\s+/)[0] ?? '',
     entrega: p.entrega,
@@ -515,6 +530,35 @@ async function pedidoDoSite(db: D1Database, codigo: string) {
   if (!achado || achado.pedido.origem !== 'site') throw falha(404, 'Pedido não encontrado.')
   return achado
 }
+
+/**
+  Os pedidos que o aparelho guardou (aba "Pedidos" da gaveta), do mais novo
+  para o mais antigo. Só os do site, e só os códigos que vieram: quem não tem o
+  código não acha o pedido. Código inválido ou de pedido que não existe some da resposta.
+*/
+compras.post('/consulta', async (c) => {
+  const db = c.env.DB
+  const corpo = await lerCorpo(c)
+  if (!Array.isArray(corpo.codigos) || corpo.codigos.length > MAX_CONSULTA) throw falha(400, 'Consulta inválida.')
+  const codigos = [...new Set(corpo.codigos.filter((x): x is string => typeof x === 'string' && CODIGO.test(x)))]
+  if (!codigos.length) return c.json({ pedidos: [] })
+  const chave = `consulta:${c.req.header('CF-Connecting-IP') ?? 'local'}`
+  if ((await usou(db, chave, 900)) >= CONSULTAS_POR_IP) throw falha(429, 'Muitas consultas seguidas. Espere um pouco e tente de novo.')
+  await contar(db, chave, 900)
+
+  const marcas = codigos.map((_, i) => `?${i + 1}`).join(',')
+  const [pedidos, itens] = await db.batch([
+    db.prepare(`SELECT * FROM pedidos WHERE origem = 'site' AND codigo IN (${marcas}) ORDER BY id DESC`).bind(...codigos),
+    db
+      .prepare(
+        `SELECT i.*, pc.slug AS peca_slug FROM pedido_itens i JOIN pedidos p ON p.id = i.pedido_id
+         LEFT JOIN pecas pc ON pc.id = i.peca_id WHERE p.origem = 'site' AND p.codigo IN (${marcas}) ORDER BY i.id`,
+      )
+      .bind(...codigos),
+  ])
+  const todos = itens.results as LinhaItemPedido[]
+  return c.json({ pedidos: (pedidos.results as LinhaPedido[]).map((p) => pedidoPublico(p, todos.filter((i) => i.pedido_id === p.id))) })
+})
 
 compras.get('/:codigo', async (c) => {
   const { pedido, itens } = await pedidoDoSite(c.env.DB, c.req.param('codigo'))

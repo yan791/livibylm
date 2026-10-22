@@ -68,6 +68,16 @@ Falta:
 3. **Ligar as vendas** em Ajustes, e cancelar o pedido de teste em Pedidos (o valor volta pelo app da InfinitePay, se ela quiser).
 4. **Opcional, a chave de API da InfinitePay.** Ela só entra como segredo: `npx wrangler secret put INFINITEPAY_CHAVE`, e o código já manda no cabeçalho `X-Api-Key` quando existir. Com ela daria para usar `valid_until` e `single_payment` (link que vence junto com a reserva). Não foram usados porque a documentação pública não diz o formato. **A Livia já tem a chave** (o Arthur confirmou em 21/10): falta cadastrar e conferir o formato de `valid_until`.
 
+## Aba "Pedidos" da cliente, feita (22/10)
+
+Sem conta: o aparelho guarda o código de cada compra pelo site (`app/src/lib/meus-pedidos.ts`).
+- O pedido entra na lista quando a cliente vai para o pagamento e quando ela abre a página do pedido, inclusive pelo link que a Livia manda no WhatsApp (as mensagens prontas do painel agora levam esse link).
+- A aba aparece na gaveta, ao lado de Sacola e Desejos, só depois que o aparelho tem algum pedido. Também tem "Meus pedidos" no rodapé e "Ver todos os meus pedidos" na página do pedido.
+- Cada pedido mostra número, data, peças, total e a situação; tocar abre a página do pedido, com tudo detalhado. Pedido não pago pode sair da lista (X).
+- "Acompanhar" (a setinha) abre as 4 etapas do pedido, com data e hora, todas automáticas: pedido feito (na compra), pagamento confirmado (InfinitePay), enviado e entregue (quando a Livia marca no painel). Se ela não marcar "entregue", o pedido fica em "Enviado". Sem rastreio automático dos Correios: a API oficial pede contrato no CNPJ.
+- O código de rastreio não aparece na aba: a Livia manda pelo WhatsApp, e nos pedidos pelos Correios a aba tem "Pedir o código de rastreio" (abre o WhatsApp com o número do pedido). A página do pedido mostra o código depois que ela marca o pedido como enviado no painel.
+- Servidor: `POST /api/pedidos/consulta` com até 30 códigos, só pedidos do site, sem dados pessoais, 120 consultas por IP a cada 15 minutos. Testes em `app/test/meus-pedidos.test.ts`.
+
 ## Respostas da Livia
 
 Já respondidas (21/10):

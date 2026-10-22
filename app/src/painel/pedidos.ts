@@ -2,7 +2,7 @@
   O que as telas de pedidos usam em comum: nomes das situações, das entregas
   e das formas de pagamento, datas e as mensagens prontas do WhatsApp.
 */
-import type { Pedido, Situacao } from './api'
+import { enderecoSite, type Pedido, type Situacao } from './api'
 
 export const SITUACOES: Record<Situacao, { rotulo: string; selo: string }> = {
   aguardando: { rotulo: 'Aguardando pagamento', selo: 'selo-claro' },
@@ -82,6 +82,11 @@ export const linkConversa = (numero: string, texto?: string) => `https://wa.me/$
 
 const primeiroNome = (nome: string) => nome.trim().split(/\s+/)[0] ?? ''
 
+/** página do pedido no site, para a cliente acompanhar (só as compras do site têm) */
+export const linkDoPedido = (p: Pick<Pedido, 'codigo'>) => `${enderecoSite || location.origin}/pedido/${p.codigo}`
+const acompanhar = (p: Pick<Pedido, 'codigo' | 'origem'>, texto = 'Acompanhe o seu pedido aqui:') =>
+  p.origem === 'site' ? [`${texto} ${linkDoPedido(p)}`] : []
+
 /** "pagamento confirmado": a primeira mensagem depois que a compra cai */
 export function mensagemConfirmacao(p: Pedido) {
   const proximo = pelosCorreios(p.entrega)
@@ -89,7 +94,12 @@ export function mensagemConfirmacao(p: Pedido) {
     : p.entrega === 'maceio'
       ? 'Vamos combinar o melhor horário para a entrega por aqui.'
       : 'Vamos combinar a entrega por aqui.'
-  return [`Oi, ${primeiroNome(p.nome)}! Aqui é da Livi.`, `Recebemos o seu pedido nº ${p.id} e o pagamento está confirmado. ${proximo}`, 'Obrigada pela compra!'].join('\n\n')
+  return [
+    `Oi, ${primeiroNome(p.nome)}! Aqui é da Livi.`,
+    `Recebemos o seu pedido nº ${p.id} e o pagamento está confirmado. ${proximo}`,
+    ...acompanhar(p),
+    'Obrigada pela compra!',
+  ].join('\n\n')
 }
 
 /** "seu pedido foi enviado": com o código de rastreio, nos Correios */
@@ -100,6 +110,7 @@ export function mensagemEnvio(p: Pedido) {
       oi,
       `O seu pedido nº ${p.id} foi postado nos Correios. O código de rastreio é ${p.rastreio}.`,
       'Dá para acompanhar em https://rastreamento.correios.com.br',
+      ...acompanhar(p, 'Os detalhes do pedido ficam aqui:'),
     ].join('\n\n')
-  return [oi, `O seu pedido nº ${p.id} saiu para entrega. Qualquer coisa, é só chamar por aqui.`].join('\n\n')
+  return [oi, `O seu pedido nº ${p.id} saiu para entrega. Qualquer coisa, é só chamar por aqui.`, ...acompanhar(p)].join('\n\n')
 }

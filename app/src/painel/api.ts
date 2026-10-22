@@ -77,7 +77,7 @@ export type Ajustes = {
   parcelasSemJuros: number
   /** 55 + DDD + número, só dígitos */
   whatsapp: string
-  /** quem vende: aparece no rodapé do site e nas páginas de trocas e de privacidade (documento = CPF ou CNPJ, só dígitos) */
+  /** quem vende: aparece no rodapé do site e nas páginas de trocas e de privacidade (documento = CPF ou CNPJ sem pontuação; o CNPJ pode ter letras) */
   loja: { nome: string; documento: string; endereco: string; email: string }
   /** dias, contados do recebimento, para pedir troca */
   trocaDias: number

@@ -105,7 +105,7 @@ export function detalhar<T extends ItemBase>(lista: T[]) {
   })
 }
 
-/* gaveta: as duas listas moram na mesma gaveta, cada uma numa aba */
-export type Aba = 'sacola' | 'desejos'
+/* gaveta: as duas listas e os pedidos do aparelho moram na mesma gaveta, cada um numa aba */
+export type Aba = 'sacola' | 'desejos' | 'pedidos'
 export const EVENTO_GAVETA = 'livi:gaveta'
 export const abrirGaveta = (aba: Aba) => window.dispatchEvent(new CustomEvent<Aba>(EVENTO_GAVETA, { detail: aba }))

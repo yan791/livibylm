@@ -165,6 +165,19 @@ export function IconeSacola(props: P) {
   )
 }
 
+/** caixa de pedido (aba "Pedidos" da gaveta) */
+export function IconePedido(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <g {...linha} strokeWidth="1.3">
+        <path d="M4 7.5 12 3.5l8 4v9L12 20.5l-8-4Z" />
+        <path d="m4 7.5 8 4 8-4M12 11.5v9" />
+        <path d="m8 5.5 8 4" />
+      </g>
+    </svg>
+  )
+}
+
 /** coração da lista de desejos: contorno ou cheio */
 export function Coracao({ cheio = false, ...props }: P & { cheio?: boolean }) {
   return (

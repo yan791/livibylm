@@ -1653,6 +1653,9 @@ img {
   padding: 18px 26px;
   display: grid;
   align-content: start;
+  /* cada item com a altura do conteúdo: com o overflow escondido (para a animação de sair),
+     sem isso a lista apertava os itens em vez de rolar quando passava da altura da tela */
+  grid-auto-rows: max-content;
   gap: 18px;
   overscroll-behavior: contain;
 }
@@ -4989,4 +4992,183 @@ html[data-movimento='reduzido'] .lk-bloco-info {
 .pedido-politica a {
   color: var(--vinho);
   text-underline-offset: 3px;
+}
+
+/* ---------- aba "Pedidos" da gaveta ---------- */
+
+/* três abas: sem os ícones e um pouco menores, para caberem ao lado do X (a gaveta tem no máximo ~460px) */
+.gaveta-abas[data-abas='3'] {
+  gap: 18px;
+}
+.gaveta-abas[data-abas='3'] .gaveta-aba {
+  gap: 7px;
+  font-size: 1.25rem;
+}
+.gaveta-abas[data-abas='3'] .gaveta-aba .ico {
+  display: none;
+}
+@media (max-width: 400px) {
+  .gaveta-abas[data-abas='3'] {
+    gap: 12px;
+  }
+  .gaveta-abas[data-abas='3'] .gaveta-aba {
+    font-size: 1.08rem;
+  }
+}
+
+/* pedido sem foto (a compra de teste): o cabide num fundo claro */
+.pedidos-lista .gaveta-foto {
+  background: var(--rose-claro);
+  color: var(--taupe);
+}
+
+.pedidos-lista .gaveta-nome a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pedidos-situacao {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgb(79 15 16 / 0.08);
+  color: var(--vinho);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+.pedidos-situacao.pago {
+  background: rgb(47 107 69 / 0.12);
+  color: #2f6b45;
+}
+.pedidos-situacao.encerrado {
+  background: rgb(54 14 0 / 0.06);
+  color: var(--taupe);
+}
+
+.pedidos-lista li.encerrado .gaveta-foto {
+  opacity: 0.55;
+}
+
+.pedidos-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+}
+.pedidos-acoes a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--vinho);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgb(79 15 16 / 0.3);
+}
+.pedidos-acoes .ico {
+  width: 1em;
+  height: 1em;
+}
+
+.pedidos-carregando {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-style: normal !important;
+}
+.pedidos-carregando .pedido-giro {
+  margin-top: 0;
+}
+
+/* "Acompanhar": a setinha que abre as etapas do pedido */
+.pedidos-seta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--vinho);
+  font-weight: 500;
+  cursor: pointer;
+}
+.pedidos-seta-ico {
+  width: 1.1em;
+  height: 1.1em;
+  transition: rotate 0.3s var(--ease);
+}
+.pedidos-seta.aberta .pedidos-seta-ico {
+  rotate: 180deg;
+}
+.pedidos-seta:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* as etapas: uma linha vertical com um ponto por etapa (cheio = já aconteceu) */
+.pedidos-etapas {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  display: grid;
+  padding-left: 4px;
+}
+.pedidos-etapas li {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 18px 1fr !important;
+  gap: 12px !important;
+  padding-bottom: 14px;
+  overflow: visible !important;
+}
+.pedidos-etapas li:first-child {
+  padding-top: 12px;
+}
+.pedidos-etapas li:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  bottom: -4px;
+  width: 2px;
+  background: rgb(79 15 16 / 0.14);
+}
+.pedidos-etapas li:first-child:not(:last-child)::before {
+  top: 30px;
+}
+/* o trecho entre duas etapas feitas fica cheio; até a próxima que falta, fica claro */
+.pedidos-etapas li.feita:has(+ li.feita)::before {
+  background: var(--vinho);
+}
+.pedidos-etapa-ponto {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 2px solid rgb(79 15 16 / 0.22);
+  background: var(--creme);
+}
+.pedidos-etapas li.feita .pedidos-etapa-ponto {
+  border-color: var(--vinho);
+  background: var(--vinho);
+  box-shadow: inset 0 0 0 3px var(--creme);
+}
+.pedidos-etapa-texto {
+  display: grid;
+  gap: 2px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.pedidos-etapa-texto strong {
+  font-weight: 500;
+  color: var(--vinho);
+}
+.pedidos-etapas li:not(.feita) .pedidos-etapa-texto strong {
+  color: var(--taupe);
+  font-weight: 400;
+}
+.pedidos-etapa-texto time,
+.pedidos-etapa-texto small {
+  font-size: 0.76rem;
+  color: var(--taupe);
 }

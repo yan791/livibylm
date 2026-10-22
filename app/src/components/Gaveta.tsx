@@ -1,26 +1,33 @@
 /*
   Gaveta lateral com as duas listas da cliente, cada uma numa aba:
   Sacola (o que ela quer comprar) e Desejos (o que salvou para ver depois).
+  A terceira aba, Pedidos, só aparece depois que o aparelho fez (ou abriu) um
+  pedido pelo site.
   Os dois botões do topo (sacola e coração) abrem a gaveta já na aba certa,
   cada um com o seu contador.
 */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
 import { EVENTO_GAVETA, abrirGaveta, type Aba } from '../lib/lista'
 import { EVENTO_SACOLA_ADICIONOU, unidades, useSacola } from '../lib/sacola'
 import { useDesejos } from '../lib/desejos'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
-import { Coracao, Fechar, IconeSacola } from './icones'
+import { useMeusPedidos } from '../lib/meus-pedidos'
+import { Coracao, Fechar, IconePedido, IconeSacola } from './icones'
 import { PainelSacola } from './Sacola'
 import { EVENTO_DESEJO_CHEGOU, PainelDesejos } from './Desejos'
+import { PainelPedidos } from './MeusPedidos'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
 const ABAS: { id: Aba; rotulo: string; nome: string }[] = [
   { id: 'sacola', rotulo: 'Sacola', nome: 'Sacola' },
   { id: 'desejos', rotulo: 'Desejos', nome: 'Lista de desejos' },
+  { id: 'pedidos', rotulo: 'Pedidos', nome: 'Meus pedidos' },
 ]
+
+const ICONES = { sacola: IconeSacola, desejos: Coracao, pedidos: IconePedido }
 
 // ao trocar de aba, o conteúdo desliza para o lado da aba escolhida
 const painel: Variants = {
@@ -35,10 +42,17 @@ export function Gaveta() {
   const [sentido, setSentido] = useState(1)
   const sacola = useSacola()
   const desejos = useDesejos()
+  const pedidos = useMeusPedidos()
   const aberta = aba !== null
+  // a aba de pedidos só aparece quando o aparelho tem algum
+  const abas = ABAS.filter((a) => a.id !== 'pedidos' || pedidos.length > 0 || aba === 'pedidos')
 
+  // a aba de agora, para o sentido do deslize (irPara também é chamado por eventos de fora)
+  const abaAtual = useRef(aba)
+  abaAtual.current = aba
   const irPara = (nova: Aba) => {
-    setSentido(nova === 'desejos' ? 1 : -1)
+    const ordem = (x: Aba | null) => ABAS.findIndex((a) => a.id === x)
+    setSentido(ordem(nova) >= ordem(abaAtual.current) ? 1 : -1)
     setAba(nova)
   }
   const fechar = () => setAba(null)
@@ -76,9 +90,10 @@ export function Gaveta() {
             transition={{ duration: 0.6, ease }}
           >
             <div className="gaveta-topo">
-              <div className="gaveta-abas" role="tablist" aria-label="Suas listas">
-                {ABAS.map((a) => {
-                  const n = a.id === 'sacola' ? unidades(sacola) : desejos.length
+              <div className="gaveta-abas" role="tablist" aria-label="Suas listas" data-abas={abas.length}>
+                {abas.map((a) => {
+                  const n = a.id === 'sacola' ? unidades(sacola) : a.id === 'desejos' ? desejos.length : pedidos.length
+                  const Icone = ICONES[a.id]
                   const ativa = a.id === aba
                   return (
                     <button
@@ -91,9 +106,9 @@ export function Gaveta() {
                       className={cn('gaveta-aba', ativa && 'ativa')}
                       onClick={() => irPara(a.id)}
                     >
-                      {a.id === 'sacola' ? <IconeSacola className="ico" /> : <Coracao className="ico" />}
+                      <Icone className="ico" />
                       {a.rotulo}
-                      <span className="gaveta-aba-n" aria-label={`${n} ${n === 1 ? 'peça' : 'peças'}`}>
+                      <span className="gaveta-aba-n" aria-label={a.id === 'pedidos' ? `${n} ${n === 1 ? 'pedido' : 'pedidos'}` : `${n} ${n === 1 ? 'peça' : 'peças'}`}>
                         {n}
                       </span>
                       {ativa && <motion.span layoutId="gaveta-aba-marca" className="gaveta-aba-marca" transition={{ duration: 0.5, ease }} />}
@@ -119,7 +134,13 @@ export function Gaveta() {
                 animate="fica"
                 exit="sai"
               >
-                {aba === 'sacola' ? <PainelSacola fechar={fechar} irPara={irPara} /> : <PainelDesejos fechar={fechar} irPara={irPara} />}
+                {aba === 'sacola' ? (
+                  <PainelSacola fechar={fechar} irPara={irPara} />
+                ) : aba === 'desejos' ? (
+                  <PainelDesejos fechar={fechar} irPara={irPara} />
+                ) : (
+                  <PainelPedidos fechar={fechar} />
+                )}
               </motion.div>
             </AnimatePresence>
           </motion.aside>

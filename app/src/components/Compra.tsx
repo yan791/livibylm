@@ -14,6 +14,7 @@ import type { detalhar } from '../lib/sacola'
 import { cn } from '../lib/cn'
 import { SetaEsquerda, WhatsApp } from './icones'
 import { LinkPolitica } from '../paginas/Politica'
+import { guardarPedido } from '../lib/meus-pedidos'
 
 type Item = ReturnType<typeof detalhar>[number]
 type TipoEntrega = 'maceio' | 'pac' | 'sedex'
@@ -114,8 +115,10 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
           entrega: { tipo, cep: digitos, ...endereco },
         }),
       })
-      const resposta = (await r.json()) as { pagar?: string; erro?: string }
+      const resposta = (await r.json()) as { codigo?: string; pagar?: string; erro?: string }
       if (r.ok && resposta.pagar) {
+        // a aba "Pedidos" da gaveta mostra este pedido, mesmo se ela fechar a página da InfinitePay
+        if (resposta.codigo) guardarPedido(resposta.codigo)
         // a página de pagamento da InfinitePay; ela volta para /pedido/<código>
         location.assign(resposta.pagar)
         return

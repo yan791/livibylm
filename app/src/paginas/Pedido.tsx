@@ -5,40 +5,24 @@
   Quem aprova é sempre o servidor (que pergunta à InfinitePay); os dados do
   endereço só servem para pedir a conferência. Enquanto a confirmação não
   chega, a página pergunta de novo de tempos em tempos.
-  Pedido pago: as peças compradas saem da sacola.
+  Pedido pago: as peças compradas saem da sacola. O pedido também fica
+  guardado no aparelho (aba "Pedidos" da gaveta), mesmo aberto pelo link do WhatsApp.
 */
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { API, comBase, enderecoFoto, fotoPequena } from '../lib/base'
 import { navegar } from '../lib/rota'
+import { rolarPara } from '../lib/scroll'
+import { abrirGaveta } from '../lib/lista'
 import { tirarCompradas } from '../lib/sacola'
+import { dataDoPedido, guardarPedido, mensagemRastreio, PAGOS, type PedidoPublico } from '../lib/meus-pedidos'
 import { mostrarCatalogo } from '../lib/catalogo'
 import { ajustes, precoBR, rotuloTamanho } from '../dados/colecoes'
 import { linkWhatsApp, site } from '../dados/site'
 import { IconeCabide, SetaDiagonal, WhatsApp } from '../components/icones'
 import { LinkPolitica } from './Politica'
 
-type Situacao = 'aguardando' | 'expirado' | 'pago' | 'sem_estoque' | 'enviado' | 'entregue' | 'cancelado'
-
-type PedidoPublico = {
-  numero: number
-  situacao: Situacao
-  nome: string
-  entrega: string
-  itens: { peca: string; nome: string; cor: string; tamanho: string; quantidade: number; precoCentavos: number; foto: string }[]
-  itensCentavos: number
-  freteCentavos: number
-  totalCentavos: number
-  pagamento: string
-  parcelas: number
-  recibo: string
-  rastreio: string
-  pagar: string
-  reservaAte: number
-}
-
 const reais = (centavos: number) => precoBR(centavos / 100)
 const hora = (ms: number) => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-const PAGOS: Situacao[] = ['pago', 'enviado', 'entregue']
 
 /** quanto tempo a página continua perguntando depois que a cliente volta da InfinitePay */
 const ESPERA_MS = 2 * 60_000
@@ -67,6 +51,9 @@ export function Pedido({ codigo }: { codigo: string }) {
   // voltou agora da InfinitePay: mostra "confirmando" em vez de "falta pagar"
   const voltou = Boolean(dados)
   const [esperando, setEsperando] = useState(false)
+
+  // aberta de dentro do site (aba "Pedidos"), a página começa do topo
+  useLayoutEffect(() => rolarPara(0, { imediato: true }), [])
 
   useEffect(() => {
     document.title = 'Seu pedido · Livi'
@@ -102,6 +89,7 @@ export function Pedido({ codigo }: { codigo: string }) {
   }, [codigo, dados])
 
   useEffect(() => {
+    if (pedido) guardarPedido(codigo)
     if (pedido && PAGOS.concat('sem_estoque').includes(pedido.situacao))
       tirarCompradas(
         codigo,
@@ -176,7 +164,7 @@ export function Pedido({ codigo }: { codigo: string }) {
             ? 'Seu pedido foi postado nos Correios.'
             : 'Seu pedido saiu para entrega.'
           : correios
-            ? 'Seu pagamento foi confirmado. Assim que o pedido for postado, mandamos o código de rastreio pelo WhatsApp.'
+            ? 'Seu pagamento foi confirmado. Agora a gente prepara o envio pelos Correios.'
             : 'Seu pagamento foi confirmado. Vamos te chamar no WhatsApp para combinar a entrega.'
   } else if (p.situacao === 'sem_estoque') {
     titulo = 'Recebemos o seu pagamento.'
@@ -202,7 +190,9 @@ export function Pedido({ codigo }: { codigo: string }) {
   return (
     <main className="pedido">
       <div className="pedido-caixa">
-        <p className="sobretitulo">Pedido nº {p.numero}</p>
+        <p className="sobretitulo">
+          Pedido nº {p.numero} · {dataDoPedido(p.criadoEm)}
+        </p>
         <h1 className="pedido-titulo">{titulo}</h1>
         <p className="pedido-texto" aria-live="polite">
           {p.situacao === 'aguardando' && voltou && esperando && <span className="pedido-giro" aria-hidden="true" />}
@@ -222,13 +212,24 @@ export function Pedido({ codigo }: { codigo: string }) {
             })}
           </ol>
         )}
-        {p.rastreio && (
+        {p.rastreio ? (
           <p className="pedido-rastreio">
             Código de rastreio: <strong>{p.rastreio}</strong>{' '}
             <a href="https://rastreamento.correios.com.br" target="_blank" rel="noreferrer">
               Acompanhar nos Correios
             </a>
           </p>
+        ) : (
+          correios &&
+          (pago || p.situacao === 'sem_estoque') &&
+          p.situacao !== 'entregue' && (
+            <p className="pedido-rastreio">
+              Para receber o código de rastreio, fale com a gente no WhatsApp.{' '}
+              <a href={linkWhatsApp(mensagemRastreio(p.numero))} target="_blank" rel="noreferrer">
+                Pedir o código de rastreio
+              </a>
+            </p>
+          )
         )}
 
         <div className="pedido-botoes">
@@ -299,11 +300,22 @@ export function Pedido({ codigo }: { codigo: string }) {
             </a>
           )}
         </section>
-        {pago && ajustes.loja && (
-          <p className="pedido-politica">
-            Precisa trocar ou devolver? <LinkPolitica nome="trocas">Veja como funciona</LinkPolitica>.
-          </p>
-        )}
+        <p className="pedido-politica">
+          {pago && ajustes.loja && (
+            <>
+              Precisa trocar ou devolver? <LinkPolitica nome="trocas">Veja como funciona</LinkPolitica>.{' '}
+            </>
+          )}
+          <a
+            href={comBase('/')}
+            onClick={(e) => {
+              e.preventDefault()
+              abrirGaveta('pedidos')
+            }}
+          >
+            Ver todos os meus pedidos
+          </a>
+        </p>
       </div>
     </main>
   )
