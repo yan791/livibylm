@@ -2,6 +2,7 @@
   Pedidos da loja: compras pelo site, pagas pela InfinitePay.
   Rotas abertas (o site do GitHub Pages também chama):
     POST /api/pedidos                    monta o pedido com os preços do banco, segura as peças e devolve o link de pagamento
+                                         (só com a conta aberta: o pedido fica na conta da cliente, worker/contas.ts)
     GET  /api/pedidos/:codigo            situação do pedido (página /pedido/... do site)
     POST /api/pedidos/consulta           vários pedidos de uma vez (aba "Pedidos" da gaveta: os feitos naquele aparelho)
     POST /api/pedidos/:codigo/conferir   a cliente voltou da InfinitePay: confere o pagamento
@@ -23,7 +24,7 @@ import { cors } from 'hono/cors'
 import type { Ambiente, LinhaItemPedido, LinhaPedido, CorPeca, LinhaPeca } from './tipos'
 import { cpfValido, EMAIL, falha, inteiro, lerCorpo, texto, type Corpo } from './validar'
 import { lerAjustes, numeroWhatsApp, type Ajustes } from './ajustes'
-import { agora } from './seguranca'
+import { agora, clienteDaSessao } from './seguranca'
 import { limparCacheCatalogo } from './catalogo'
 import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type ItemLink } from './infinitepay'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
@@ -121,6 +122,8 @@ export type DadosPedido = {
   freteCentavos: number
   pagamento: string
   observacao: string
+  /** conta da cliente no site (compra pelo site) */
+  clienteId?: number | null
 }
 
 /**
@@ -134,8 +137,8 @@ export async function gravarPedido(db: D1Database, p: DadosPedido, itens: ItemNo
     db
       .prepare(
         `INSERT INTO pedidos (codigo, origem, situacao, reserva_ate, nome, whatsapp, email, cpf, entrega, cep, rua, numero,
-         complemento, bairro, cidade, uf, itens_centavos, frete_centavos, total_centavos, pagamento, observacao)
-         VALUES (?1, ?2, 'aguardando', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)`,
+         complemento, bairro, cidade, uf, itens_centavos, frete_centavos, total_centavos, pagamento, observacao, cliente_id)
+         VALUES (?1, ?2, 'aguardando', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)`,
       )
       .bind(
         p.codigo,
@@ -158,6 +161,7 @@ export async function gravarPedido(db: D1Database, p: DadosPedido, itens: ItemNo
         itensCentavos + p.freteCentavos,
         p.pagamento,
         p.observacao,
+        p.clienteId ?? null,
       ),
     ...itens.map((i) =>
       db
@@ -281,12 +285,12 @@ export const CONSULTAS_POR_IP = 120
 export const MAX_CONSULTA = 30
 
 /** quantas vezes algo aconteceu (pedidos de um IP, conferências de um pedido) dentro da janela */
-async function usou(db: D1Database, chave: string, janela: number) {
+export async function usou(db: D1Database, chave: string, janela: number) {
   const r = await db.prepare('SELECT falhas FROM tentativas WHERE chave = ?1 AND desde > ?2').bind(chave, agora() - janela).first<{ falhas: number }>()
   return r?.falhas ?? 0
 }
 
-async function contar(db: D1Database, chave: string, janela: number) {
+export async function contar(db: D1Database, chave: string, janela: number) {
   await db
     .prepare(
       `INSERT INTO tentativas (chave, falhas, desde) VALUES (?1, 1, ?2)
@@ -304,7 +308,8 @@ function objeto(v: unknown): Corpo {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Corpo) : {}
 }
 
-function lerCliente(v: unknown) {
+/** nome, WhatsApp e e-mail da cliente (a conta guarda, e cada pedido leva uma cópia) */
+export function lerContato(v: unknown) {
   const o = objeto(v)
   const nome = texto(o.nome, 'seu nome', 80, true)
   if (nome.length < 3) throw falha(400, 'Preencha seu nome completo.')
@@ -312,10 +317,15 @@ function lerCliente(v: unknown) {
   if (!whatsapp) throw falha(400, 'Confira o WhatsApp: DDD e número, ex.: (82) 99999-9999.')
   const email = texto(o.email, 'seu e-mail', 200, true).toLowerCase()
   if (!EMAIL.test(email)) throw falha(400, 'Confira o e-mail.')
-  const cpfDigitado = texto(o.cpf, 'O CPF', 20)
-  const cpf = cpfDigitado ? cpfValido(cpfDigitado) : ''
+  return { nome, whatsapp, email }
+}
+
+/** o CPF (só nos envios pelos Correios); vazio se não veio */
+function lerCpf(v: unknown) {
+  const digitado = texto(objeto(v).cpf, 'O CPF', 20)
+  const cpf = digitado ? cpfValido(digitado) : ''
   if (cpf === null) throw falha(400, 'Confira o CPF.')
-  return { nome, whatsapp, email, cpf }
+  return cpf
 }
 
 /** entrega e frete: Maceió (taxa única) ou Correios, PAC ou SEDEX, pela tabela por região dos Ajustes (worker/frete.ts) */
@@ -399,7 +409,7 @@ async function itensDaSacola(db: D1Database, v: unknown): Promise<ItemNovo[]> {
 /** "2026-10-22 14:52:10" (UTC, como o banco guarda) em milissegundos; null se não aconteceu */
 const emMs = (t: string | null) => (t ? Date.parse(t.replace(' ', 'T') + 'Z') : null)
 
-function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
+export function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
   const situacao = situacaoDe(p)
   return {
     codigo: p.codigo,
@@ -462,7 +472,7 @@ export async function abrirPagamento(
 export const compras = new Hono<Ambiente>()
 
 // o site do GitHub Pages mora em outro endereço
-compras.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST'], allowHeaders: ['Content-Type'], maxAge: 86400 }))
+compras.use('*', cors({ origin: '*', allowMethods: ['GET', 'POST'], allowHeaders: ['Content-Type', 'Authorization'], maxAge: 86400 }))
 
 /** as entregas possíveis para um CEP, com o preço (a sacola pergunta antes de fechar a compra) */
 compras.get('/frete', async (c) => {
@@ -486,8 +496,12 @@ compras.post('/', async (c) => {
   const ip = c.req.header('CF-Connecting-IP') ?? 'local'
   if ((await usou(db, `pedido:${ip}`, 3600)) >= 10) throw falha(429, 'Muitos pedidos seguidos. Espere um pouco e tente de novo.')
 
+  // a compra fica na conta da cliente: nome, WhatsApp e e-mail vêm dela
+  const conta = await clienteDaSessao(c)
+  if (!conta) throw falha(401, 'Entre na sua conta (ou crie uma) para fechar a compra.')
+
   const corpo = await lerCorpo(c)
-  const cliente = lerCliente(corpo.cliente)
+  const cliente = { nome: conta.nome, whatsapp: conta.whatsapp, email: conta.email, cpf: lerCpf(corpo.cliente) }
   const entrega = lerEntrega(corpo.entrega, ajustes)
   if (entrega.entrega !== 'maceio' && !cliente.cpf)
     throw falha(400, 'Para enviar pelos Correios, preencha o CPF: ele vai na declaração de conteúdo do pacote.')
@@ -502,7 +516,11 @@ compras.post('/', async (c) => {
 
   const codigo = novoCodigo()
   try {
-    await gravarPedido(db, { codigo, origem: 'site', reservaAte: agora() + RESERVA_MINUTOS * 60, ...cliente, ...entrega, pagamento: '', observacao: '' }, itens)
+    await gravarPedido(
+      db,
+      { codigo, origem: 'site', reservaAte: agora() + RESERVA_MINUTOS * 60, ...cliente, ...entrega, pagamento: '', observacao: '', clienteId: conta.id },
+      itens,
+    )
   } catch (e) {
     if (semEstoque(e)) throw falha(409, 'Uma das peças acabou de esgotar. Confira a sacola e tente de novo.')
     throw e

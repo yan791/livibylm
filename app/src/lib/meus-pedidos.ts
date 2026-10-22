@@ -1,9 +1,10 @@
 /*
-  Pedidos feitos neste aparelho (aba "Pedidos" da gaveta), sem conta: o código
+  Pedidos feitos neste aparelho (aba "Pedidos" da gaveta): o código
   de cada compra pelo site, que é o que abre a página /pedido/<código>. Entra
   quando a cliente vai para o pagamento e quando ela abre a página de um
   pedido (por exemplo, pelo link que a loja manda no WhatsApp). A situação de
-  cada um vem do servidor (POST /api/pedidos/consulta).
+  cada um vem do servidor (POST /api/pedidos/consulta). Com a conta aberta
+  (lib/conta), os pedidos vêm da conta, e os códigos daqui que são dela entram nela.
 */
 import { useSyncExternalStore } from 'react'
 import { API } from './base'
@@ -52,6 +53,9 @@ export function guardarPedido(codigo: string) {
 
 /** tira da lista (pedido que não foi pago, ou que o servidor não conhece mais) */
 export const esquecerPedidos = (tirar: string[]) => salvar(codigos.filter((c) => !tirar.includes(c)))
+
+/** esquece todos (ao sair da conta, para a próxima pessoa no aparelho não ver) */
+export const esquecerTodos = () => salvar([])
 
 export const useMeusPedidos = () =>
   useSyncExternalStore(

@@ -1,6 +1,9 @@
 export type AdminLogado = { id: number; email: string; nome: string }
 
-export type Ambiente = { Bindings: Env; Variables: { admin: AdminLogado } }
+/** a cliente com a conta aberta no site (worker/contas.ts) */
+export type ClienteLogada = { id: number; nome: string; whatsapp: string; email: string }
+
+export type Ambiente = { Bindings: Env; Variables: { admin: AdminLogado; cliente: ClienteLogada } }
 
 export type CorPeca = { id: string; nome: string; hex: string }
 
@@ -80,6 +83,8 @@ export type LinhaPedido = {
   cancelado_em: string | null
   /** último aviso (webhook) da InfinitePay para este pedido */
   aviso_em: string | null
+  /** conta da cliente no site (null: venda do painel, compra de teste ou pedido de antes das contas) */
+  cliente_id: number | null
 }
 
 export type LinhaItemPedido = {

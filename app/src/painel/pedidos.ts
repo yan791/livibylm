@@ -87,6 +87,10 @@ export const linkDoPedido = (p: Pick<Pedido, 'codigo'>) => `${enderecoSite || lo
 const acompanhar = (p: Pick<Pedido, 'codigo' | 'origem'>, texto = 'Acompanhe o seu pedido aqui:') =>
   p.origem === 'site' ? [`${texto} ${linkDoPedido(p)}`] : []
 
+/** link de senha nova da conta do site (vale por 24 horas e uma vez só) */
+export const mensagemSenhaNova = (nome: string, link: string) =>
+  `Oi, ${primeiroNome(nome)}! Para criar uma senha nova na sua conta do site da Livi, é só abrir este link (ele vale por 24 horas):\n\n${link}`
+
 /** "pagamento confirmado": a primeira mensagem depois que a compra cai */
 export function mensagemConfirmacao(p: Pedido) {
   const proximo = pelosCorreios(p.entrega)

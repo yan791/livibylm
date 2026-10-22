@@ -1,8 +1,9 @@
 /*
   Um pedido: situação e o que fazer agora (marcar como pago, enviado,
   entregue, cancelar), dados da cliente com as mensagens prontas do
-  WhatsApp, endereço para copiar, peças, pagamento, anotação interna e a
-  folha para imprimir e separar as peças.
+  WhatsApp (e o link de senha nova, se ela tem conta no site e esqueceu),
+  endereço para copiar, peças, pagamento, anotação interna e a folha para
+  imprimir e separar as peças.
 */
 import { useEffect, useState, type ReactNode } from 'react'
 import { api, mensagemDe, reais, telefone, type Ajustes, type Pedido } from '../api'
@@ -17,6 +18,7 @@ import {
   linkConversa,
   mensagemConfirmacao,
   mensagemEnvio,
+  mensagemSenhaNova,
   pagamentoTexto,
   PAGAMENTOS,
   pelosCorreios,
@@ -203,12 +205,14 @@ function Tela({ inicial, whatsappLoja }: { inicial: Pedido; whatsappLoja: string
               </Dado>
             )}
             {p.cpf && <Dado rotulo="CPF">{cpfTexto(p.cpf)}</Dado>}
+            {p.conta && <Dado rotulo="Conta no site">Sim, entra com o WhatsApp e a senha</Dado>}
           </dl>
           {p.whatsapp && (
             <div className="mensagens">
               <a className="botao botao-claro" href={linkConversa(p.whatsapp)} target="_blank" rel="noreferrer">
                 {Icone.whatsapp} Abrir conversa
               </a>
+              {p.conta && <SenhaNova pedidoId={p.id} />}
               {pago && p.nome && (
                 <>
                   <a className="botao botao-claro" href={linkConversa(p.whatsapp, mensagemConfirmacao(p))} target="_blank" rel="noreferrer">
@@ -436,5 +440,41 @@ function FolhaImpressa({ p, endereco, whatsappLoja }: { p: Pedido; endereco: str
         {whatsappLoja && <p>Qualquer dúvida, fale com a gente no WhatsApp {telefone(whatsappLoja)}.</p>}
       </footer>
     </section>
+  )
+}
+
+/**
+  A cliente esqueceu a senha da conta do site: gera um link de senha nova
+  (vale por 24 horas e uma vez só) e abre a conversa com o WhatsApp da conta.
+  São dois toques porque o navegador bloqueia abrir o WhatsApp depois de esperar o servidor.
+*/
+function SenhaNova({ pedidoId }: { pedidoId: number }) {
+  const [link, setLink] = useState<{ link: string; whatsapp: string; nome: string } | null>(null)
+  const [gerando, setGerando] = useState(false)
+  const gerar = async () => {
+    const ok = await confirmar({
+      titulo: 'Gerar um link de senha nova?',
+      texto: 'Use quando a cliente disser que esqueceu a senha da conta do site. O link vale por 24 horas, uma vez só, e vai para o WhatsApp da conta.',
+      botao: 'Gerar link',
+    })
+    if (!ok) return
+    setGerando(true)
+    try {
+      setLink(await api<{ link: string; whatsapp: string; nome: string }>('POST', `/pedidos/${pedidoId}/nova-senha`))
+    } catch (e) {
+      avisar(mensagemDe(e), 'erro')
+    }
+    setGerando(false)
+  }
+  if (link)
+    return (
+      <a className="botao" href={linkConversa(link.whatsapp, mensagemSenhaNova(link.nome, link.link))} target="_blank" rel="noreferrer">
+        {Icone.whatsapp} Mandar o link de senha nova
+      </a>
+    )
+  return (
+    <button type="button" className="botao botao-claro" onClick={gerar} disabled={gerando}>
+      {gerando ? 'Gerando…' : 'Esqueceu a senha? Gerar link'}
+    </button>
   )
 }

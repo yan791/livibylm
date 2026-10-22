@@ -15,6 +15,7 @@ import { Cortina } from './components/Cortina'
 import { movimentoReduzido } from './lib/midia'
 import { Pedido } from './paginas/Pedido'
 import { Politica } from './paginas/Politica'
+import { NovaSenha } from './paginas/NovaSenha'
 
 export default function App() {
   const caminho = useCaminho()
@@ -41,6 +42,11 @@ export default function App() {
       ) : rota.nome === 'trocas' || rota.nome === 'privacidade' ? (
         <>
           <Politica key={rota.nome} nome={rota.nome} />
+          <Rodape rota={rota} />
+        </>
+      ) : rota.nome === 'nova-senha' ? (
+        <>
+          <NovaSenha key={rota.link} link={rota.link} />
           <Rodape rota={rota} />
         </>
       ) : (

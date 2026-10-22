@@ -168,6 +168,11 @@ function Privacidade() {
             falar com você sobre ele. Nos envios pelos Correios, também o CPF, que vai na declaração de conteúdo do pacote.
           </li>
           <li>
+            <strong>Na sua conta no site:</strong> nome, WhatsApp, e-mail e uma senha, para você entrar e acompanhar os seus
+            pedidos de qualquer aparelho. A senha fica guardada embaralhada: nem a loja consegue ler. Enquanto a conta estiver
+            aberta, o navegador guarda um código de acesso, que sai quando você toca em “Sair”.
+          </li>
+          <li>
             <strong>No pagamento:</strong> ele é feito na página da InfinitePay. Os dados do seu cartão não passam pelo site da
             Livi: recebemos só a confirmação, a forma de pagamento e o comprovante.
           </li>
@@ -206,14 +211,15 @@ function Privacidade() {
         <h2>Por quanto tempo</h2>
         <p>
           Guardamos os dados dos pedidos pelo tempo necessário para a entrega, as trocas e as obrigações legais, como as fiscais.
+          A conta fica guardada até você pedir para apagar.
         </p>
       </section>
 
       <section>
         <h2>Seus direitos</h2>
         <p>
-          Você pode pedir para ver, corrigir ou apagar os seus dados, e saber com quem eles foram divididos. É só pedir pelo
-          WhatsApp ou pelo e-mail, e respondemos em até 15 dias.
+          Você pode pedir para ver, corrigir ou apagar os seus dados (inclusive a sua conta no site), e saber com quem eles
+          foram divididos. É só pedir pelo WhatsApp ou pelo e-mail, e respondemos em até 15 dias.
         </p>
       </section>
     </>

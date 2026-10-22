@@ -136,22 +136,31 @@ describe('compra pelo site publicado', () => {
     await aviso({ order_nsu: t.codigo, transaction_nsu: 'tx-t', amount: 100 })
     expect((await salvarAjustes(token, { vendasOnline: true })).status).toBe(200)
 
-    const ligado = await doSitePublicado('POST', '/api/pedidos', compraDoSite)
+    // sem conta não compra; com a conta aberta (token no cabeçalho), sim
+    expect((await doSitePublicado('POST', '/api/pedidos', compraDoSite)).status).toBe(401)
+    const criada = await doSitePublicado('POST', '/api/conta/criar', { ...compraDoSite.cliente, senha: 'senha-da-maria' })
+    expect(criada.status).toBe(201)
+    expect(criada.headers.get('Access-Control-Allow-Origin')).toBe('*')
+    const { token: sessao } = (await criada.json()) as { token: string }
+    const ligado = await doSitePublicado('POST', '/api/pedidos', compraDoSite, { Authorization: `Bearer ${sessao}` })
     expect(ligado.status).toBe(201)
     expect(ligado.headers.get('Access-Control-Allow-Origin')).toBe('*')
     const { pagar } = (await ligado.json()) as { pagar: string }
     expect(pagar).toBe('https://checkout.infinitepay.io/teste')
   })
 
-  it('o navegador pode chamar do GitHub Pages (CORS do POST com JSON)', async () => {
-    const r = await doSitePublicado('OPTIONS', '/api/pedidos', undefined, {
-      'Access-Control-Request-Method': 'POST',
-      'Access-Control-Request-Headers': 'content-type',
-    })
-    expect(r.status).toBe(204)
-    expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*')
-    expect(r.headers.get('Access-Control-Allow-Methods')).toMatch(/POST/)
-    expect(r.headers.get('Access-Control-Allow-Headers')?.toLowerCase()).toMatch(/content-type/)
+  it('o navegador pode chamar do GitHub Pages (CORS do POST com JSON e a sessão da conta)', async () => {
+    for (const caminho of ['/api/pedidos', '/api/conta/entrar', '/api/conta/pedidos']) {
+      const r = await doSitePublicado('OPTIONS', caminho, undefined, {
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type,authorization',
+      })
+      expect(r.status).toBe(204)
+      expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*')
+      expect(r.headers.get('Access-Control-Allow-Methods')).toMatch(/POST/)
+      expect(r.headers.get('Access-Control-Allow-Headers')?.toLowerCase()).toMatch(/content-type/)
+      expect(r.headers.get('Access-Control-Allow-Headers')?.toLowerCase()).toMatch(/authorization/)
+    }
   })
 
   it('o painel recusa a compra de teste vinda de outro site', async () => {

@@ -1,5 +1,6 @@
 /*
-  Acesso ao painel: senhas, sessões, convites e freio de tentativas.
+  Acesso ao painel e às contas das clientes do site: senhas, sessões,
+  convites e freio de tentativas.
   - Senha: HMAC com uma chave secreta do Worker (SENHA_PEPPER, fora do banco)
     e depois PBKDF2-SHA256 com sal próprio. O plano grátis dá 10 ms de CPU
     por pedido, então as voltas do PBKDF2 são poucas; a chave secreta é o que
@@ -10,12 +11,15 @@
     só o hash dele fica no banco.
   - Cookie HttpOnly, Secure e SameSite=Strict, e todo pedido que altera algo
     precisa vir do próprio site (cabeçalho Origin).
+  - Conta da cliente: o site mora em outro endereço (GitHub Pages), e o
+    navegador bloqueia cookie de outro site. O token fica no navegador dela e
+    vem no cabeçalho Authorization (Bearer); aqui também só o hash.
 */
 import { createMiddleware } from 'hono/factory'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { HTTPException } from 'hono/http-exception'
 import type { Context } from 'hono'
-import type { AdminLogado, Ambiente } from './tipos'
+import type { AdminLogado, Ambiente, ClienteLogada } from './tipos'
 
 const COOKIE = 'livi_sessao'
 const DIA = 24 * 60 * 60
@@ -69,9 +73,10 @@ export async function conferirSenha(senha: string, guardado: string | null, pepp
   return guardado !== null && calculado.length === esperado.length && crypto.subtle.timingSafeEqual(calculado, esperado)
 }
 
-export function validarSenha(senha: unknown) {
-  if (typeof senha !== 'string' || senha.length < 10)
-    throw new HTTPException(400, { message: 'A senha precisa ter pelo menos 10 caracteres.' })
+/** a do painel tem pelo menos 10 caracteres; a das clientes do site, 8 */
+export function validarSenha(senha: unknown, minimo = 10) {
+  if (typeof senha !== 'string' || senha.length < minimo)
+    throw new HTTPException(400, { message: `A senha precisa ter pelo menos ${minimo} caracteres.` })
   if (senha.length > 200) throw new HTTPException(400, { message: 'Essa senha é longa demais.' })
   return senha
 }
@@ -142,6 +147,54 @@ export const exigirAdmin = createMiddleware<Ambiente>(async (c, next) => {
   c.set('admin', { id: linha.id, email: linha.email, nome: linha.nome })
   await next()
 })
+
+/* ---------- sessão das clientes do site ---------- */
+
+const SESSAO_CLIENTE_DIAS = 90
+
+export async function abrirSessaoCliente(db: D1Database, clienteId: number) {
+  const token = novoToken()
+  await db.batch([
+    db.prepare('DELETE FROM sessoes_clientes WHERE expira_em <= ?1').bind(agora()),
+    db
+      .prepare('INSERT INTO sessoes_clientes (token_hash, cliente_id, expira_em) VALUES (?1, ?2, ?3)')
+      .bind(await hashToken(token), clienteId, agora() + SESSAO_CLIENTE_DIAS * DIA),
+    db.prepare("UPDATE clientes SET ultimo_acesso = datetime('now') WHERE id = ?1").bind(clienteId),
+  ])
+  return token
+}
+
+const tokenCliente = (c: Context<Ambiente>) => /^Bearer ([\w-]{20,100})$/.exec(c.req.header('Authorization') ?? '')?.[1] ?? null
+
+/** a cliente da sessão; null sem sessão válida. Renova a sessão quando falta menos da metade do prazo */
+export async function clienteDaSessao(c: Context<Ambiente>): Promise<ClienteLogada | null> {
+  const token = tokenCliente(c)
+  if (!token) return null
+  const hash = await hashToken(token)
+  const linha = await c.env.DB.prepare(
+    `SELECT cl.id, cl.nome, cl.whatsapp, cl.email, s.expira_em FROM sessoes_clientes s JOIN clientes cl ON cl.id = s.cliente_id
+     WHERE s.token_hash = ?1 AND s.expira_em > ?2`,
+  )
+    .bind(hash, agora())
+    .first<ClienteLogada & { expira_em: number }>()
+  if (!linha) return null
+  if (linha.expira_em - agora() < (SESSAO_CLIENTE_DIAS * DIA) / 2)
+    await c.env.DB.prepare('UPDATE sessoes_clientes SET expira_em = ?1 WHERE token_hash = ?2').bind(agora() + SESSAO_CLIENTE_DIAS * DIA, hash).run()
+  return { id: linha.id, nome: linha.nome, whatsapp: linha.whatsapp, email: linha.email }
+}
+
+/** só passa a cliente com a conta aberta */
+export const exigirCliente = createMiddleware<Ambiente>(async (c, next) => {
+  const cliente = await clienteDaSessao(c)
+  if (!cliente) throw new HTTPException(401, { message: 'Sua sessão terminou. Entre de novo.' })
+  c.set('cliente', cliente)
+  await next()
+})
+
+export async function fecharSessaoCliente(c: Context<Ambiente>) {
+  const token = tokenCliente(c)
+  if (token) await c.env.DB.prepare('DELETE FROM sessoes_clientes WHERE token_hash = ?1').bind(await hashToken(token)).run()
+}
 
 /** pedidos que mudam algo só valem vindos do próprio site */
 export const mesmaOrigem = createMiddleware<Ambiente>(async (c, next) => {

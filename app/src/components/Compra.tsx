@@ -1,10 +1,14 @@
 /*
-  Compra pelo site, dentro da sacola (só com as vendas ligadas no painel):
-  dados da cliente, CEP e a entrega, Maceió ou Correios, com o preço na hora.
-  Depois ela vai para a página de pagamento da InfinitePay e volta para
-  /pedido/<código>. O servidor refaz todas as contas (preços, frete e estoque);
-  aqui é só para ela ver antes.
+  Compra pelo site, dentro da sacola (só com as vendas ligadas no painel).
+  Primeiro a conta: quem já tem entra com o WhatsApp e a senha; quem não tem
+  cria ali mesmo, com os dados da compra e uma senha (lib/conta). Assim cada
+  compra fica na conta da cliente, e ela acompanha os pedidos de qualquer
+  aparelho. Depois: CEP e a entrega, Maceió ou Correios, com o preço na hora,
+  e ela vai para a página de pagamento da InfinitePay e volta para
+  /pedido/<código>. O servidor refaz todas as contas (preços, frete e
+  estoque); aqui é só para ela ver antes.
   O endereço vem do ViaCEP quando der; se ele não responder, ela digita.
+  Com a conta aberta, o endereço e o CPF da última compra já vêm preenchidos.
 */
 import { useEffect, useState, type FormEvent } from 'react'
 import { ajustes, precoBR, rotuloTamanho } from '../dados/colecoes'
@@ -12,9 +16,12 @@ import { linkWhatsApp } from '../dados/site'
 import { API } from '../lib/base'
 import type { detalhar } from '../lib/sacola'
 import { cn } from '../lib/cn'
+import { cabecalhoConta, criarConta, sairDaConta, SENHA_MINIMA, sessaoEncerrada, telefoneTexto, useConta } from '../lib/conta'
 import { SetaEsquerda, WhatsApp } from './icones'
 import { LinkPolitica } from '../paginas/Politica'
 import { guardarPedido } from '../lib/meus-pedidos'
+import { Campo, CampoSenha } from './Campo'
+import { Entrar } from './Entrar'
 
 type Item = ReturnType<typeof detalhar>[number]
 type TipoEntrega = 'maceio' | 'pac' | 'sedex'
@@ -50,19 +57,102 @@ async function buscarEndereco(cep: string): Promise<Endereco | null> {
 }
 
 export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void }) {
-  const [dados, setDados] = useState({ nome: '', whatsapp: '', email: '', cpf: '' })
+  const sessao = useConta()
+  const dentro = sessao.situacao === 'dentro'
+  // sem conta aberta: primeiro a tela de entrar; "Criar conta e continuar" leva para os dados
+  const [criando, setCriando] = useState(false)
+
+  if (sessao.situacao === 'carregando')
+    return (
+      <div className="compra">
+        <div className="compra-corpo">
+          <p className="pedidos-carregando" role="status">
+            <span className="pedido-giro" aria-hidden="true" /> Abrindo a sua conta…
+          </p>
+        </div>
+      </div>
+    )
+
+  if (!dentro && !criando) return <Acesso itens={itens} voltar={voltar} criar={() => setCriando(true)} />
+  return <Formulario itens={itens} voltar={voltar} entrar={() => setCriando(false)} />
+}
+
+/** total das peças, sem a entrega */
+const totalPecas = (itens: Item[]) => itens.reduce((s, i) => s + i.peca.preco * i.qtd, 0)
+
+/** antes dos dados: entrar na conta ou criar uma */
+function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; criar: () => void }) {
+  return (
+    <div className="compra">
+      <div className="compra-corpo">
+        <button type="button" className="compra-voltar" onClick={voltar}>
+          <SetaEsquerda className="ico" /> Voltar para a sacola
+        </button>
+
+        <Entrar titulo="Entrar" texto="Se você já tem conta, entre com o seu WhatsApp e a senha." />
+
+        <section className="compra-bloco conta-criar" aria-labelledby="conta-criar-titulo">
+          <h3 className="conta-titulo" id="conta-criar-titulo">
+            Ainda não tem conta?
+          </h3>
+          <p className="conta-texto">
+            Crie agora, junto com os dados da compra. Com ela você acompanha os seus pedidos de qualquer aparelho.
+          </p>
+          <button type="button" className="pilula" onClick={criar}>
+            Criar conta e continuar
+          </button>
+        </section>
+
+        <a className="compra-duvida" href={linkWhatsApp()} target="_blank" rel="noreferrer">
+          <WhatsApp className="ico" /> Dúvidas? Fale com a gente
+        </a>
+      </div>
+
+      <div className="gaveta-rodape">
+        <p className="gaveta-total">
+          <span>Total sem a entrega</span>
+          <strong>{precoBR(totalPecas(itens))}</strong>
+        </p>
+        <p className="gaveta-nota">
+          Veja as políticas de <LinkPolitica nome="trocas" novaAba>trocas</LinkPolitica> e de{' '}
+          <LinkPolitica nome="privacidade" novaAba>privacidade</LinkPolitica>.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** os dados da compra; sem conta aberta, também os da conta nova (com a senha) */
+function Formulario({ itens, voltar, entrar }: { itens: Item[]; voltar: () => void; entrar: () => void }) {
+  const sessao = useConta()
+  const conta = sessao.situacao === 'dentro' ? sessao : null
+  const [dados, setDados] = useState({ nome: '', whatsapp: '', email: '', cpf: '', senha: '' })
   const [cep, setCep] = useState('')
   const [endereco, setEndereco] = useState({ rua: '', numero: '', complemento: '', bairro: '', cidade: '' })
   const [frete, setFrete] = useState<Frete | null>(null)
   const [tipo, setTipo] = useState<TipoEntrega | null>(null)
   const [erro, setErro] = useState('')
+  // o WhatsApp digitado já tem conta: mostra o botão para entrar
+  const [jaTem, setJaTem] = useState(false)
   const [enviando, setEnviando] = useState(false)
 
   const digitos = cep.replace(/\D/g, '').slice(0, 8)
   const opcoes = frete?.estado === 'pronto' ? frete.opcoes : []
   const escolhida = opcoes.find((o) => o.tipo === tipo)
-  const pecas = itens.reduce((s, i) => s + i.peca.preco * i.qtd, 0)
-  const total = pecas + (escolhida ? escolhida.centavos / 100 : 0)
+  const total = totalPecas(itens) + (escolhida ? escolhida.centavos / 100 : 0)
+
+  // com a conta aberta, a última entrega e o CPF já vêm preenchidos (uma vez, sem apagar o que ela digitou)
+  const ultima = conta?.entrega
+  useEffect(() => {
+    if (!ultima) return
+    setCep((c) => c || ultima.cep)
+    setEndereco((e) =>
+      e.rua || e.numero || e.bairro
+        ? e
+        : { rua: ultima.rua, numero: ultima.numero, complemento: ultima.complemento, bairro: ultima.bairro, cidade: ultima.cidade },
+    )
+    setDados((d) => (d.cpf ? d : { ...d, cpf: ultima.cpf }))
+  }, [ultima])
 
   // CEP completo: pergunta a entrega à loja e o endereço ao ViaCEP, ao mesmo tempo
   useEffect(() => {
@@ -88,9 +178,12 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
   const campoEndereco = (k: keyof typeof endereco) => (v: string) => setEndereco((x) => ({ ...x, [k]: v }))
 
   const faltando = () => {
-    if (dados.nome.trim().length < 3) return 'Preencha seu nome completo.'
-    if (!dados.whatsapp.trim()) return 'Preencha seu WhatsApp, com DDD.'
-    if (!dados.email.trim()) return 'Preencha seu e-mail.'
+    if (!conta) {
+      if (dados.nome.trim().length < 3) return 'Preencha seu nome completo.'
+      if (!dados.email.trim()) return 'Preencha seu e-mail.'
+      if (!dados.whatsapp.trim()) return 'Preencha seu WhatsApp, com DDD.'
+      if (dados.senha.length < SENHA_MINIMA) return `Crie uma senha com pelo menos ${SENHA_MINIMA} caracteres.`
+    }
     if (digitos.length !== 8) return 'Preencha o CEP.'
     if (!escolhida) return 'Escolha a entrega.'
     if (!endereco.rua.trim() || !endereco.numero.trim() || !endereco.bairro.trim()) return 'Preencha a rua, o número e o bairro.'
@@ -103,15 +196,28 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
     e.preventDefault()
     const falta = faltando()
     setErro(falta)
+    setJaTem(false)
     if (falta || !tipo) return
     setEnviando(true)
+
+    // sem conta aberta: cria a conta primeiro (ela já fica aberta, mesmo se a compra falhar depois)
+    if (!conta) {
+      const criada = await criarConta({ nome: dados.nome, whatsapp: dados.whatsapp, email: dados.email, senha: dados.senha })
+      if (criada.erro) {
+        setErro(criada.erro)
+        setJaTem(criada.jaTem)
+        setEnviando(false)
+        return
+      }
+    }
+
     try {
       const r = await fetch(`${API}/api/pedidos`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...cabecalhoConta() },
         body: JSON.stringify({
           itens: itens.map((i) => ({ peca: i.peca.slug, cor: i.cor, tamanho: i.tamanho, qtd: i.qtd })),
-          cliente: { ...dados, cpf: correios(tipo) ? dados.cpf : '' },
+          cliente: { cpf: correios(tipo) ? dados.cpf : '' },
           entrega: { tipo, cep: digitos, ...endereco },
         }),
       })
@@ -123,6 +229,8 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
         location.assign(resposta.pagar)
         return
       }
+      // a sessão venceu: volta para a tela de entrar
+      if (r.status === 401) sessaoEncerrada()
       setErro(resposta.erro ?? 'Não conseguimos fechar a compra agora. Tente de novo em instantes.')
     } catch {
       setErro('Não conseguimos falar com a loja agora. Confira a internet e tente de novo.')
@@ -137,12 +245,49 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
           <SetaEsquerda className="ico" /> Voltar para a sacola
         </button>
 
-        <fieldset className="compra-bloco">
-          <legend>Seus dados</legend>
-          <Campo rotulo="Nome completo" valor={dados.nome} mudar={campo('nome')} autoComplete="name" />
-          <Campo rotulo="WhatsApp, com DDD" valor={dados.whatsapp} mudar={campo('whatsapp')} tipo="tel" autoComplete="tel" dica="É por ele que a gente fala sobre o pedido." />
-          <Campo rotulo="E-mail" valor={dados.email} mudar={campo('email')} tipo="email" autoComplete="email" />
-        </fieldset>
+        {conta ? (
+          <section className="compra-bloco" aria-labelledby="compra-conta">
+            <h3 className="conta-titulo" id="compra-conta">
+              Seus dados
+            </h3>
+            <div className="conta-cartao">
+              <strong>{conta.conta.nome}</strong>
+              <span>
+                {telefoneTexto(conta.conta.whatsapp)} · {conta.conta.email}
+              </span>
+              <button type="button" className="conta-link" onClick={sairDaConta}>
+                Não é você? Sair da conta
+              </button>
+            </div>
+          </section>
+        ) : (
+          <fieldset className="compra-bloco">
+            <legend>Crie a sua conta</legend>
+            <p className="conta-texto">
+              Já tem conta?{' '}
+              <button type="button" className="conta-link" onClick={entrar}>
+                Entrar
+              </button>
+            </p>
+            <Campo rotulo="Nome completo" valor={dados.nome} mudar={campo('nome')} autoComplete="name" />
+            <Campo rotulo="E-mail" valor={dados.email} mudar={campo('email')} tipo="email" autoComplete="email" />
+            <Campo
+              rotulo="WhatsApp, com DDD"
+              valor={dados.whatsapp}
+              mudar={campo('whatsapp')}
+              tipo="tel"
+              autoComplete="username"
+              dica="É por ele que a gente fala sobre o pedido, e é com ele que você entra na conta."
+            />
+            <CampoSenha
+              rotulo="Crie uma senha"
+              valor={dados.senha}
+              mudar={campo('senha')}
+              nova
+              dica={`Pelo menos ${SENHA_MINIMA} caracteres. Com o WhatsApp e essa senha você acompanha os seus pedidos.`}
+            />
+          </fieldset>
+        )}
 
         <fieldset className="compra-bloco">
           <legend>Entrega</legend>
@@ -235,15 +380,20 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
         </p>
         {erro && (
           <p className="compra-erro" role="alert">
-            {erro}
+            {erro}{' '}
+            {jaTem && (
+              <button type="button" className="conta-link" onClick={entrar}>
+                Entrar com a minha senha
+              </button>
+            )}
           </p>
         )}
         <button type="submit" className="pilula cheia" disabled={enviando}>
           {enviando ? 'Abrindo o pagamento…' : 'Ir para o pagamento'}
         </button>
         <p className="gaveta-nota">
-          Pix ou cartão{ajustes.parcelas > 1 ? ` em até ${ajustes.parcelas}x sem juros` : ''}, na página da InfinitePay. Ao seguir, as peças
-          ficam separadas para você por 30 minutos.
+          Pix ou cartão{ajustes.parcelas > 1 ? ` em até ${ajustes.parcelas}x sem juros` : ''}, na página da InfinitePay. Ao seguir,{' '}
+          {conta ? '' : 'a sua conta é criada e '}as peças ficam separadas para você por 30 minutos.
         </p>
         <p className="gaveta-nota">
           Veja as políticas de <LinkPolitica nome="trocas" novaAba>trocas</LinkPolitica> e de{' '}
@@ -251,25 +401,5 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
         </p>
       </div>
     </form>
-  )
-}
-
-type PropsCampo = {
-  rotulo: string
-  valor: string
-  mudar: (v: string) => void
-  tipo?: 'text' | 'tel' | 'email'
-  modo?: 'text' | 'numeric'
-  autoComplete?: string
-  dica?: string
-}
-
-function Campo({ rotulo, valor, mudar, tipo = 'text', modo, autoComplete, dica }: PropsCampo) {
-  return (
-    <label className="compra-campo">
-      <span>{rotulo}</span>
-      <input type={tipo} inputMode={modo} value={valor} onChange={(e) => mudar(e.target.value)} autoComplete={autoComplete ?? 'off'} />
-      {dica && <small>{dica}</small>}
-    </label>
   )
 }

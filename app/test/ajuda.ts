@@ -1,7 +1,8 @@
 /*
   Ajuda dos testes: monta uma peça com estoque, segura peças como uma compra do
   site (a mesma função que o POST /api/pedidos usa) e chama a API do painel
-  com uma sessão aberta direto no banco.
+  com uma sessão aberta direto no banco. Compras pelo site precisam de uma
+  conta da cliente (criarConta).
 */
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 import { env } from 'cloudflare:workers'
@@ -98,8 +99,11 @@ export async function painel(token: string, metodo: string, caminho: string, cor
   return resposta
 }
 
-/** chama a API pública em localhost, onde TESTE_VENDAS deixa comprar com as vendas desligadas; ip = o que a Cloudflare mandaria */
-async function publica(metodo: string, caminho: string, corpo?: unknown, ip?: string) {
+/**
+  Chama a API pública em localhost, onde TESTE_VENDAS deixa comprar com as vendas desligadas;
+  ip = o que a Cloudflare mandaria; token = a sessão da conta da cliente
+*/
+async function publica(metodo: string, caminho: string, corpo?: unknown, ip?: string, token?: string) {
   const ctx = createExecutionContext()
   const resposta = await app.fetch(
     new Request(`http://localhost${caminho}`, {
@@ -107,6 +111,7 @@ async function publica(metodo: string, caminho: string, corpo?: unknown, ip?: st
       headers: {
         ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
         ...(ip ? { 'CF-Connecting-IP': ip } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),
     }),
@@ -117,8 +122,24 @@ async function publica(metodo: string, caminho: string, corpo?: unknown, ip?: st
   return resposta
 }
 
-/** chama a API de compras como o site chamaria */
-export const site = (metodo: string, caminho: string, corpo?: unknown, ip?: string) => publica(metodo, `/api/pedidos${caminho}`, corpo, ip)
+/** chama a API de compras como o site chamaria (token: a conta aberta, para comprar) */
+export const site = (metodo: string, caminho: string, corpo?: unknown, ip?: string, token?: string) =>
+  publica(metodo, `/api/pedidos${caminho}`, corpo, ip, token)
+
+/** chama a API da conta da cliente como o site chamaria */
+export const conta = (metodo: string, caminho: string, corpo?: unknown, token?: string, ip?: string) =>
+  publica(metodo, `/api/conta${caminho}`, corpo, ip, token)
+
+let zap = 0
+/** um WhatsApp diferente a cada chamada, do jeito que a cliente digita */
+export const novoZap = () => `(82) 9${80000000 + ++zap}`
+
+/** cria uma conta no site e devolve o token da sessão */
+export async function criarConta(dados: Record<string, unknown> = {}) {
+  const r = await conta('POST', '/criar', { nome: 'Maria Teste', whatsapp: novoZap(), email: 'maria@exemplo.com', senha: 'senha-da-maria', ...dados })
+  if (r.status !== 201) throw new Error(`conta não criada: ${r.status} ${await r.text()}`)
+  return ((await r.json()) as { token: string }).token
+}
 
 /** o catálogo e os ajustes que o site lê */
 export const loja = () => publica('GET', '/api/loja')

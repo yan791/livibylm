@@ -178,6 +178,18 @@ export function IconePedido(props: P) {
   )
 }
 
+/** pessoa (conta da cliente) */
+export function IconePessoa(props: P) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <g {...linha} strokeWidth="1.3">
+        <circle cx="12" cy="8.5" r="3.75" />
+        <path d="M4.75 20c.9-3.6 3.75-5.75 7.25-5.75s6.35 2.15 7.25 5.75" />
+      </g>
+    </svg>
+  )
+}
+
 /** coração da lista de desejos: contorno ou cheio */
 export function Coracao({ cheio = false, ...props }: P & { cheio?: boolean }) {
   return (

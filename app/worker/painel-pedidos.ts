@@ -10,6 +10,7 @@
     POST /:id/entregue     marca como entregue
     POST /:id/cancelar     cancela; se o estoque já tinha baixado, as peças voltam (com devolverEstoque: false, ficam fora)
     PUT  /:id/observacao   anotação interna da loja
+    POST /:id/nova-senha   link de senha nova para a conta da cliente deste pedido (a loja manda pelo WhatsApp da conta)
 */
 import { Hono } from 'hono'
 import type { Ambiente, CorPeca, LinhaEstoque, LinhaItemPedido, LinhaPeca, LinhaPedido } from './tipos'
@@ -18,6 +19,7 @@ import { numeroWhatsApp } from './ajustes'
 import { agora } from './seguranca'
 import { conferirDisponivel, gravarPedido, lerPedido, MAX_LINHAS, novoCodigo, semEstoque, situacaoDe, type ItemNovo } from './pedidos'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
+import { criarLinkSenha } from './contas'
 
 export const painelPedidos = new Hono<Ambiente>()
 
@@ -51,6 +53,8 @@ const pedidoParaPainel = (p: LinhaPedido, itens: LinhaItemPedido[]) => ({
   enviadoEm: p.enviado_em,
   entregueEm: p.entregue_em,
   canceladoEm: p.cancelado_em,
+  /** a compra está numa conta do site (dá para mandar o link de senha nova) */
+  conta: p.cliente_id !== null,
   itens: itens.map((i) => ({
     id: i.id,
     pecaId: i.peca_id,
@@ -296,4 +300,16 @@ painelPedidos.post('/:id/cancelar', async (c) => {
 painelPedidos.put('/:id/observacao', async (c) => {
   const corpo = await lerCorpo(c)
   return mudar(c, 'UPDATE pedidos SET observacao = ?2 WHERE id = ?1', texto(corpo.observacao, 'A anotação', 1000))
+})
+
+/** link de senha nova para a conta da cliente deste pedido; o painel abre o WhatsApp da conta com ele */
+painelPedidos.post('/:id/nova-senha', async (c) => {
+  const id = idDe(c, 'Pedido')
+  const conta = await c.env.DB.prepare('SELECT cl.id, cl.nome, cl.whatsapp FROM pedidos p JOIN clientes cl ON cl.id = p.cliente_id WHERE p.id = ?1')
+    .bind(id)
+    .first<{ id: number; nome: string; whatsapp: string }>()
+  if (!conta) throw falha(404, 'Esta compra não está numa conta do site.')
+  const token = await criarLinkSenha(c.env.DB, conta.id)
+  const site = (c.env.SITE_PUBLICO || new URL(c.req.url).origin).replace(/\/$/, '')
+  return c.json({ link: `${site}/nova-senha/${token}`, whatsapp: conta.whatsapp, nome: conta.nome })
 })

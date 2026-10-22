@@ -135,6 +135,8 @@ export type Pedido = Omit<ResumoPedido, 'unidades' | 'foto' | 'primeira'> & {
   enviadoEm: string | null
   entregueEm: string | null
   canceladoEm: string | null
+  /** a compra está numa conta do site (a cliente entra com o WhatsApp e a senha) */
+  conta: boolean
   itens: {
     id: number
     pecaId: number | null

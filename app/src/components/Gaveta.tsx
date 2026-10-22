@@ -1,10 +1,11 @@
 /*
   Gaveta lateral com as duas listas da cliente, cada uma numa aba:
   Sacola (o que ela quer comprar) e Desejos (o que salvou para ver depois).
-  A terceira aba, Pedidos, só aparece depois que o aparelho fez (ou abriu) um
-  pedido pelo site.
-  Os dois botões do topo (sacola e coração) abrem a gaveta já na aba certa,
-  cada um com o seu contador.
+  A terceira aba, Pedidos, aparece com as vendas pelo site ligadas, com a
+  conta aberta ou quando o aparelho fez (ou abriu) um pedido pelo site: lá a
+  cliente entra na conta e acompanha as compras.
+  Os botões do topo (conta, sacola e coração) abrem a gaveta já na aba certa,
+  a sacola e o coração com o seu contador.
 */
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, type Variants } from 'motion/react'
@@ -14,7 +15,9 @@ import { useDesejos } from '../lib/desejos'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { useMeusPedidos } from '../lib/meus-pedidos'
-import { Coracao, Fechar, IconePedido, IconeSacola } from './icones'
+import { useConta } from '../lib/conta'
+import { ajustes } from '../dados/colecoes'
+import { Coracao, Fechar, IconePedido, IconePessoa, IconeSacola } from './icones'
 import { PainelSacola } from './Sacola'
 import { EVENTO_DESEJO_CHEGOU, PainelDesejos } from './Desejos'
 import { PainelPedidos } from './MeusPedidos'
@@ -43,9 +46,11 @@ export function Gaveta() {
   const sacola = useSacola()
   const desejos = useDesejos()
   const pedidos = useMeusPedidos()
+  const sessao = useConta()
   const aberta = aba !== null
-  // a aba de pedidos só aparece quando o aparelho tem algum
-  const abas = ABAS.filter((a) => a.id !== 'pedidos' || pedidos.length > 0 || aba === 'pedidos')
+  const abas = ABAS.filter((a) => a.id !== 'pedidos' || temAbaPedidos(sessao.situacao, pedidos.length) || aba === 'pedidos')
+  // com a conta aberta, o número de pedidos vem dela
+  const nPedidos = sessao.situacao === 'dentro' ? sessao.pedidos : pedidos.length
 
   // a aba de agora, para o sentido do deslize (irPara também é chamado por eventos de fora)
   const abaAtual = useRef(aba)
@@ -92,7 +97,7 @@ export function Gaveta() {
             <div className="gaveta-topo">
               <div className="gaveta-abas" role="tablist" aria-label="Suas listas" data-abas={abas.length}>
                 {abas.map((a) => {
-                  const n = a.id === 'sacola' ? unidades(sacola) : a.id === 'desejos' ? desejos.length : pedidos.length
+                  const n = a.id === 'sacola' ? unidades(sacola) : a.id === 'desejos' ? desejos.length : nPedidos
                   const Icone = ICONES[a.id]
                   const ativa = a.id === aba
                   return (
@@ -184,6 +189,24 @@ function BotaoLista({
         {children}
       </motion.span>
       {n > 0 && <span className="sacola-contador">{n}</span>}
+    </button>
+  )
+}
+
+/** a aba "Pedidos" (e o botão da conta): com as vendas pelo site, com a conta aberta ou com pedidos no aparelho */
+const temAbaPedidos = (situacao: string, pedidosNoAparelho: number) => ajustes.vendasOnline || situacao !== 'fora' || pedidosNoAparelho > 0
+
+/** botão da conta no topo: abre a aba "Pedidos" (entrar, ou os pedidos de quem já entrou) */
+export function BotaoConta({ className }: { className?: string }) {
+  const sessao = useConta()
+  const n = useMeusPedidos().length
+  if (!temAbaPedidos(sessao.situacao, n)) return null
+  const rotulo = sessao.situacao === 'dentro' ? `Minha conta, ${sessao.conta.nome.split(/\s+/)[0]}` : 'Entrar na conta'
+  return (
+    <button type="button" className={cn('sacola-botao', 'botao-conta', sessao.situacao === 'dentro' && 'dentro', className)} onClick={() => abrirGaveta('pedidos')} aria-label={rotulo} title={rotulo}>
+      <span className="sacola-botao-icone">
+        <IconePessoa />
+      </span>
     </button>
   )
 }

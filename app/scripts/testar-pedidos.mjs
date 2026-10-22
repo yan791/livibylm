@@ -2,6 +2,7 @@
 // com uma InfinitePay de mentira em 127.0.0.1:8799. No .dev.vars: TESTE_VENDAS=sim e
 // INFINITEPAY_API=http://127.0.0.1:8799. Login do painel local em teste-local.env
 // (PAINEL_TESTE_EMAIL e PAINEL_TESTE_SENHA). Cria tudo com nome "Teste ..." e apaga no fim.
+// A compra pede conta: cada cliente do teste cria a sua ("Maria Teste", apagadas no fim).
 // Uso, dentro de app: node scripts/testar-pedidos.mjs .
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -50,11 +51,13 @@ const tx_t_a = T('t-a'), tx_t_c1 = T('t-c1'), tx_t_c2 = T('t-c2'), tx_t_e = T('t
 
 
 /* ---------- ajudantes ---------- */
+// uma conexão por chamada: o servidor do PC fecha as paradas, e o Node tentava reaproveitar uma fechada (ECONNRESET)
+const buscar = (url, init = {}) => fetch(url, { ...init, headers: { ...init.headers, Connection: 'close' } })
 let cookie = ''
-const api = async (metodo, caminho, corpo, { semLogin, origem = B } = {}) => {
-  const h = { Origin: origem, ...(cookie && !semLogin ? { Cookie: cookie } : {}) }
+const api = async (metodo, caminho, corpo, { semLogin, origem = B, token } = {}) => {
+  const h = { Origin: origem, ...(cookie && !semLogin ? { Cookie: cookie } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) }
   if (corpo) h['Content-Type'] = 'application/json'
-  const r = await fetch(B + caminho, { method: metodo, headers: h, body: corpo ? JSON.stringify(corpo) : undefined })
+  const r = await buscar(B + caminho, { method: metodo, headers: h, body: corpo ? JSON.stringify(corpo) : undefined })
   const sc = r.headers.get('set-cookie')
   if (sc && !semLogin) cookie = sc.split(';')[0]
   return { status: r.status, headers: r.headers, dados: (r.headers.get('content-type') ?? '').includes('json') ? await r.json() : await r.text() }
@@ -66,22 +69,29 @@ const sql = (comando) =>
       encoding: 'utf8',
     }),
   )[0].results
-const loja = async () => (await fetch(B + '/api/loja')).json()
+const loja = async () => (await buscar(B + '/api/loja')).json()
 const disponivelNaLoja = async (slug, chave) => {
   const l = await loja()
   for (const c of l.colecoes) for (const p of c.pecas) if (p.slug === slug) return p.disponivel[chave]
 }
 let zap = 82991000000
-const cliente = () => ({ nome: 'Maria Teste', whatsapp: `(82) ${String(++zap).slice(2, 7)}-${String(zap).slice(7)}`, email: 'maria@exemplo.com', cpf: '529.982.247-25' })
+const contato = () => ({ nome: 'Maria Teste', whatsapp: `(82) ${String(++zap).slice(2, 7)}-${String(zap).slice(7)}`, email: 'maria@exemplo.com', senha: 'senha-do-teste' })
+const site = { semLogin: true, origem: 'https://yan791.github.io' }
+const novaConta = async (dados = contato()) => (await api('POST', '/api/conta/criar', dados, site)).dados.token
 const entregaMaceio = { tipo: 'maceio', cep: '57035-180', rua: 'Rua Teste', numero: '10', complemento: 'Apto 2', bairro: 'Ponta Verde' }
-const comprar = (itens, extra = {}) => api('POST', '/api/pedidos', { itens, cliente: cliente(), entrega: entregaMaceio, ...extra }, { semLogin: true, origem: 'https://yan791.github.io' })
-const zerarLimites = () => sql("DELETE FROM tentativas WHERE chave LIKE 'pedido:%' OR chave LIKE 'conferir:%'")
+const comprarCom = (token, itens, extra = {}) =>
+  api('POST', '/api/pedidos', { itens, cliente: { cpf: '529.982.247-25' }, entrega: entregaMaceio, ...extra }, { ...site, token })
+// cada compra é de uma cliente nova, com a conta dela
+const comprar = async (itens, extra) => comprarCom(await novaConta(), itens, extra)
+const zerarLimites = () => sql("DELETE FROM tentativas WHERE chave LIKE 'pedido:%' OR chave LIKE 'conferir:%' OR chave LIKE 'conta-nova:%'")
+const apagarContas = () => sql("DELETE FROM clientes WHERE nome = 'Maria Teste'")
 const aviso = (corpo) => api('POST', '/api/pagamento/aviso', corpo, { semLogin: true, origem: 'https://api.infinitepay.io' })
 
 /* ---------- preparar: login e duas peças de teste ---------- */
 let r = await api('POST', '/api/painel/entrar', { email: env.PAINEL_TESTE_EMAIL, senha: env.PAINEL_TESTE_SENHA })
 ok(r.status === 200, 'login no painel')
 zerarLimites()
+apagarContas() // de uma rodada interrompida
 const colecao = (await api('GET', '/api/painel/colecoes')).dados.find((c) => c.visivel)
 const novaPeca = async (nome, extra) =>
   (
@@ -107,13 +117,17 @@ ok(peca.id && encomenda.id, 'peças de teste criadas')
 const item = (tamanho, qtd = 1, slug = peca.slug) => ({ peca: slug, cor: 'Vinho', tamanho, qtd })
 
 /* ---------- 4.1: pedido inválido ---------- */
+r = await comprarCom('', [item('P')])
+ok(r.status === 401 && /conta/.test(r.dados.erro), 'compra sem conta: 401', r)
+r = await comprarCom('x'.repeat(43), [item('P')])
+ok(r.status === 401, 'compra com sessão que não existe: 401', r)
 r = await comprar([])
 ok(r.status === 400 && /sacola/.test(r.dados.erro), 'sacola vazia: 400', r)
-r = await api('POST', '/api/pedidos', { itens: [item('P')], cliente: { ...cliente(), email: 'x' }, entrega: entregaMaceio }, { semLogin: true })
-ok(r.status === 400 && /e-mail/.test(r.dados.erro), 'e-mail errado: 400', r)
-r = await api('POST', '/api/pedidos', { itens: [item('P')], cliente: { ...cliente(), whatsapp: '123' }, entrega: entregaMaceio }, { semLogin: true })
-ok(r.status === 400 && /WhatsApp/.test(r.dados.erro), 'WhatsApp errado: 400', r)
-r = await api('POST', '/api/pedidos', { itens: [item('P')], cliente: { ...cliente(), cpf: '111.111.111-11' }, entrega: entregaMaceio }, { semLogin: true })
+r = await api('POST', '/api/conta/criar', { ...contato(), email: 'x' }, site)
+ok(r.status === 400 && /e-mail/.test(r.dados.erro), 'conta com e-mail errado: 400', r)
+r = await api('POST', '/api/conta/criar', { ...contato(), whatsapp: '123' }, site)
+ok(r.status === 400 && /WhatsApp/.test(r.dados.erro), 'conta com WhatsApp errado: 400', r)
+r = await comprar([item('P')], { cliente: { cpf: '111.111.111-11' } })
 ok(r.status === 400 && /CPF/.test(r.dados.erro), 'CPF inválido: 400', r)
 r = await comprar([item('P')], { entrega: { ...entregaMaceio, cep: '01310-100' } })
 ok(r.status === 400 && /Maceió/.test(r.dados.erro), 'CEP fora de Maceió: 400', r)
@@ -138,7 +152,8 @@ ok(r.status === 400 && /20/.test(r.dados.erro), 'mais de 20 linhas: 400', r)
 ok(ip.links.length === 0, 'nada disso chegou à InfinitePay')
 
 /* ---------- 4.1 + 4.4: pedido A segura a última P ---------- */
-r = await comprar([item('P'), item('M', 2)])
+const contaA = await novaConta()
+r = await comprarCom(contaA, [item('P'), item('M', 2)])
 ok(r.status === 201 && /^[2-9a-z]{16}$/.test(r.dados.codigo) && r.dados.pagar.startsWith('https://checkout.infinitepay.io/'), 'pedido A criado com link de pagamento', r)
 const A = r.dados.codigo
 const linkA = ip.links.at(-1).d
@@ -148,8 +163,8 @@ ok(
   'link: preços do banco, quantidade e a entrega como item',
   linkA.items,
 )
-// no PC o próprio Worker mostra o site (SITE_PUBLICO vazio); publicado, vai para o GitHub Pages
-ok(linkA.redirect_url === `${B}/pedido/${A}`, 'link: a cliente volta para a página do pedido no site', linkA.redirect_url)
+// no PC volta para o site local (SITE_PUBLICO do .dev.vars, ou o próprio Worker); publicado, vai para o GitHub Pages
+ok(linkA.redirect_url.endsWith(`/pedido/${A}`), 'link: a cliente volta para a página do pedido no site', linkA.redirect_url)
 ok(linkA.webhook_url === `${B}/api/pagamento/aviso`, 'link: aviso vai para o Worker', linkA.webhook_url)
 ok(linkA.customer.phone_number.startsWith('+5582') && linkA.address.cep === '57035180', 'link: telefone com +55 e endereço')
 ok(!ip.links.at(-1).headers['x-api-key'], 'sem chave de API configurada, nada de X-Api-Key')
@@ -164,8 +179,12 @@ r = await api('GET', `/api/pedidos/${A}`, null, { semLogin: true })
 ok(r.status === 200 && r.dados.situacao === 'aguardando' && r.dados.pagar && r.dados.totalCentavos === 25990 * 3 + 1500, 'página do pedido: aguardando, com link e total', r.dados)
 ok(!('cpf' in r.dados) && !('email' in r.dados) && !('whatsapp' in r.dados) && !JSON.stringify(r.dados).includes('Ponta Verde') && r.dados.nome === 'Maria', 'página do pedido: sem CPF, e-mail, telefone ou endereço')
 ok(r.headers.get('access-control-allow-origin') === '*', 'página do pedido: o site do GitHub pode ler')
-r = await fetch(B + '/api/pedidos', { method: 'OPTIONS', headers: { Origin: 'https://yan791.github.io', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' } })
-ok(r.status === 204 && r.headers.get('access-control-allow-origin') === '*', 'pré-conferência do navegador (CORS) responde')
+r = await buscar(B + '/api/pedidos', { method: 'OPTIONS', headers: { Origin: 'https://yan791.github.io', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type, authorization' } })
+ok(r.status === 204 && r.headers.get('access-control-allow-origin') === '*' && /authorization/i.test(r.headers.get('access-control-allow-headers')), 'pré-conferência do navegador (CORS) responde, com a sessão no cabeçalho')
+r = await api('POST', '/api/conta/pedidos', { codigos: [] }, { ...site, token: contaA })
+ok(r.status === 200 && r.dados.pedidos.length === 1 && r.dados.pedidos[0].codigo === A && r.dados.pedidos[0].daConta, 'o pedido A está na conta de quem comprou', r.dados)
+r = await api('POST', '/api/conta/pedidos', { codigos: [A] }, { ...site, token: await novaConta() })
+ok(r.status === 200 && r.dados.pedidos.every((p) => !p.daConta), 'outra conta com o código de A: não leva o pedido para ela', r.dados)
 r = await api('GET', '/api/pedidos/naoexiste123456', null, { semLogin: true })
 ok(r.status === 404, 'código inválido: 404')
 
@@ -179,7 +198,7 @@ r = await aviso({ order_nsu: A, transaction_nsu: tx_t_forjada, amount: 79470, pa
 ok(r.status === 400 && r.dados.resultado === 'nao_pago', 'aviso forjado (a InfinitePay diz que não pagou): não aprova, 400 (manda de novo)', r.dados)
 r = await aviso({ order_nsu: 'zzzzzzzzzzzzzzzz', transaction_nsu: 'x' })
 ok(r.status === 200, 'aviso de pedido que não existe: 200 (para de mandar)')
-r = await fetch(B + '/api/pagamento/aviso', { method: 'POST', body: 'lixo' })
+r = await buscar(B + '/api/pagamento/aviso', { method: 'POST', body: 'lixo' })
 ok(r.status === 400, 'aviso ilegível: 400')
 ok((await api('GET', `/api/pedidos/${A}`, null, { semLogin: true })).dados.situacao === 'aguardando', 'pedido A continua aguardando')
 
@@ -200,7 +219,10 @@ ok(sql(`SELECT COUNT(*) AS n FROM pagamentos WHERE pedido_id = (SELECT id FROM p
 /* ---------- 4.1: várias clientes pela mesma peça ao mesmo tempo ---------- */
 zerarLimites()
 sql(`UPDATE estoque SET quantidade = 3 WHERE peca_id = ${peca.id} AND tamanho = 'M'`)
-const corrida = await Promise.all(Array.from({ length: 6 }, () => comprar([item('M')])))
+// as contas antes, uma por vez: a corrida é só dos pedidos
+const contasCorrida = []
+for (let i = 0; i < 6; i++) contasCorrida.push(await novaConta())
+const corrida = await Promise.all(contasCorrida.map((t) => comprarCom(t, [item('M')])))
 ok(corrida.filter((x) => x.status === 201).length === 3 && corrida.filter((x) => x.status === 409).length === 3, '6 clientes ao mesmo tempo, 3 unidades: 3 conseguem, 3 não', corrida.map((x) => x.status))
 ok((await disponivelNaLoja(peca.slug, 'Vinho|M')) === 0, 'site: M zerada pelas reservas')
 const corridaCodigos = corrida.filter((x) => x.status === 201).map((x) => x.dados.codigo)
@@ -252,10 +274,9 @@ ok(r.dados.resultado === 'pago', 'sob encomenda: pago sem mexer no estoque', r.d
 
 /* ---------- limites ---------- */
 zerarLimites()
-const mesmoZap = { ...cliente(), whatsapp: '(82) 98888-7777' }
+const mesmoZap = await novaConta({ ...contato(), whatsapp: '(82) 98888-7777' })
 const pedidosZap = []
-for (let i = 0; i < 4; i++)
-  pedidosZap.push(await api('POST', '/api/pedidos', { itens: [item('P', 1, encomenda.slug)], cliente: mesmoZap, entrega: entregaMaceio }, { semLogin: true }))
+for (let i = 0; i < 4; i++) pedidosZap.push(await comprarCom(mesmoZap, [item('P', 1, encomenda.slug)]))
 ok(pedidosZap.slice(0, 3).every((x) => x.status === 201) && pedidosZap[3].status === 429, 'mesmo WhatsApp: até 3 pedidos esperando pagamento', pedidosZap.map((x) => x.status))
 for (let i = 0; i < 8; i++) await comprar([item('P', 1, encomenda.slug)])
 r = await comprar([item('P', 1, encomenda.slug)])
@@ -351,6 +372,7 @@ await api('DELETE', `/api/painel/pecas/${encomenda.id}`)
 
 /* ---------- limpeza ---------- */
 sql("DELETE FROM pedidos WHERE id IN (SELECT pedido_id FROM pedido_itens WHERE nome LIKE 'Teste %')")
+apagarContas()
 zerarLimites()
 servidor.close()
 console.log(`\n${falhas ? `${falhas} FALHA(S)` : 'tudo certo'}`)

@@ -110,8 +110,8 @@ const passos = ajustes.vendasOnline
   ? [
       { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
       { titulo: 'Leve para a sacola', texto: 'Junte tudo o que quiser. As dúvidas, a gente tira no WhatsApp.' },
-      { titulo: 'Pague no site', texto: 'Pix ou cartão, numa página segura. O frete aparece pelo CEP antes de pagar.' },
-      { titulo: 'Receba a sua Livi', texto: 'Acompanhe o pedido pelo link que fica com você.' },
+      { titulo: 'Pague no site', texto: 'Entre na sua conta (ou crie na hora) e pague por Pix ou cartão. O frete aparece pelo CEP.' },
+      { titulo: 'Receba a sua Livi', texto: 'Acompanhe cada etapa do pedido na sua conta, de qualquer aparelho.' },
     ]
   : [
       { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },

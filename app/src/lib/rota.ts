@@ -2,7 +2,8 @@
   Roteador mínimo com URLs reais: "/" é a página inicial,
   "/colecao/velvet/vestido-velvet" abre o catálogo por cima dela (lib/catalogo)
   "/pedido/<código>" é a página de uma compra (para onde a InfinitePay devolve a cliente)
-  e "/trocas" e "/privacidade" são as páginas das políticas da loja.
+  "/trocas" e "/privacidade" são as páginas das políticas da loja
+  e "/nova-senha/<link>" é onde a cliente cria uma senha nova para a conta.
   As trocas passam pela View Transitions API quando o navegador suporta,
   para a peça "voar" de um lugar para o outro sem corte seco.
   As rotas são escritas sem a base ("/colecao/velvet"); a base do site
@@ -18,6 +19,7 @@ export type Rota =
   | { nome: 'colecao'; colecao: string; peca?: string }
   | { nome: 'pedido'; codigo: string }
   | { nome: 'trocas' | 'privacidade' }
+  | { nome: 'nova-senha'; link: string }
 
 const ouvintes = new Set<() => void>()
 const emitir = () => ouvintes.forEach((f) => f())
@@ -44,6 +46,7 @@ export function interpretar(caminho: string): Rota {
   if (partes[0] === 'colecao' && partes[1]) return { nome: 'colecao', colecao: partes[1], peca: partes[2] }
   if (partes[0] === 'pedido' && partes[1]) return { nome: 'pedido', codigo: partes[1] }
   if (partes[0] === 'trocas' || partes[0] === 'privacidade') return { nome: partes[0] }
+  if (partes[0] === 'nova-senha' && partes[1]) return { nome: 'nova-senha', link: partes[1] }
   return { nome: 'inicio', ancora: hash }
 }
 

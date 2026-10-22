@@ -6,7 +6,8 @@
   endereço só servem para pedir a conferência. Enquanto a confirmação não
   chega, a página pergunta de novo de tempos em tempos.
   Pedido pago: as peças compradas saem da sacola. O pedido também fica
-  guardado no aparelho (aba "Pedidos" da gaveta), mesmo aberto pelo link do WhatsApp.
+  guardado no aparelho (aba "Pedidos" da gaveta), mesmo aberto pelo link do
+  WhatsApp; com a conta aberta, a aba põe na conta os que forem dela.
 */
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { API, comBase, enderecoFoto, fotoPequena } from '../lib/base'
@@ -85,6 +86,7 @@ export function Pedido({ codigo }: { codigo: string }) {
     return () => {
       vivo = false
       clearTimeout(relogio)
+      document.title = 'Livi by LM | Moda feminina autoral'
     }
   }, [codigo, dados])
 

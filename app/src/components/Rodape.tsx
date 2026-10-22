@@ -8,11 +8,14 @@ import { Instagram, SetaDiagonal, WhatsApp } from './icones'
 import { comBase } from '../lib/base'
 import { LinkPolitica } from '../paginas/Politica'
 import { useMeusPedidos } from '../lib/meus-pedidos'
+import { useConta } from '../lib/conta'
 import { abrirGaveta } from '../lib/lista'
 
 export function Rodape({ rota }: { rota: Rota }) {
   const loja = ajustes.loja
-  const temPedidos = useMeusPedidos().length > 0
+  const sessao = useConta()
+  // "Minha conta" aparece com as vendas pelo site, com a conta aberta ou com pedidos no aparelho
+  const temConta = ajustes.vendasOnline || sessao.situacao !== 'fora' || useMeusPedidos().length > 0
   return (
     <footer className="rodape">
       <div className="rodape-marca">
@@ -57,7 +60,7 @@ export function Rodape({ rota }: { rota: Rota }) {
         <a href={site.instagram} target="_blank" rel="noreferrer">
           <Instagram className="ico" /> {site.instagramArroba}
         </a>
-        {temPedidos && (
+        {temConta && (
           <a
             href={comBase('/')}
             onClick={(e) => {
@@ -65,7 +68,7 @@ export function Rodape({ rota }: { rota: Rota }) {
               abrirGaveta('pedidos')
             }}
           >
-            Meus pedidos
+            {sessao.situacao === 'dentro' ? 'Minha conta e pedidos' : 'Entrar e ver meus pedidos'}
           </a>
         )}
         {/* as políticas aparecem quando a loja preenche os dados dela no painel (Ajustes) */}

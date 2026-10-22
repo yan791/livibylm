@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:workers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { opcoesDeEntrega, regiaoDoCep, TABELA_VAZIA, ufDoCep, type TabelaFrete } from '../worker/frete'
-import { criarPeca, entrar, painel, site } from './ajuda'
+import { criarConta, criarPeca, entrar, painel, site } from './ajuda'
 
 const TABELA: TabelaFrete = {
   ...TABELA_VAZIA,
@@ -94,14 +94,21 @@ describe('compra pelos Correios', () => {
   it('cobra o frete da tabela e manda a cliente para o pagamento', async () => {
     await salvarFrete(TABELA)
     await criarPeca({ M: 2 })
+    const token = await criarConta()
     const enviados = infinitePayFalsa()
 
-    const r = await site('POST', '', {
-      itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }],
-      cliente,
-      // o frete que o navegador mandar não vale: o servidor usa a tabela
-      entrega: { tipo: 'sedex', cep: '50030-000', ...endereco, uf: 'SP', freteCentavos: 1 },
-    })
+    const r = await site(
+      'POST',
+      '',
+      {
+        itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }],
+        cliente,
+        // o frete que o navegador mandar não vale: o servidor usa a tabela
+        entrega: { tipo: 'sedex', cep: '50030-000', ...endereco, uf: 'SP', freteCentavos: 1 },
+      },
+      undefined,
+      token,
+    )
     expect(r.status).toBe(201)
     const { codigo, pagar } = (await r.json()) as { codigo: string; pagar: string }
     expect(pagar).toBe('https://checkout.infinitepay.io/teste')
@@ -114,12 +121,15 @@ describe('compra pelos Correios', () => {
   it('exige o CPF para os Correios', async () => {
     await salvarFrete(TABELA)
     await criarPeca({ M: 2 })
+    const token = await criarConta()
     infinitePayFalsa()
-    const r = await site('POST', '', {
-      itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }],
-      cliente: { ...cliente, cpf: '' },
-      entrega: { tipo: 'pac', cep: '50030000', ...endereco },
-    })
+    const r = await site(
+      'POST',
+      '',
+      { itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }], cliente: { ...cliente, cpf: '' }, entrega: { tipo: 'pac', cep: '50030000', ...endereco } },
+      undefined,
+      token,
+    )
     expect(r.status).toBe(400)
     expect(((await r.json()) as { erro: string }).erro).toMatch(/CPF/)
     expect(await env.DB.prepare('SELECT count(*) AS n FROM pedidos').first<number>('n')).toBe(0)
@@ -128,9 +138,10 @@ describe('compra pelos Correios', () => {
   it('recusa Correios para Maceió, Maceió para fora e região sem preço', async () => {
     await salvarFrete(TABELA)
     await criarPeca({ M: 2 })
+    const token = await criarConta()
     infinitePayFalsa()
     const comprar = (entrega: Record<string, unknown>) =>
-      site('POST', '', { itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }], cliente, entrega: { ...endereco, ...entrega } })
+      site('POST', '', { itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }], cliente, entrega: { ...endereco, ...entrega } }, undefined, token)
 
     expect((await comprar({ tipo: 'pac', cep: '57020000' })).status).toBe(400)
     expect((await comprar({ tipo: 'maceio', cep: '50030000' })).status).toBe(400)
@@ -141,12 +152,19 @@ describe('compra pelos Correios', () => {
 
   it('Maceió segue com a taxa única e sem exigir CPF', async () => {
     await criarPeca({ M: 2 })
+    const token = await criarConta()
     const enviados = infinitePayFalsa()
-    const r = await site('POST', '', {
-      itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }],
-      cliente: { ...cliente, cpf: '' },
-      entrega: { tipo: 'maceio', cep: '57020-000', rua: 'Rua do Sol', numero: '5', bairro: 'Centro' },
-    })
+    const r = await site(
+      'POST',
+      '',
+      {
+        itens: [{ peca: 'vestido-teste', cor: 'Preto', tamanho: 'M', qtd: 1 }],
+        cliente: { ...cliente, cpf: '' },
+        entrega: { tipo: 'maceio', cep: '57020-000', rua: 'Rua do Sol', numero: '5', bairro: 'Centro' },
+      },
+      undefined,
+      token,
+    )
     expect(r.status).toBe(201)
     expect(enviados[0].itens).toContainEqual({ description: 'Entrega em Maceió', price: 1500, quantity: 1 })
   })
