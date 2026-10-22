@@ -133,10 +133,10 @@ export function fecharOutrasSessoes(c: Context<Ambiente>, adminId: number) {
   )
 }
 
-/** só passa quem tem sessão válida; renova a sessão quando falta menos da metade do prazo */
-export const exigirAdmin = createMiddleware<Ambiente>(async (c, next) => {
+/** quem está com a sessão aberta; null sem sessão válida. Renova a sessão quando falta menos da metade do prazo */
+export async function adminDaSessao(c: Context<Ambiente>): Promise<AdminLogado | null> {
   const token = getCookie(c, COOKIE)
-  if (!token) throw new HTTPException(401, { message: 'Entre para continuar.' })
+  if (!token) return null
   const hash = await hashToken(token)
   const linha = await c.env.DB.prepare(
     'SELECT a.id, a.email, a.nome, s.expira_em FROM sessoes s JOIN admins a ON a.id = s.admin_id WHERE s.token_hash = ?1 AND s.expira_em > ?2',
@@ -145,13 +145,21 @@ export const exigirAdmin = createMiddleware<Ambiente>(async (c, next) => {
     .first<AdminLogado & { expira_em: number }>()
   if (!linha) {
     deleteCookie(c, COOKIE, { path: '/', secure: true })
-    throw new HTTPException(401, { message: 'Sua sessão terminou. Entre de novo.' })
+    return null
   }
   if (linha.expira_em - agora() < (SESSAO_DIAS * DIA) / 2) {
     await c.env.DB.prepare('UPDATE sessoes SET expira_em = ?1 WHERE token_hash = ?2').bind(agora() + SESSAO_DIAS * DIA, hash).run()
     setCookie(c, COOKIE, token, { httpOnly: true, secure: true, sameSite: 'Strict', path: '/', maxAge: SESSAO_DIAS * DIA })
   }
-  c.set('admin', { id: linha.id, email: linha.email, nome: linha.nome })
+  return { id: linha.id, email: linha.email, nome: linha.nome }
+}
+
+/** só passa quem tem sessão válida */
+export const exigirAdmin = createMiddleware<Ambiente>(async (c, next) => {
+  if (!getCookie(c, COOKIE)) throw new HTTPException(401, { message: 'Entre para continuar.' })
+  const admin = await adminDaSessao(c)
+  if (!admin) throw new HTTPException(401, { message: 'Sua sessão terminou. Entre de novo.' })
+  c.set('admin', admin)
   await next()
 })
 

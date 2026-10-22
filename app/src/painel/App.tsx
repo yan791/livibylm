@@ -30,9 +30,9 @@ export function App() {
   const [admin, setAdmin] = useState<Admin | null | undefined>(undefined)
 
   useEffect(() => {
-    api<Admin>('GET', '/eu').then(
-      (a) => {
-        definirSite(a.site)
+    api<{ admin: Admin | null }>('GET', '/sessao').then(
+      ({ admin: a }) => {
+        if (a) definirSite(a.site)
         setAdmin(a)
       },
       () => setAdmin(null),

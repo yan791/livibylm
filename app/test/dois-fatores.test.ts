@@ -159,6 +159,16 @@ describe('entrar', () => {
     expect(outro.dados.recuperacaoRestantes).toBe(CODIGOS_RECUPERACAO - 2)
   })
 
+  it('ao abrir, o painel pergunta quem está logado sem receber erro (a tela de entrar fica sem 401 no console)', async () => {
+    const vazio = await painel('', 'GET', '/sessao')
+    expect(vazio.status).toBe(200)
+    expect(await vazio.json()).toEqual({ admin: null })
+    expect(await (await painel('sessao-que-nao-existe-1234567890', 'GET', '/sessao')).json()).toEqual({ admin: null })
+    const email = await pessoa()
+    const { sessao } = await entrar(email)
+    expect(await (await painel(sessao, 'GET', '/sessao')).json()).toMatchObject({ admin: { email, nome: 'Livia' } })
+  })
+
   it('quem não ligou entra só com a senha, como antes', async () => {
     const email = await pessoa()
     const r = await entrar(email)

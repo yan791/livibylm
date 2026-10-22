@@ -1,6 +1,6 @@
 /*
   API do painel da loja (/api/painel/...).
-  Abertas: entrar e usar um link de acesso (convite). O resto exige login.
+  Abertas: entrar, usar um link de acesso (convite) e /sessao (quem está logado). O resto exige login.
   Quem ligou a verificação em duas etapas (worker/dois-fatores.ts) entra com
   a senha e o código do app, inclusive pelo link de senha nova.
 */
@@ -9,6 +9,7 @@ import type { Ambiente, CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from '.
 import { cnpjValido, cpfValido, EMAIL, falha, idDe, inteiro, lerCorpo, texto, type Corpo } from './validar'
 import {
   abrirSessao,
+  adminDaSessao,
   agora,
   bloqueado,
   conferirSenha,
@@ -164,6 +165,12 @@ painel.post('/convite/:token', async (c) => {
   ])
   await abrirSessao(c, convite.id)
   return c.json({ ok: true })
+})
+
+/** quem está no painel (admin null = ninguém): o painel pergunta ao abrir, sem o erro 401 no console da tela de entrar */
+painel.get('/sessao', async (c) => {
+  const admin = await adminDaSessao(c)
+  return c.json({ admin: admin && { ...admin, site: c.env.SITE_PUBLICO ?? '' } })
 })
 
 /* ---------- daqui para baixo, só com login ---------- */
