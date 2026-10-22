@@ -1,13 +1,15 @@
 import { site, linkWhatsApp } from '../dados/site'
-import { colecoes } from '../dados/colecoes'
+import { ajustes, colecoes } from '../dados/colecoes'
 import { type Rota } from '../lib/rota'
 import { mostrarCatalogo } from '../lib/catalogo'
 import { irPara } from './Cabecalho'
 import { Logo } from './Logo'
 import { Instagram, SetaDiagonal, WhatsApp } from './icones'
 import { comBase } from '../lib/base'
+import { LinkPolitica } from '../paginas/Politica'
 
 export function Rodape({ rota }: { rota: Rota }) {
+  const loja = ajustes.loja
   return (
     <footer className="rodape">
       <div className="rodape-marca">
@@ -52,8 +54,22 @@ export function Rodape({ rota }: { rota: Rota }) {
         <a href={site.instagram} target="_blank" rel="noreferrer">
           <Instagram className="ico" /> {site.instagramArroba}
         </a>
+        {/* as políticas aparecem quando a loja preenche os dados dela no painel (Ajustes) */}
+        {loja && (
+          <>
+            <LinkPolitica nome="trocas" />
+            <LinkPolitica nome="privacidade" />
+          </>
+        )}
       </div>
-      <p className="rodape-fim">© {new Date().getFullYear()} Livi by LM. Todos os direitos reservados.</p>
+      <div className="rodape-fim">
+        <p>© {new Date().getFullYear()} Livi by LM. Todos os direitos reservados.</p>
+        {loja && (
+          <p className="rodape-loja">
+            {[loja.nome, `${loja.documento.length > 14 ? 'CNPJ' : 'CPF'} ${loja.documento}`, loja.endereco, loja.email].join(' · ')}
+          </p>
+        )}
+      </div>
     </footer>
   )
 }

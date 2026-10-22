@@ -17,14 +17,14 @@
      depois de a reserva vencer e a peça já tiver ido para outra cliente, o
      pedido vira 'sem_estoque' (pago, mas a loja precisa resolver com a cliente).
 */
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { cors } from 'hono/cors'
 import type { Ambiente, LinhaItemPedido, LinhaPedido, CorPeca, LinhaPeca } from './tipos'
 import { cpfValido, EMAIL, falha, inteiro, lerCorpo, texto, type Corpo } from './validar'
 import { lerAjustes, numeroWhatsApp, type Ajustes } from './ajustes'
 import { agora } from './seguranca'
 import { limparCacheCatalogo } from './catalogo'
-import { conferirPagamento, criarLink, ErroInfinitePay } from './infinitepay'
+import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type ItemLink } from './infinitepay'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
 
@@ -37,7 +37,8 @@ export const MAX_LINHAS = 20
 
 /** uma linha do pedido já conferida, com as cópias que ficam guardadas */
 export type ItemNovo = {
-  pecaId: number
+  /** null só no item da compra de teste do painel, que não é uma peça */
+  pecaId: number | null
   cor: string
   tamanho: string
   quantidade: number
@@ -419,6 +420,30 @@ function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
   }
 }
 
+/**
+  Cria a página de pagamento de um pedido já gravado e devolve o endereço dela.
+  A cliente volta para /pedido/<codigo> no site, e o aviso vem para este Worker.
+  Se a InfinitePay falhar, o pedido não serve: some, e as peças voltam na hora.
+*/
+export async function abrirPagamento(
+  c: Context<Ambiente>,
+  codigo: string,
+  d: { itens: ItemLink[]; cliente: DadosLink['cliente']; endereco?: DadosLink['endereco'] },
+) {
+  const origem = new URL(c.req.url).origin
+  const site = (c.env.SITE_PUBLICO || origem).replace(/\/$/, '')
+  try {
+    const link = await criarLink(c.env, { codigo, ...d, voltar: `${site}/pedido/${codigo}`, aviso: `${origem}/api/pagamento/aviso` })
+    await c.env.DB.prepare('UPDATE pedidos SET link_pagamento = ?1, fatura = ?2 WHERE codigo = ?3').bind(link.url, link.fatura, codigo).run()
+    return link.url
+  } catch (e) {
+    console.error('InfinitePay: não abriu o pagamento', e)
+    await c.env.DB.prepare('DELETE FROM pedidos WHERE codigo = ?1').bind(codigo).run()
+    limparCacheCatalogo()
+    throw e
+  }
+}
+
 export const compras = new Hono<Ambiente>()
 
 // o site do GitHub Pages mora em outro endereço
@@ -470,27 +495,17 @@ compras.post('/', async (c) => {
   await contar(db, `pedido:${ip}`, 3600)
   limparCacheCatalogo()
 
-  const origem = new URL(c.req.url).origin
-  const site = (c.env.SITE_PUBLICO || origem).replace(/\/$/, '')
   try {
-    const link = await criarLink(c.env, {
-      codigo,
+    const pagar = await abrirPagamento(c, codigo, {
       itens: [
         ...itens.map((i) => ({ descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}`, quantidade: i.quantidade, precoCentavos: i.precoCentavos })),
         ...(entrega.freteCentavos > 0 ? [{ descricao: NOME_ENTREGA[entrega.entrega], quantidade: 1, precoCentavos: entrega.freteCentavos }] : []),
       ],
-      voltar: `${site}/pedido/${codigo}`,
-      aviso: `${origem}/api/pagamento/aviso`,
       cliente,
       endereco: entrega,
     })
-    await db.prepare('UPDATE pedidos SET link_pagamento = ?1, fatura = ?2 WHERE codigo = ?3').bind(link.url, link.fatura, codigo).run()
-    return c.json({ codigo, pagar: link.url }, 201)
-  } catch (e) {
-    // sem página de pagamento o pedido não serve: some, e as peças voltam na hora
-    console.error('InfinitePay: não abriu o pagamento', e)
-    await db.prepare('DELETE FROM pedidos WHERE codigo = ?1').bind(codigo).run()
-    limparCacheCatalogo()
+    return c.json({ codigo, pagar }, 201)
+  } catch {
     throw falha(502, 'Não conseguimos abrir o pagamento agora. Tente de novo em instantes.')
   }
 })
@@ -524,6 +539,13 @@ compras.post('/:codigo/conferir', async (c) => {
       console.error('conferir pagamento', e)
     }
     ;({ pedido, itens } = await pedidoDoSite(db, codigo))
+  } else if (pedido.pago_em && !pedido.recibo && transacao && transacao === pedido.transacao) {
+    // o aviso chegou antes e veio sem o comprovante: guarda o que veio na volta da cliente (mesma transação)
+    const recibo = reciboValido(corpo.recibo)
+    if (recibo) {
+      await db.prepare(`UPDATE pedidos SET recibo = ?1 WHERE id = ?2 AND recibo = ''`).bind(recibo, pedido.id).run()
+      ;({ pedido, itens } = await pedidoDoSite(db, codigo))
+    }
   }
   return c.json(pedidoPublico(pedido, itens))
 })
@@ -554,6 +576,8 @@ export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise
   const chave = `aviso:${codigo}`
   if ((await usou(c.env.DB, chave, 900)) >= AVISOS_POR_PEDIDO) return c.json({ ok: false }, 429)
   await contar(c.env.DB, chave, 900)
+  // a compra de teste do painel mostra se o aviso chegou
+  await c.env.DB.prepare(`UPDATE pedidos SET aviso_em = datetime('now') WHERE id = ?1`).bind(achado.pedido.id).run()
   try {
     const r = await processarPagamento(c.env, achado.pedido, {
       transacao,

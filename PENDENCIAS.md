@@ -1,6 +1,6 @@
 # Loja Livi: o que falta (etapa 4 em diante)
 
-Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra na sacola com frete por região).
+Atualizado em 22/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`), 4.3 (compra na sacola com frete por região) e 4.5 (abrir as vendas pelo painel).
 
 ## O que já está pronto e publicado
 
@@ -21,7 +21,7 @@ Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra
   - Se o aviso chega e o `payment_check` ainda diz que não pagou, o Worker responde 400 para a InfinitePay mandar de novo.
   - Pagamento que chega depois de a reserva vencer, sem a peça, vira "pago sem estoque".
 
-**As compras pelo site continuam travadas.** `PAGAMENTO_PRONTO = false` em `app/worker/ajustes.ts`. Até isso mudar, `POST /api/pedidos` responde 409 e a sacola segue mandando o pedido pelo WhatsApp.
+**As compras pelo site só abrem pelo painel**, depois dos passos da parte 4.5. Até lá, `POST /api/pedidos` responde 409 e a sacola segue mandando o pedido pelo WhatsApp.
 
 ## Parte 4.3: compra no site (formulário na sacola), feita
 
@@ -40,21 +40,33 @@ Falta:
 
    Esses limites estão no código, então a requisição já chegou ao Worker e conta na cota de 100 mil por dia do plano grátis. A proteção contra enxurrada de acessos vem com o domínio próprio: uma regra de limite por IP na Cloudflare, antes do Worker.
 
-## Parte 4.5: abrir as vendas
+## Parte 4.5: abrir as vendas, feita
 
-1. **Páginas e rodapé:**
-   - política de troca (a cliente tem 7 dias para desistir da compra);
-   - política de privacidade (o site pede CPF);
-   - rodapé com nome, CPF ou CNPJ e contato. A Livia vende no CPF: confirmar se ela topa mostrar o CPF ou se vai abrir um MEI.
-2. **Compra de teste de verdade**, com o ok da Livia: uma peça barata paga no Pix e devolvida depois pelo app da InfinitePay. O código segue a documentação pública, mas a InfinitePay real nunca foi chamada. Conferir:
-   - qual campo da resposta de `POST /links` traz o endereço de pagamento (o código aceita `url`, `link`, `checkout_url` ou `payment_url`);
-   - se o aviso chega em `https://livi.yanyago2529.workers.dev/api/pagamento/aviso`;
-   - o domínio do recibo: só são guardados recibos de `infinitepay.io` ou `cloudwalk.io` (`reciboValido` em `pedidos.ts`).
-3. **Ligar as vendas:**
-   - trocar `PAGAMENTO_PRONTO` para `true` (`app/worker/ajustes.ts`);
-   - publicar (`npm run publicar` dentro de `app`);
-   - a Livia liga "Vender pelo site" em Ajustes no painel.
-4. **Opcional, a chave de API da InfinitePay.** Ela só entra como segredo: `npx wrangler secret put INFINITEPAY_CHAVE`, e o código já manda no cabeçalho `X-Api-Key` quando existir. Com ela daria para usar `valid_until` e `single_payment` (link que vence junto com a reserva). Não foram usados porque a documentação pública não diz o formato. **A Livia já tem a chave** (o Arthur confirmou em 21/10): falta cadastrar e conferir o formato de `valid_until` na compra de teste.
+A constante `PAGAMENTO_PRONTO` saiu. Quem libera as vendas agora é o painel, em Ajustes, com três passos na tela:
+
+1. **Dados da loja** (nome, CPF ou CNPJ, endereço e e-mail). Aparecem no rodapé do site e nas páginas de trocas e de privacidade, como pede o Decreto 7.962/2013.
+   - O CNPJ pode ter letras (o formato novo da Receita, desde julho de 2026): `cnpjValido` em `app/worker/validar.ts`.
+   - Enquanto os dados não estão completos, o site não mostra o rodapé com eles nem os links das políticas, e as vendas não ligam (`deLinha` em `app/worker/ajustes.ts` confere de novo).
+2. **Compra de teste** (`app/worker/compra-teste.ts`, rotas em `/api/painel/compra-teste`):
+   - um pedido de verdade, de R$ 1 a R$ 100, com um item só ("Compra de teste"), sem peça e sem estoque;
+   - passa pelo mesmo caminho de uma compra do site: página da InfinitePay, volta para `/pedido/<código>`, `payment_check` e aviso;
+   - a tela mostra se foi paga e se o aviso automático chegou (coluna `aviso_em`, `migrations/0005_aviso_do_pagamento.sql`);
+   - se a InfinitePay não abrir o pagamento, o painel mostra o motivo que ela deu.
+3. **Ligar as vendas.** O interruptor só destrava com os dados completos e a compra de teste paga; o servidor confere de novo ao salvar.
+
+Também entrou:
+- **Trocas** em Ajustes: prazo (7 a 90 dias) e quem paga o frete da troca. A desistência (7 dias) e o defeito (90 dias) seguem o Código de Defesa do Consumidor e são sempre por conta da loja.
+- **Páginas `/trocas` e `/privacidade`** (`app/src/paginas/Politica.tsx`), com os links no rodapé, no "Como comprar", no formulário de compra e na página do pedido.
+- **"Como comprar"** com os passos e as respostas de pagamento, envio e trocas quando as vendas estão ligadas.
+- **Comprovante:** se o aviso chega antes da cliente voltar ao site e vem sem o comprovante, a volta dela guarda o dela (só da mesma transação e do domínio da InfinitePay).
+
+Falta:
+1. **A Livia preencher os dados dela** em Ajustes (decidir CPF ou MEI antes) e conferir o prazo e o frete da troca.
+2. **A compra de teste de verdade**, com o ok da Livia, pelo botão em Ajustes. Depois dela, conferir no banco:
+   - qual campo da resposta de `POST /links` trouxe o endereço de pagamento (o código aceita `url`, `link`, `checkout_url` ou `payment_url`);
+   - se o aviso chegou (`aviso_em` do pedido de teste) e o domínio do comprovante (`recibo`).
+3. **Ligar as vendas** em Ajustes, e cancelar o pedido de teste em Pedidos (o valor volta pelo app da InfinitePay, se ela quiser).
+4. **Opcional, a chave de API da InfinitePay.** Ela só entra como segredo: `npx wrangler secret put INFINITEPAY_CHAVE`, e o código já manda no cabeçalho `X-Api-Key` quando existir. Com ela daria para usar `valid_until` e `single_payment` (link que vence junto com a reserva). Não foram usados porque a documentação pública não diz o formato. **A Livia já tem a chave** (o Arthur confirmou em 21/10): falta cadastrar e conferir o formato de `valid_until`.
 
 ## Respostas da Livia
 
@@ -66,7 +78,7 @@ Já respondidas (21/10):
 
 Ainda faltam:
 - os preços da tabela de frete (ela mesma preenche em Ajustes, no painel);
-- política de troca;
+- prazo e frete da troca (ela mesma escolhe em Ajustes);
 - se mostra o CPF no rodapé ou abre um MEI;
 - ok para a compra de teste.
 
@@ -97,5 +109,10 @@ O teste completo, com a InfinitePay de mentira:
    - `TESTE_VENDAS=sim`, que deixa criar pedidos no PC com as vendas desligadas;
    - `INFINITEPAY_API=http://127.0.0.1:8799`, uma InfinitePay de mentira.
 3. Rodar `node scripts/testar-pedidos.mjs .` dentro de `app`.
-   - O teste sobe a InfinitePay de mentira e testa pedidos, reserva, pagamento, aviso falso, pagamento atrasado, 6 clientes pela mesma peça, painel e venda fora do site.
+   - O teste sobe a InfinitePay de mentira e testa pedidos, reserva, pagamento, aviso falso, pagamento atrasado, 6 clientes pela mesma peça, painel, venda fora do site e peça apagada (91 conferências).
    - Precisa de um login do painel local em `app/teste-local.env`, com as linhas `PAINEL_TESTE_EMAIL=` e `PAINEL_TESTE_SENHA=`.
+
+Para clicar na compra inteira no navegador (sacola, pagamento e volta ao site), com a mesma configuração do `.dev.vars`:
+- rodar `node scripts/infinitepay-falsa.mjs` dentro de `app` (porta 8799; não rode junto com o `testar-pedidos.mjs`, que usa a mesma porta);
+- a página de pagamento de mentira tem "Pagar com Pix" (avisa o Worker e volta para o site) e "Desistir";
+- só no PC, com `INFINITEPAY_API` no `.dev.vars`, o link de pagamento pode ser `http`; no ar, só `https`.

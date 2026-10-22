@@ -3,8 +3,11 @@
   Ritmo mais calmo, ainda fluido. Fotos que ainda não existem aparecem como
   espaços reservados; textos concretos ficam marcados para confirmar.
 */
+import type { ReactNode } from 'react'
 import { motion } from 'motion/react'
 import { linkWhatsApp, mensagens, site } from '../dados/site'
+import { ajustes, precoBR } from '../dados/colecoes'
+import { LinkPolitica } from '../paginas/Politica'
 import { Espaco, Ph } from '../components/Espaco'
 import { Ima, TituloVivo } from '../components/Vivos'
 import {
@@ -102,18 +105,51 @@ export function Sobre() {
   )
 }
 
-const passos = [
-  { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
-  { titulo: 'Chame no WhatsApp', texto: 'O botão da peça já abre a conversa com tudo preenchido.' },
-  { titulo: 'Confirme os detalhes', texto: 'Tiramos dúvidas de medidas, pagamento e envio.' },
-  { titulo: 'Receba a sua Livi', texto: 'Sua peça chega até você.' },
-]
+// com as vendas pelo site ligadas no painel, a compra fecha na sacola; senão, pelo WhatsApp
+const passos = ajustes.vendasOnline
+  ? [
+      { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
+      { titulo: 'Leve para a sacola', texto: 'Junte tudo o que quiser. As dúvidas, a gente tira no WhatsApp.' },
+      { titulo: 'Pague no site', texto: 'Pix ou cartão, numa página segura. O frete aparece pelo CEP antes de pagar.' },
+      { titulo: 'Receba a sua Livi', texto: 'Acompanhe o pedido pelo link que fica com você.' },
+    ]
+  : [
+      { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
+      { titulo: 'Chame no WhatsApp', texto: 'O botão da peça já abre a conversa com tudo preenchido.' },
+      { titulo: 'Confirme os detalhes', texto: 'Tiramos dúvidas de medidas, pagamento e envio.' },
+      { titulo: 'Receba a sua Livi', texto: 'Sua peça chega até você.' },
+    ]
 
-const duvidas = [
-  { p: 'Tamanhos', r: '[Grade do PP ao GG e tabela de medidas em cada peça. Confirmar com a cliente.]' },
-  { p: 'Pagamento', r: '[Formas de pagamento e parcelamento. Confirmar com a cliente.]' },
-  { p: 'Envio', r: '[Regiões atendidas, prazos e frete. Confirmar com a cliente.]' },
-  { p: 'Trocas', r: '[Política de troca. Confirmar com a cliente.]' },
+/** ph = texto que ainda espera a cliente confirmar (aparece marcado) */
+const duvidas: { p: string; r: ReactNode; ph?: boolean }[] = [
+  { p: 'Tamanhos', r: '[Grade do PP ao GG e tabela de medidas em cada peça. Confirmar com a cliente.]', ph: true },
+  ajustes.vendasOnline
+    ? {
+        p: 'Pagamento',
+        r: `Pix ou cartão de crédito${ajustes.parcelas > 1 ? `, em até ${ajustes.parcelas}x sem juros` : ''}, numa página segura da InfinitePay.`,
+      }
+    : { p: 'Pagamento', r: '[Formas de pagamento e parcelamento. Confirmar com a cliente.]', ph: true },
+  ajustes.vendasOnline
+    ? {
+        p: 'Envio',
+        r: `Em Maceió, a entrega tem uma taxa única${ajustes.taxaMaceio ? ` de ${precoBR(ajustes.taxaMaceio)}` : ''}. ${
+          ajustes.correios
+            ? 'Para outras cidades, enviamos pelos Correios (PAC ou SEDEX), e o frete aparece pelo CEP antes de pagar.'
+            : 'Para outras cidades, fale com a gente pelo WhatsApp.'
+        }`,
+      }
+    : { p: 'Envio', r: '[Regiões atendidas, prazos e frete. Confirmar com a cliente.]', ph: true },
+  ajustes.loja
+    ? {
+        p: 'Trocas',
+        r: (
+          <>
+            Você tem 7 dias do recebimento para desistir da compra e {ajustes.trocaDias} dias para trocar por outro tamanho,
+            cor ou peça. <LinkPolitica nome="trocas">Veja como funciona</LinkPolitica>.
+          </>
+        ),
+      }
+    : { p: 'Trocas', r: '[Política de troca. Confirmar com a cliente.]', ph: true },
 ]
 
 export function ComoComprar() {
@@ -140,9 +176,7 @@ export function ComoComprar() {
                 {d.p}
                 <span aria-hidden="true" />
               </summary>
-              <p>
-                <Ph>{d.r}</Ph>
-              </p>
+              <p>{d.ph ? <Ph>{d.r}</Ph> : d.r}</p>
             </details>
           ))}
         </div>

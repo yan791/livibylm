@@ -77,8 +77,24 @@ export type Ajustes = {
   parcelasSemJuros: number
   /** 55 + DDD + número, só dígitos */
   whatsapp: string
-  /** o pagamento pelo site já existe (só então as vendas pelo site podem ligar) */
-  pagamentoPronto: boolean
+  /** quem vende: aparece no rodapé do site e nas páginas de trocas e de privacidade (documento = CPF ou CNPJ, só dígitos) */
+  loja: { nome: string; documento: string; endereco: string; email: string }
+  /** dias, contados do recebimento, para pedir troca */
+  trocaDias: number
+  /** quem paga o frete de uma troca */
+  freteTroca: 'loja' | 'dividido' | 'cliente'
+}
+
+/** a última compra de teste (Ajustes): paga, ela libera as vendas pelo site */
+export type CompraTeste = {
+  id: number
+  situacao: Situacao
+  totalCentavos: number
+  /** página de pagamento, enquanto ainda dá para pagar */
+  pagar: string
+  pago: boolean
+  /** o aviso automático (webhook) da InfinitePay chegou */
+  aviso: boolean
 }
 
 export type Situacao = 'aguardando' | 'expirado' | 'pago' | 'sem_estoque' | 'enviado' | 'entregue' | 'cancelado'

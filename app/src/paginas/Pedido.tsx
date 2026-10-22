@@ -12,9 +12,10 @@ import { API, comBase, enderecoFoto, fotoPequena } from '../lib/base'
 import { navegar } from '../lib/rota'
 import { tirarCompradas } from '../lib/sacola'
 import { mostrarCatalogo } from '../lib/catalogo'
-import { precoBR, rotuloTamanho } from '../dados/colecoes'
+import { ajustes, precoBR, rotuloTamanho } from '../dados/colecoes'
 import { linkWhatsApp, site } from '../dados/site'
 import { IconeCabide, SetaDiagonal, WhatsApp } from '../components/icones'
+import { LinkPolitica } from './Politica'
 
 type Situacao = 'aguardando' | 'expirado' | 'pago' | 'sem_estoque' | 'enviado' | 'entregue' | 'cancelado'
 
@@ -256,10 +257,13 @@ export function Pedido({ codigo }: { codigo: string }) {
                 <span className="pedido-foto">{i.foto ? <img src={enderecoFoto(fotoPequena(i.foto))} alt="" /> : <IconeCabide />}</span>
                 <span className="pedido-item">
                   <strong>{i.nome}</strong>
-                  <span>
-                    {i.cor} · {rotuloTamanho(i.tamanho)}
-                    {i.quantidade > 1 && ` · ${i.quantidade} unidades`}
-                  </span>
+                  {/* a compra de teste do painel não tem cor nem tamanho */}
+                  {i.tamanho && (
+                    <span>
+                      {i.cor} · {rotuloTamanho(i.tamanho)}
+                      {i.quantidade > 1 && ` · ${i.quantidade} unidades`}
+                    </span>
+                  )}
                 </span>
                 <span className="pedido-valor">{reais(i.precoCentavos * i.quantidade)}</span>
               </li>
@@ -295,6 +299,11 @@ export function Pedido({ codigo }: { codigo: string }) {
             </a>
           )}
         </section>
+        {pago && ajustes.loja && (
+          <p className="pedido-politica">
+            Precisa trocar ou devolver? <LinkPolitica nome="trocas">Veja como funciona</LinkPolitica>.
+          </p>
+        )}
       </div>
     </main>
   )

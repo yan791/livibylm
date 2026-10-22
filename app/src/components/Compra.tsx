@@ -13,6 +13,7 @@ import { API } from '../lib/base'
 import type { detalhar } from '../lib/sacola'
 import { cn } from '../lib/cn'
 import { SetaEsquerda, WhatsApp } from './icones'
+import { LinkPolitica } from '../paginas/Politica'
 
 type Item = ReturnType<typeof detalhar>[number]
 type TipoEntrega = 'maceio' | 'pac' | 'sedex'
@@ -240,6 +241,10 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
         <p className="gaveta-nota">
           Pix ou cartão{ajustes.parcelas > 1 ? ` em até ${ajustes.parcelas}x sem juros` : ''}, na página da InfinitePay. Ao seguir, as peças
           ficam separadas para você por 30 minutos.
+        </p>
+        <p className="gaveta-nota">
+          Veja as políticas de <LinkPolitica nome="trocas" novaAba>trocas</LinkPolitica> e de{' '}
+          <LinkPolitica nome="privacidade" novaAba>privacidade</LinkPolitica>.
         </p>
       </div>
     </form>

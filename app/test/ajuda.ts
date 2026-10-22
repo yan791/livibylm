@@ -120,6 +120,9 @@ async function publica(metodo: string, caminho: string, corpo?: unknown, ip?: st
 /** chama a API de compras como o site chamaria */
 export const site = (metodo: string, caminho: string, corpo?: unknown, ip?: string) => publica(metodo, `/api/pedidos${caminho}`, corpo, ip)
 
+/** o catálogo e os ajustes que o site lê */
+export const loja = () => publica('GET', '/api/loja')
+
 /** manda o aviso (webhook) que a InfinitePay manda quando aprova um pagamento */
 export const aviso = (corpo: unknown) => publica('POST', '/api/pagamento/aviso', corpo)
 

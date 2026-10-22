@@ -78,6 +78,8 @@ export type LinhaPedido = {
   enviado_em: string | null
   entregue_em: string | null
   cancelado_em: string | null
+  /** último aviso (webhook) da InfinitePay para este pedido */
+  aviso_em: string | null
 }
 
 export type LinhaItemPedido = {

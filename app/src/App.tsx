@@ -14,6 +14,7 @@ import { Catalogo } from './components/Catalogo'
 import { Cortina } from './components/Cortina'
 import { movimentoReduzido } from './lib/midia'
 import { Pedido } from './paginas/Pedido'
+import { Politica } from './paginas/Politica'
 
 export default function App() {
   const caminho = useCaminho()
@@ -32,8 +33,16 @@ export default function App() {
       {/* /colecao/... abre o catálogo por cima da página inicial, que fica sempre montada */}
       <Catalogo />
       {rota.nome === 'pedido' ? (
-        // a página de uma compra fica sozinha, sem a página inicial por baixo
-        <Pedido key={rota.codigo} codigo={rota.codigo} />
+        // a página de uma compra e as das políticas ficam sozinhas, sem a página inicial por baixo
+        <>
+          <Pedido key={rota.codigo} codigo={rota.codigo} />
+          <Rodape rota={rota} />
+        </>
+      ) : rota.nome === 'trocas' || rota.nome === 'privacidade' ? (
+        <>
+          <Politica key={rota.nome} nome={rota.nome} />
+          <Rodape rota={rota} />
+        </>
       ) : (
         <>
           <Cortina />

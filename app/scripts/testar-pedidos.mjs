@@ -332,7 +332,17 @@ const vendaPendente = (await api('GET', `/api/painel/pedidos/${r.dados.id}`)).da
 ok(vendaPendente.situacao === 'pago' && vendaPendente.entrega === 'combinar', 'venda ainda não entregue fica "pra enviar"')
 
 /* ---------- peça apagada: o pedido continua legível ---------- */
-await api('DELETE', `/api/painel/pecas/${peca.id}`)
+// alguém ainda está pagando esta peça: o painel não deixa apagar (migrations/0004)
+const reservadas = sql(
+  `SELECT count(*) AS n FROM pedido_itens i JOIN pedidos p ON p.id = i.pedido_id WHERE i.peca_id = ${peca.id} AND p.situacao = 'aguardando' AND p.reserva_ate > unixepoch()`,
+)[0].n
+if (reservadas) {
+  r = await api('DELETE', `/api/painel/pecas/${peca.id}`)
+  ok(r.status === 409 && /pagando/.test(r.dados.erro), 'peça com reserva ativa: o painel não deixa apagar', r)
+  sql(`UPDATE pedidos SET reserva_ate = unixepoch() - 1 WHERE situacao = 'aguardando' AND id IN (SELECT pedido_id FROM pedido_itens WHERE peca_id = ${peca.id})`)
+}
+r = await api('DELETE', `/api/painel/pecas/${peca.id}`)
+ok(r.status === 200, 'peça sem reserva ativa: apaga', r)
 r = await api('GET', `/api/painel/pedidos/${venda.id}`)
 ok(r.status === 200 && r.dados.itens[0].nome === nomePeca && r.dados.itens[0].pecaId === null, 'peça apagada: o pedido mantém nome, cor e tamanho')
 r = await api('POST', `/api/painel/pedidos/${venda.id}/cancelar`, {})

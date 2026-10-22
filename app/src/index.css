@@ -1434,12 +1434,22 @@ img {
 
 .rodape-fim {
   grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
   margin-top: 40px;
   padding-top: 24px;
   border-top: 1px solid rgb(230 205 191 / 0.2);
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   opacity: 0.7;
+}
+
+/* quem vende: nome, CPF ou CNPJ, endereço e e-mail (Ajustes do painel) */
+.rodape-loja {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 /* pedido sem tamanho escolhido: os botões de tamanho balançam (catálogo) */
@@ -1765,6 +1775,11 @@ img {
   font-size: 0.78rem;
   line-height: 1.5;
   opacity: 0.75;
+}
+.gaveta-nota a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* faixa contínua das coleções */
@@ -4881,4 +4896,97 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   .pedido {
     padding-top: 150px;
   }
+}
+
+/* ============================================================
+   PÁGINAS DAS POLÍTICAS (/trocas e /privacidade)
+   ============================================================ */
+
+.politica {
+  min-height: 100svh;
+  padding: 112px 20px 88px;
+  background:
+    radial-gradient(90% 50% at 50% 0%, rgb(230 205 191 / 0.55), transparent 70%),
+    var(--creme);
+  color: var(--chocolate);
+}
+
+.politica-caixa {
+  display: grid;
+  gap: 18px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.politica-titulo {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(2.3rem, 8vw, 3.6rem);
+  font-variation-settings: 'opsz' 60;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--vinho);
+  text-wrap: balance;
+}
+
+.politica-intro {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--taupe);
+}
+
+.politica section {
+  display: grid;
+  gap: 12px;
+  padding-top: 26px;
+  margin-top: 8px;
+  border-top: 1px solid rgb(79 15 16 / 0.12);
+}
+
+.politica h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.5rem;
+  color: var(--vinho);
+}
+
+.politica section p,
+.politica li {
+  line-height: 1.7;
+}
+
+.politica ul {
+  display: grid;
+  gap: 10px;
+  padding-left: 1.2em;
+  list-style: disc;
+}
+
+.politica li::marker {
+  color: var(--vinho);
+}
+
+.politica a:not(.pilula) {
+  color: var(--vinho);
+  text-underline-offset: 3px;
+}
+
+.politica .pilula {
+  justify-self: start;
+  margin-top: 6px;
+}
+
+.politica-data {
+  margin-top: 18px;
+  font-size: 0.85rem;
+  color: var(--taupe);
+}
+
+.pedido-politica {
+  font-size: 0.92rem;
+  color: var(--taupe);
+}
+.pedido-politica a {
+  color: var(--vinho);
+  text-underline-offset: 3px;
 }

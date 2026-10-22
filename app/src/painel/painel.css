@@ -1912,3 +1912,68 @@ select {
     text-align: center;
   }
 }
+
+/* vendas pelo site (Ajustes): os passos antes de ligar, com a compra de teste no meio */
+.passos-vendas {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 18px;
+  padding: 0;
+  list-style: none;
+  counter-reset: passo;
+}
+.passos-vendas li {
+  position: relative;
+  display: grid;
+  gap: 6px;
+  padding-left: 40px;
+  counter-increment: passo;
+}
+.passos-vendas li::before {
+  content: counter(passo);
+  position: absolute;
+  left: 0;
+  top: -2px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--linha-forte);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--suave);
+}
+.passos-vendas li.feito::before {
+  content: '✓';
+  box-shadow: none;
+  background: var(--ok);
+  color: #fff;
+}
+.passos-vendas strong {
+  font-weight: 500;
+}
+.passos-vendas small,
+.teste small {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--suave);
+}
+.teste {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.teste-ok {
+  color: var(--ok);
+  font-weight: 500;
+}
+.teste-criar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.teste-criar .preco {
+  width: 120px;
+}

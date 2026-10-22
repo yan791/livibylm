@@ -4,7 +4,7 @@
 */
 import { Hono, type Context } from 'hono'
 import type { Ambiente, CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
-import { EMAIL, falha, idDe, inteiro, lerCorpo, texto, type Corpo } from './validar'
+import { cnpjValido, cpfValido, EMAIL, falha, idDe, inteiro, lerCorpo, texto, type Corpo } from './validar'
 import {
   abrirSessao,
   agora,
@@ -23,9 +23,10 @@ import {
 } from './seguranca'
 import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
 import { limparCacheCatalogo } from './catalogo'
-import { lerAjustes, numeroWhatsApp, PAGAMENTO_PRONTO, salvarAjustes } from './ajustes'
+import { FRETES_TROCA, lerAjustes, lojaCompleta, numeroWhatsApp, PADRAO, salvarAjustes, type Ajustes, type DadosLoja, type FreteTroca } from './ajustes'
 import { chaveVariante, consultaReservas, estoqueReservado, mapaReservas, type LinhaReserva } from './reservas'
 import { painelPedidos } from './painel-pedidos'
+import { compraTeste, estadoTeste } from './compra-teste'
 import { REGIOES, type TabelaFrete } from './frete'
 import { RESERVA_MINUTOS } from './pedidos'
 
@@ -142,6 +143,7 @@ painel.use('*', exigirAdmin)
 painel.get('/eu', (c) => c.json({ ...c.get('admin'), site: c.env.SITE_PUBLICO ?? '' }))
 
 painel.route('/pedidos', painelPedidos)
+painel.route('/compra-teste', compraTeste)
 
 /* ---------- coleções ---------- */
 
@@ -610,20 +612,46 @@ function lerTabelaFrete(v: unknown): TabelaFrete {
   ) as TabelaFrete
 }
 
-painel.get('/ajustes', async (c) => c.json({ ...(await lerAjustes(c.env.DB)), pagamentoPronto: PAGAMENTO_PRONTO }))
+/** nome, CPF ou CNPJ, endereço e e-mail; o que vier em branco fica em branco (só não deixa ligar as vendas) */
+function lerLoja(v: unknown): DadosLoja {
+  const o = v && typeof v === 'object' ? (v as Corpo) : {}
+  const documento = texto(o.documento, 'O CPF ou CNPJ', 30)
+  const doc = documento && (cpfValido(documento) ?? cnpjValido(documento))
+  if (doc === null) throw falha(400, 'Confira o CPF ou CNPJ da loja: os números não batem.')
+  const email = texto(o.email, 'O e-mail da loja', 120)
+  if (email && !EMAIL.test(email)) throw falha(400, 'Confira o e-mail da loja.')
+  return { nome: texto(o.nome, 'O nome da loja', 120), documento: doc, endereco: texto(o.endereco, 'O endereço da loja', 200), email }
+}
+
+/** o que ainda falta para ligar as vendas pelo site ('' = nada) */
+async function faltaParaVender(db: D1Database, a: Ajustes) {
+  if (!lojaCompleta(a.loja)) return 'Para ligar as vendas, preencha os dados da loja: nome, CPF ou CNPJ, endereço e e-mail. A lei pede que eles apareçam no site.'
+  if (!(await estadoTeste(db))?.pago) return 'Para ligar as vendas, faça antes uma compra de teste e pague: ela confere se o pagamento chega certinho.'
+  return ''
+}
+
+painel.get('/ajustes', async (c) => c.json(await lerAjustes(c.env.DB)))
 
 painel.put('/ajustes', async (c) => {
   const corpo = await lerCorpo(c)
   const whatsapp = numeroWhatsApp(texto(corpo.whatsapp, 'o WhatsApp', 30, true))
   if (!whatsapp) throw falha(400, 'Confira o WhatsApp: DDD e número, ex.: (82) 99811-5324.')
-  const ajustes = {
-    // sem o pagamento pronto, as vendas pelo site ficam desligadas
-    vendasOnline: PAGAMENTO_PRONTO && corpo.vendasOnline === true,
+  if (corpo.freteTroca !== undefined && !FRETES_TROCA.includes(corpo.freteTroca as FreteTroca)) throw falha(400, 'Frete da troca: valor inválido.')
+  const ajustes: Ajustes = {
+    vendasOnline: corpo.vendasOnline === true,
     taxaMaceioCentavos: inteiro(corpo.taxaMaceioCentavos, 'Taxa de entrega', 0, 100_000),
     parcelasSemJuros: inteiro(corpo.parcelasSemJuros, 'Parcelas', 1, 12),
     whatsapp,
     freteCorreios: lerTabelaFrete(corpo.freteCorreios),
+    loja: lerLoja(corpo.loja),
+    // a lei já dá 7 dias para desistir da compra: a troca não tem prazo menor
+    trocaDias: corpo.trocaDias === undefined ? PADRAO.trocaDias : inteiro(corpo.trocaDias, 'Prazo para troca', 7, 90),
+    freteTroca: (corpo.freteTroca as FreteTroca | undefined) ?? PADRAO.freteTroca,
+  }
+  if (ajustes.vendasOnline) {
+    const falta = await faltaParaVender(c.env.DB, ajustes)
+    if (falta) throw falha(409, falta)
   }
   await salvarAjustes(c.env.DB, ajustes)
-  return c.json({ ...ajustes, pagamentoPronto: PAGAMENTO_PRONTO })
+  return c.json(ajustes)
 })

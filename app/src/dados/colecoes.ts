@@ -60,6 +60,16 @@ export type Ajustes = {
   parcelas: number
   /** compras pelo site ligadas no painel: a sacola mostra "Finalizar compra" */
   vendasOnline: boolean
+  /** taxa única de entrega em Maceió, em reais */
+  taxaMaceio: number
+  /** a loja envia pelos Correios para alguma região */
+  correios: boolean
+  /** quem vende (rodapé, trocas e privacidade); null enquanto a loja não preencher no painel */
+  loja: { nome: string; documento: string; endereco: string; email: string } | null
+  /** dias, contados do recebimento, para pedir troca */
+  trocaDias: number
+  /** quem paga o frete de uma troca */
+  freteTroca: 'loja' | 'dividido' | 'cliente'
 }
 
 async function buscar(): Promise<unknown> {
@@ -101,10 +111,19 @@ function preparar(dados: unknown): Colecao[] {
 
 function prepararAjustes(dados: unknown): Ajustes {
   const a = (dados ?? {}) as Partial<Ajustes>
+  const d = (dados ?? {}) as { taxaMaceioCentavos?: unknown }
   return {
     whatsapp: typeof a.whatsapp === 'string' && /^\d{12,13}$/.test(a.whatsapp) ? a.whatsapp : '',
     parcelas: typeof a.parcelas === 'number' && a.parcelas >= 1 ? Math.floor(a.parcelas) : 1,
     vendasOnline: a.vendasOnline === true,
+    taxaMaceio: typeof d.taxaMaceioCentavos === 'number' ? d.taxaMaceioCentavos / 100 : 0,
+    correios: a.correios === true,
+    loja:
+      a.loja && typeof a.loja === 'object' && typeof a.loja.nome === 'string' && typeof a.loja.documento === 'string'
+        ? { nome: a.loja.nome, documento: a.loja.documento, endereco: String(a.loja.endereco ?? ''), email: String(a.loja.email ?? '') }
+        : null,
+    trocaDias: typeof a.trocaDias === 'number' && a.trocaDias >= 7 ? Math.floor(a.trocaDias) : 7,
+    freteTroca: a.freteTroca === 'loja' || a.freteTroca === 'cliente' ? a.freteTroca : 'dividido',
   }
 }
 

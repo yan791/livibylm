@@ -73,9 +73,11 @@ export async function criarLink(env: Ambiente, d: DadosLink) {
       },
     }),
   })
-  // a documentação e as integrações conhecidas usam nomes diferentes para o endereço
+  // a documentação e as integrações conhecidas usam nomes diferentes para o endereço.
+  // Só no PC (INFINITEPAY_API aponta para a InfinitePay de mentira, scripts/infinitepay-falsa.mjs) vale http
+  const endereco = env.INFINITEPAY_API ? /^https?:\/\// : /^https:\/\//
   const url = [resposta.url, resposta.link, resposta.checkout_url, resposta.payment_url].find(
-    (v): v is string => typeof v === 'string' && /^https:\/\//.test(v),
+    (v): v is string => typeof v === 'string' && endereco.test(v),
   )
   if (!url) throw new ErroInfinitePay(`/links: resposta sem endereço ${JSON.stringify(resposta).slice(0, 300)}`)
   return { url, fatura: typeof resposta.slug === 'string' ? resposta.slug : '' }

@@ -55,3 +55,21 @@ export function cpfValido(texto: string) {
   }
   return digito(9) === Number(n[9]) && digito(10) === Number(n[10]) ? n : null
 }
+
+/**
+  O CNPJ válido sem a pontuação (confere os dois dígitos finais); null se não for.
+  Desde julho de 2026 a Receita também emite CNPJ com letras nas 12 primeiras
+  posições (os 2 finais seguem números): cada caractere vale o código dele menos 48
+  (0 a 9 continuam 0 a 9, A vale 17), e a conta é a mesma de sempre.
+*/
+export function cnpjValido(texto: string) {
+  const n = texto.toUpperCase().replace(/[^0-9A-Z]/g, '')
+  if (!/^[0-9A-Z]{12}\d{2}$/.test(n) || /^(\d)\1{13}$/.test(n)) return null
+  const digito = (ate: number) => {
+    let soma = 0
+    for (let i = 0; i < ate; i++) soma += (n.charCodeAt(i) - 48) * (((ate - 1 - i) % 8) + 2)
+    const resto = soma % 11
+    return resto < 2 ? 0 : 11 - resto
+  }
+  return digito(12) === Number(n[12]) && digito(13) === Number(n[13]) ? n : null
+}
