@@ -34,7 +34,11 @@ Atualizado em 21/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`) e 4.3 (compra
 
 Falta:
 1. **A Livia preencher a tabela de frete** em Ajustes. Até lá, fora de Maceió o site manda a cliente para o WhatsApp.
-2. **Opcional:** um anti-robô (Cloudflare Turnstile). Já existem limites: 10 pedidos por hora por IP e 3 pedidos esperando pagamento por WhatsApp.
+2. **Opcional:** um anti-robô (Cloudflare Turnstile). Já existem limites:
+   - 10 pedidos por hora por IP e 3 pedidos esperando pagamento por WhatsApp;
+   - 60 consultas de frete por IP e 20 avisos de pagamento por pedido, a cada 15 minutos.
+
+   Esses limites estão no código, então a requisição já chegou ao Worker e conta na cota de 100 mil por dia do plano grátis. A proteção contra enxurrada de acessos vem com o domínio próprio: uma regra de limite por IP na Cloudflare, antes do Worker.
 
 ## Parte 4.5: abrir as vendas
 

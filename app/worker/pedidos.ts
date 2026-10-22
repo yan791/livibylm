@@ -267,6 +267,13 @@ export async function processarPagamento(env: Env, p: LinhaPedido, d: { transaca
 
 /* ---------- limites de uso ---------- */
 
+// Sempre confere antes de contar: passou do limite, o pedido é recusado sem gravar nada no banco.
+
+/** avisos de pagamento por pedido em 15 minutos: a InfinitePay manda poucos, e cada um pergunta a ela */
+export const AVISOS_POR_PEDIDO = 20
+/** consultas de frete por IP em 15 minutos: a cliente digita o CEP poucas vezes */
+export const FRETES_POR_IP = 60
+
 /** quantas vezes algo aconteceu (pedidos de um IP, conferências de um pedido) dentro da janela */
 async function usou(db: D1Database, chave: string, janela: number) {
   const r = await db.prepare('SELECT falhas FROM tentativas WHERE chave = ?1 AND desde > ?2').bind(chave, agora() - janela).first<{ falhas: number }>()
@@ -422,6 +429,9 @@ compras.get('/frete', async (c) => {
   const cep = (c.req.query('cep') ?? '').replace(/\D/g, '')
   const uf = ufDoCep(cep)
   if (!uf) throw falha(400, 'Confira o CEP: são 8 números.')
+  const chave = `frete:${c.req.header('CF-Connecting-IP') ?? 'local'}`
+  if ((await usou(c.env.DB, chave, 900)) >= FRETES_POR_IP) throw falha(429, 'Muitas consultas seguidas. Espere um pouco e tente de novo.')
+  await contar(c.env.DB, chave, 900)
   const ajustes = await lerAjustes(c.env.DB)
   return c.json({ uf, opcoes: opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios) })
 })
@@ -524,8 +534,9 @@ compras.post('/:codigo/conferir', async (c) => {
   Também 400 quando a conferência ainda diz que não foi pago: ela só avisa
   pagamento aprovado, então pode ser só atraso, e a cliente talvez nem volte ao
   site para conferir de novo. Um aviso forjado também cai aqui, sem aprovar nada.
+  429 quando o mesmo pedido recebe avisos demais em pouco tempo.
 */
-export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise<unknown> }; json: (d: unknown, s?: 200 | 400) => Response }) {
+export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise<unknown> }; json: (d: unknown, s?: 200 | 400 | 429) => Response }) {
   let d: Corpo
   try {
     d = objeto(await c.req.json())
@@ -539,6 +550,10 @@ export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise
     console.warn('aviso da InfinitePay sem pedido conhecido', JSON.stringify(d).slice(0, 300))
     return c.json({ ok: true })
   }
+  // quem sabe o código de um pedido não pode fazer o Worker perguntar à InfinitePay sem parar
+  const chave = `aviso:${codigo}`
+  if ((await usou(c.env.DB, chave, 900)) >= AVISOS_POR_PEDIDO) return c.json({ ok: false }, 429)
+  await contar(c.env.DB, chave, 900)
   try {
     const r = await processarPagamento(c.env, achado.pedido, {
       transacao,
