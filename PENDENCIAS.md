@@ -88,6 +88,16 @@ Antes de pagar, a sacola pede a conta: "Entrar" (WhatsApp e senha) e, embaixo, "
 - **Esqueceu a senha:** a cliente chama no WhatsApp. No painel, na página de um pedido dela, "Esqueceu a senha? Gerar link" cria um link de senha nova (24 horas, uma vez só) para mandar pelo WhatsApp da conta. Página `/nova-senha/<link>` no site.
 - Testes: `app/test/contas.test.ts` (35, inclusive 6 clientes entrando ao mesmo tempo e a mesma cliente em 6 aparelhos).
 
+## Verificação em duas etapas do painel, feita (22/10)
+
+Depois da senha, o painel pede o código de 6 números de um app autenticador (Google Authenticator, Microsoft Authenticator...). Cada pessoa liga a sua em **Acesso**: confirma a senha, lê o QR code (no celular, "Toque aqui para abrir no app") e digita o código.
+- Ao ligar, saem 10 códigos de recuperação (cada um entra uma vez) e os outros aparelhos dessa pessoa saem do painel.
+- Perdeu o celular e os códigos: outra pessoa do painel desliga a dela em Acesso ("Desligar duas etapas", com a própria senha).
+- O link de senha nova também pede o código de quem ligou.
+- Código errado conta como senha errada: 5 em 15 minutos travam o e-mail.
+- Servidor: `app/worker/dois-fatores.ts`, tabela em `app/migrations/0007_dois_fatores.sql`. O segredo fica cifrado com uma chave tirada do `SENHA_PEPPER`. Testes em `app/test/dois-fatores.test.ts`.
+- Hoje cada pessoa escolhe se liga. Dá para tornar obrigatório para todo mundo.
+
 ## Respostas da Livia
 
 Já respondidas (21/10):

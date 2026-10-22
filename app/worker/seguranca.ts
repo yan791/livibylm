@@ -34,8 +34,8 @@ const LIMITE_IP = 20
 
 export const agora = () => Math.floor(Date.now() / 1000)
 
-const paraBase64 = (bytes: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
-const deBase64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
+export const paraBase64 = (bytes: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(bytes)))
+export const deBase64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0))
 
 export function novoToken() {
   return paraBase64(crypto.getRandomValues(new Uint8Array(32))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -124,6 +124,13 @@ export async function fecharSessao(c: Context<Ambiente>) {
   const token = getCookie(c, COOKIE)
   if (token) await c.env.DB.prepare('DELETE FROM sessoes WHERE token_hash = ?1').bind(await hashToken(token)).run()
   deleteCookie(c, COOKIE, { path: '/', secure: true })
+}
+
+/** a pessoa sai dos outros aparelhos; este continua */
+export function fecharOutrasSessoes(c: Context<Ambiente>, adminId: number) {
+  return hashToken(getCookie(c, COOKIE) ?? '').then((atual) =>
+    c.env.DB.prepare('DELETE FROM sessoes WHERE admin_id = ?1 AND token_hash != ?2').bind(adminId, atual),
+  )
 }
 
 /** só passa quem tem sessão válida; renova a sessão quando falta menos da metade do prazo */

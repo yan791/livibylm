@@ -1,6 +1,8 @@
 /*
   API do painel da loja (/api/painel/...).
   Abertas: entrar e usar um link de acesso (convite). O resto exige login.
+  Quem ligou a verificação em duas etapas (worker/dois-fatores.ts) entra com
+  a senha e o código do app, inclusive pelo link de senha nova.
 */
 import { Hono, type Context } from 'hono'
 import type { Ambiente, CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
@@ -29,6 +31,7 @@ import { painelPedidos } from './painel-pedidos'
 import { compraTeste, estadoTeste } from './compra-teste'
 import { REGIOES, type TabelaFrete } from './frete'
 import { RESERVA_MINUTOS } from './pedidos'
+import { conferirSenhaDeNovo, desligar, doisFatores, gastarCodigo, recuperacaoRestantes } from './dois-fatores'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
@@ -88,16 +91,32 @@ painel.post('/entrar', async (c) => {
   const db = c.env.DB
 
   if (await bloqueado(db, email, ip)) throw falha(429, 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.')
-  const admin = await db.prepare('SELECT id, senha FROM admins WHERE email = ?1').bind(email).first<{ id: number; senha: string | null }>()
+  const admin = await db
+    .prepare('SELECT id, senha, totp_segredo FROM admins WHERE email = ?1')
+    .bind(email)
+    .first<{ id: number; senha: string | null; totp_segredo: string | null }>()
   const certa = await conferirSenha(senha, admin?.senha ?? null, c.env.SENHA_PEPPER)
   if (!admin || !certa) {
     await registrarFalha(db, email, ip)
     throw falha(401, 'E-mail ou senha incorretos.')
   }
+  // com a verificação em duas etapas, a senha certa só abre o passo do código (os erros não zeram antes dele)
+  let restantes: number | undefined
+  if (admin.totp_segredo) {
+    if (!corpo.codigo) return c.json({ precisaCodigo: true })
+    const usado = await gastarCodigo(db, admin.id, admin.totp_segredo, corpo.codigo, c.env.SENHA_PEPPER)
+    if (!usado) {
+      await registrarFalha(db, email, ip)
+      throw falha(401, CODIGO_ERRADO)
+    }
+    if (usado === 'recuperacao') restantes = await recuperacaoRestantes(db, admin.id)
+  }
   await limparFalhas(db, email)
   await abrirSessao(c, admin.id)
-  return c.json({ ok: true })
+  return c.json({ ok: true, recuperacaoRestantes: restantes })
 })
+
+const CODIGO_ERRADO = 'Código errado. Confira no app e digite o que aparece agora.'
 
 painel.post('/sair', async (c) => {
   await fecharSessao(c)
@@ -107,16 +126,17 @@ painel.post('/sair', async (c) => {
 async function acharConvite(db: D1Database, token: string) {
   return db
     .prepare(
-      'SELECT a.id, a.email, a.nome, a.senha IS NOT NULL AS ativo FROM convites v JOIN admins a ON a.id = v.admin_id WHERE v.token_hash = ?1 AND v.expira_em > ?2',
+      `SELECT a.id, a.email, a.nome, a.senha IS NOT NULL AS ativo, a.totp_segredo FROM convites v JOIN admins a ON a.id = v.admin_id
+       WHERE v.token_hash = ?1 AND v.expira_em > ?2`,
     )
     .bind(await hashToken(token), agora())
-    .first<{ id: number; email: string; nome: string; ativo: number }>()
+    .first<{ id: number; email: string; nome: string; ativo: number; totp_segredo: string | null }>()
 }
 
 painel.get('/convite/:token', async (c) => {
   const convite = await acharConvite(c.env.DB, c.req.param('token'))
   if (!convite) throw falha(404, 'Este link de acesso expirou ou já foi usado. Peça um novo.')
-  return c.json({ email: convite.email, nome: convite.nome, primeiroAcesso: convite.ativo === 0 })
+  return c.json({ email: convite.email, nome: convite.nome, primeiroAcesso: convite.ativo === 0, doisFatores: !!convite.totp_segredo })
 })
 
 painel.post('/convite/:token', async (c) => {
@@ -125,7 +145,17 @@ painel.post('/convite/:token', async (c) => {
   if (!convite) throw falha(404, 'Este link de acesso expirou ou já foi usado. Peça um novo.')
   const corpo = await lerCorpo(c)
   const nome = texto(corpo.nome, 'seu nome', 80, true)
-  const hash = await gerarHashSenha(validarSenha(corpo.senha), c.env.SENHA_PEPPER)
+  const senha = validarSenha(corpo.senha)
+  // quem tem a verificação em duas etapas: o link sozinho não entra, precisa do código do app
+  if (convite.totp_segredo) {
+    const ip = c.req.header('CF-Connecting-IP') ?? 'local'
+    if (await bloqueado(db, convite.email, ip)) throw falha(429, 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.')
+    if (!(await gastarCodigo(db, convite.id, convite.totp_segredo, corpo.codigo, c.env.SENHA_PEPPER))) {
+      await registrarFalha(db, convite.email, ip)
+      throw falha(401, CODIGO_ERRADO)
+    }
+  }
+  const hash = await gerarHashSenha(senha, c.env.SENHA_PEPPER)
   // senha nova: o link deixa de valer e as sessões antigas dessa pessoa saem
   await db.batch([
     db.prepare('UPDATE admins SET senha = ?1, nome = ?2 WHERE id = ?3').bind(hash, nome, convite.id),
@@ -144,6 +174,7 @@ painel.get('/eu', (c) => c.json({ ...c.get('admin'), site: c.env.SITE_PUBLICO ??
 
 painel.route('/pedidos', painelPedidos)
 painel.route('/compra-teste', compraTeste)
+painel.route('/dois-fatores', doisFatores)
 
 /* ---------- coleções ---------- */
 
@@ -554,14 +585,15 @@ async function novoConvite(db: D1Database, adminId: number, origem: string) {
 painel.get('/pessoas', async (c) => {
   const eu = c.get('admin').id
   const { results } = await c.env.DB.prepare(
-    'SELECT id, email, nome, senha IS NOT NULL AS ativo, ultimo_acesso, criado_em FROM admins ORDER BY criado_em, id',
-  ).all<{ id: number; email: string; nome: string; ativo: number; ultimo_acesso: string | null; criado_em: string }>()
+    'SELECT id, email, nome, senha IS NOT NULL AS ativo, totp_segredo IS NOT NULL AS dois_fatores, ultimo_acesso, criado_em FROM admins ORDER BY criado_em, id',
+  ).all<{ id: number; email: string; nome: string; ativo: number; dois_fatores: number; ultimo_acesso: string | null; criado_em: string }>()
   return c.json(
     results.map((r) => ({
       id: r.id,
       email: r.email,
       nome: r.nome,
       ativo: r.ativo === 1,
+      doisFatores: r.dois_fatores === 1,
       ultimoAcesso: r.ultimo_acesso,
       voce: r.id === eu,
     })),
@@ -585,6 +617,19 @@ painel.post('/pessoas/:id/link', async (c) => {
   const id = idDe(c, 'Pessoa')
   if (!(await db.prepare('SELECT 1 FROM admins WHERE id = ?1').bind(id).first())) throw falha(404, 'Pessoa não encontrada.')
   return c.json(await novoConvite(db, id, c.req.header('Origin')!))
+})
+
+/** o celular de alguém sumiu, e os códigos de recuperação também: outra pessoa do painel desliga a verificação dela (com a própria senha) */
+painel.post('/pessoas/:id/dois-fatores/desligar', async (c) => {
+  const db = c.env.DB
+  const id = idDe(c, 'Pessoa')
+  if (id === c.get('admin').id) throw falha(400, 'Para desligar a sua, use "Desligar" com o código do app.')
+  await conferirSenhaDeNovo(c, (await lerCorpo(c)).senha)
+  const pessoa = await db.prepare('SELECT totp_segredo FROM admins WHERE id = ?1').bind(id).first<{ totp_segredo: string | null }>()
+  if (!pessoa) throw falha(404, 'Pessoa não encontrada.')
+  if (!pessoa.totp_segredo) throw falha(409, 'A verificação em duas etapas dessa pessoa já está desligada.')
+  await desligar(db, id)
+  return c.json({ ok: true })
 })
 
 painel.delete('/pessoas/:id', async (c) => {

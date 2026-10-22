@@ -78,7 +78,7 @@ export async function entrar() {
   return token
 }
 
-/** chama a API do painel como o próprio painel chamaria (mesma origem, cookie da sessão) */
+/** chama a API do painel como o próprio painel chamaria (mesma origem, cookie da sessão; token '' = sem sessão) */
 export async function painel(token: string, metodo: string, caminho: string, corpo?: unknown) {
   const ctx = createExecutionContext()
   const resposta = await app.fetch(
@@ -87,7 +87,7 @@ export async function painel(token: string, metodo: string, caminho: string, cor
       headers: {
         Host: HOST,
         Origin: `https://${HOST}`,
-        Cookie: `livi_sessao=${token}`,
+        ...(token ? { Cookie: `livi_sessao=${token}` } : {}),
         ...(corpo === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
       body: corpo === undefined ? undefined : JSON.stringify(corpo),

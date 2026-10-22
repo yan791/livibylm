@@ -66,7 +66,16 @@ export type Peca = {
   estoque: { cor: string; tamanho: string; quantidade: number; reservado: number }[]
 }
 
-export type Pessoa = { id: number; email: string; nome: string; ativo: boolean; ultimoAcesso: string | null; voce: boolean }
+export type Pessoa = {
+  id: number
+  email: string
+  nome: string
+  ativo: boolean
+  /** ligou a verificação em duas etapas (código do app autenticador) */
+  doisFatores: boolean
+  ultimoAcesso: string | null
+  voce: boolean
+}
 
 export type Ajustes = {
   vendasOnline: boolean

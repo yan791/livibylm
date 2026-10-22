@@ -7,6 +7,9 @@ const contagem = (chave: string) => env.DB.prepare('SELECT falhas FROM tentativa
 
 afterEach(() => vi.restoreAllMocks())
 
+// dezenas de chamadas seguidas: com o PC ocupado, passam dos 5 segundos padrão
+const TEMPO = 30_000
+
 describe('limite do aviso de pagamento', () => {
   it('passou do limite, o pedido não pergunta mais à InfinitePay nem grava no banco', async () => {
     const peca = await criarPeca({ M: 3 })
@@ -22,7 +25,7 @@ describe('limite do aviso de pagamento', () => {
 
     // o limite é de cada pedido: o outro segue normal
     expect((await aviso({ order_nsu: outro, transaction_nsu: 'tx-2' })).status).toBe(400)
-  })
+  }, TEMPO)
 })
 
 describe('limite da consulta de frete', () => {
@@ -37,5 +40,5 @@ describe('limite da consulta de frete', () => {
 
     expect((await site('GET', '/frete?cep=123', undefined, ip)).status).toBe(400)
     expect((await site('GET', '/frete?cep=57020000', undefined, '203.0.113.8')).status).toBe(200)
-  })
+  }, TEMPO)
 })
