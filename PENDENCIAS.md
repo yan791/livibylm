@@ -78,6 +78,16 @@ Sem conta: o aparelho guarda o código de cada compra pelo site (`app/src/lib/me
 - O código de rastreio não aparece na aba: a Livia manda pelo WhatsApp, e nos pedidos pelos Correios a aba tem "Pedir o código de rastreio" (abre o WhatsApp com o número do pedido). A página do pedido mostra o código depois que ela marca o pedido como enviado no painel.
 - Servidor: `POST /api/pedidos/consulta` com até 30 códigos, só pedidos do site, sem dados pessoais, 120 consultas por IP a cada 15 minutos. Testes em `app/test/meus-pedidos.test.ts`.
 
+## Conta da cliente, feita e publicada (22/10)
+
+Antes de pagar, a sacola pede a conta: "Entrar" (WhatsApp e senha) e, embaixo, "Ainda não tem conta? Criar conta e continuar", que leva aos dados da compra com uma senha. Só compra quem está com a conta aberta.
+- Servidor: `app/worker/contas.ts` (`/api/conta`: criar, entrar, sair, dados, pedidos e senha nova), tabelas em `app/migrations/0006_contas.sql`. A sessão vai no cabeçalho `Authorization` (90 dias), guardada só como hash.
+- Cada pedido do site fica na conta (`pedidos.cliente_id`), e a aba "Pedidos" mostra os da conta em qualquer aparelho. Nome, WhatsApp e e-mail do pedido vêm da conta; a próxima compra já vem com a última entrega e o CPF.
+- Sem SMS: um pedido antigo só entra na conta com o código guardado no aparelho e o mesmo WhatsApp. Vendas do painel e compras de teste nunca aparecem numa conta.
+- Limites: 20 contas novas por IP por hora; 5 senhas erradas por número e 20 por IP a cada 15 minutos.
+- **Esqueceu a senha:** a cliente chama no WhatsApp. No painel, na página de um pedido dela, "Esqueceu a senha? Gerar link" cria um link de senha nova (24 horas, uma vez só) para mandar pelo WhatsApp da conta. Página `/nova-senha/<link>` no site.
+- Testes: `app/test/contas.test.ts` (35, inclusive 6 clientes entrando ao mesmo tempo e a mesma cliente em 6 aparelhos).
+
 ## Respostas da Livia
 
 Já respondidas (21/10):
@@ -106,7 +116,8 @@ Ainda faltam:
   - relatórios;
   - "me avisa quando voltar";
   - lançamento agendado de coleção;
-  - acompanhar pedido pelo site.
+  - a cliente trocar a própria senha e os dados dentro da conta;
+  - apagar a conta: hoje a cliente pede pelo WhatsApp (como diz a política de privacidade) e a gente apaga direto no banco; dá para pôr um botão no painel.
 
 ## Como testar no PC
 
@@ -119,7 +130,7 @@ O teste completo, com a InfinitePay de mentira:
    - `TESTE_VENDAS=sim`, que deixa criar pedidos no PC com as vendas desligadas;
    - `INFINITEPAY_API=http://127.0.0.1:8799`, uma InfinitePay de mentira.
 3. Rodar `node scripts/testar-pedidos.mjs .` dentro de `app`.
-   - O teste sobe a InfinitePay de mentira e testa pedidos, reserva, pagamento, aviso falso, pagamento atrasado, 6 clientes pela mesma peça, painel, venda fora do site e peça apagada (91 conferências).
+   - O teste sobe a InfinitePay de mentira e testa pedidos, reserva, pagamento, aviso falso, pagamento atrasado, 6 clientes pela mesma peça, painel, venda fora do site e peça apagada (95 conferências). Cada cliente do teste cria a sua conta antes de comprar ("Maria Teste", apagadas no fim).
    - Precisa de um login do painel local em `app/teste-local.env`, com as linhas `PAINEL_TESTE_EMAIL=` e `PAINEL_TESTE_SENHA=`.
 
 Para clicar na compra inteira no navegador (sacola, pagamento e volta ao site), com a mesma configuração do `.dev.vars`:
