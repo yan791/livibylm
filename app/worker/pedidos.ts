@@ -428,7 +428,7 @@ function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
 export async function abrirPagamento(
   c: Context<Ambiente>,
   codigo: string,
-  d: { itens: ItemLink[]; cliente: DadosLink['cliente']; endereco?: DadosLink['endereco'] },
+  d: { itens: ItemLink[]; cliente?: DadosLink['cliente']; endereco?: DadosLink['endereco'] },
 ) {
   const origem = new URL(c.req.url).origin
   const site = (c.env.SITE_PUBLICO || origem).replace(/\/$/, '')

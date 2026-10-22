@@ -51,7 +51,8 @@ export type DadosLink = {
   voltar: string
   /** onde a InfinitePay avisa que o pagamento foi aprovado */
   aviso: string
-  cliente: { nome: string; email: string; whatsapp: string }
+  /** sem ela, quem paga preenche nome, e-mail e telefone na página da InfinitePay */
+  cliente?: { nome: string; email: string; whatsapp: string }
   endereco?: { cep: string; rua: string; bairro: string; numero: string; complemento: string }
 }
 
@@ -62,7 +63,7 @@ export async function criarLink(env: Ambiente, d: DadosLink) {
     redirect_url: d.voltar,
     webhook_url: d.aviso,
     items: d.itens.map((i) => ({ quantity: i.quantidade, price: i.precoCentavos, description: i.descricao.slice(0, 120) })),
-    customer: { name: d.cliente.nome, email: d.cliente.email, phone_number: '+' + d.cliente.whatsapp },
+    ...(d.cliente && { customer: { name: d.cliente.nome, email: d.cliente.email, phone_number: '+' + d.cliente.whatsapp } }),
     ...(d.endereco && {
       address: {
         cep: d.endereco.cep,

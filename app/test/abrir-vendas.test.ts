@@ -102,6 +102,9 @@ describe('ligar as vendas pelo site', () => {
     const p = await env.DB.prepare('SELECT * FROM pedidos WHERE id = ?1').bind(teste!.id).first<Record<string, unknown>>()
     expect(p).toMatchObject({ origem: 'site', entrega: 'combinar', total_centavos: 150, frete_centavos: 0, whatsapp: '5582998115324' })
     expect(links[0]).toMatchObject({ order_nsu: p!.codigo, items: [{ description: 'Compra de teste', price: 150, quantity: 1 }] })
+    // quem paga o teste preenche o próprio contato na InfinitePay
+    expect(links[0]).not.toHaveProperty('customer')
+    expect(links[0]).not.toHaveProperty('address')
     expect(String(links[0].redirect_url)).toMatch(new RegExp(`/pedido/${p!.codigo}$`))
 
     // a InfinitePay avisa que foi pago: o pedido vira pago e as vendas liberam

@@ -99,10 +99,8 @@ compraTeste.post('/', async (c) => {
   )
   let pagar: string
   try {
-    pagar = await abrirPagamento(c, codigo, {
-      itens: [{ descricao: 'Compra de teste', quantidade: 1, precoCentavos: valor }],
-      cliente: { nome: admin.nome, email: admin.email, whatsapp: ajustes.whatsapp },
-    })
+    // sem os dados de contato: quem paga o teste preenche os dele na InfinitePay (o painel não sabe o telefone de quem está logado)
+    pagar = await abrirPagamento(c, codigo, { itens: [{ descricao: 'Compra de teste', quantidade: 1, precoCentavos: valor }] })
   } catch (e) {
     // aqui quem lê é a loja: o motivo ajuda a resolver
     throw falha(502, `A InfinitePay não abriu a página de pagamento. ${e instanceof Error ? e.message : ''}`.trim())
