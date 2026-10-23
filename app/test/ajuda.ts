@@ -6,6 +6,7 @@
 */
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 import { env } from 'cloudflare:workers'
+import { vi } from 'vitest'
 import app from '../worker/index'
 import { gravarPedido, novoCodigo } from '../worker/pedidos'
 import { agora, hashToken, novoToken } from '../worker/seguranca'
@@ -139,6 +140,34 @@ export async function criarConta(dados: Record<string, unknown> = {}) {
   const r = await conta('POST', '/criar', { nome: 'Maria Teste', whatsapp: novoZap(), email: 'maria@exemplo.com', senha: 'senha-da-maria', ...dados })
   if (r.status !== 201) throw new Error(`conta não criada: ${r.status} ${await r.text()}`)
   return ((await r.json()) as { token: string }).token
+}
+
+/** um pedido qualquer ao Worker, com o endereço e os cabeçalhos que o teste quiser */
+export async function chamar(url: string, init: RequestInit = {}) {
+  const ctx = createExecutionContext()
+  const resposta = await app.fetch(new Request(url, init), env, ctx)
+  await waitOnExecutionContext(ctx)
+  return resposta
+}
+
+/** cabeçalhos de quem usa o painel: mesma origem e, com token, a sessão */
+export const doPainel = (token = '', extra: Record<string, string> = {}) => ({
+  Host: HOST,
+  Origin: `https://${HOST}`,
+  ...(token ? { Cookie: `livi_sessao=${token}` } : {}),
+  ...extra,
+})
+
+/** a InfinitePay de mentira para as compras: o link abre e o payment_check responde o que o teste mandar */
+export function infinitePay(conferencia: Record<string, unknown> = { success: true, paid: false }) {
+  const chamadas: { url: string; corpo: Record<string, unknown> }[] = []
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    const corpo = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>
+    chamadas.push({ url: String(url), corpo })
+    if (String(url).endsWith('/links')) return Response.json({ url: 'https://checkout.infinitepay.io/teste', slug: 'fatura-teste' })
+    return Response.json(conferencia)
+  })
+  return chamadas
 }
 
 /** o catálogo e os ajustes que o site lê */
