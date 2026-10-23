@@ -29,6 +29,7 @@ import { limparCacheCatalogo } from './catalogo'
 import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type ItemLink } from './infinitepay'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
+import { avisarVenda } from './aviso-de-venda'
 
 /** quanto tempo as peças ficam seguras esperando o pagamento */
 export const RESERVA_MINUTOS = 30
@@ -594,7 +595,8 @@ compras.post('/:codigo/conferir', async (c) => {
     if ((await usou(db, `conferir:${codigo}`, 900)) >= 30) throw falha(429, 'Muitas tentativas. Espere um pouco e recarregue a página.')
     await contar(db, `conferir:${codigo}`, 900)
     try {
-      await processarPagamento(c.env, pedido, { transacao, fatura: texto(corpo.fatura, 'A fatura', 100), recibo: corpo.recibo })
+      const r = await processarPagamento(c.env, pedido, { transacao, fatura: texto(corpo.fatura, 'A fatura', 100), recibo: corpo.recibo })
+      if (r === 'pago' || r === 'sem_estoque') c.executionCtx.waitUntil(avisarVenda(c.env, pedido.id, new URL(c.req.url).origin))
     } catch (e) {
       // a InfinitePay não respondeu: o pedido segue aguardando, e o aviso dela ou a próxima tentativa da página resolvem
       if (!(e instanceof ErroInfinitePay)) throw e
@@ -620,7 +622,12 @@ compras.post('/:codigo/conferir', async (c) => {
   site para conferir de novo. Um aviso forjado também cai aqui, sem aprovar nada.
   429 quando o mesmo pedido recebe avisos demais em pouco tempo.
 */
-export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise<unknown> }; json: (d: unknown, s?: 200 | 400 | 429) => Response }) {
+export async function avisoDePagamento(c: {
+  env: Env
+  req: { json: () => Promise<unknown>; url: string }
+  executionCtx: Pick<ExecutionContext, 'waitUntil'>
+  json: (d: unknown, s?: 200 | 400 | 429) => Response
+}) {
   let d: Corpo
   try {
     d = objeto(await c.req.json())
@@ -647,6 +654,8 @@ export async function avisoDePagamento(c: { env: Env; req: { json: () => Promise
       recibo: d.receipt_url,
     })
     if (r === 'nao_pago') return c.json({ ok: false, resultado: r }, 400)
+    // pago agora ('pago', 'sem_estoque') ou antes ('ja', caso o e-mail daquela vez tenha falhado): a loja recebe o e-mail uma vez só
+    if (r !== 'valor_diferente') c.executionCtx.waitUntil(avisarVenda(c.env, achado.pedido.id, new URL(c.req.url).origin))
     return c.json({ ok: true, resultado: r })
   } catch (e) {
     console.error('aviso da InfinitePay', e)

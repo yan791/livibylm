@@ -211,6 +211,10 @@ function Privacidade() {
           <li>
             <strong>ViaCEP</strong>: o CEP que você digita, para preencher o endereço.
           </li>
+          <li>
+            <strong>Resend</strong>, que entrega para a loja o e-mail de cada venda: o seu nome, WhatsApp, cidade e as peças do
+            pedido.
+          </li>
         </ul>
         <p>Não vendemos nem passamos os seus dados para mais ninguém.</p>
       </section>

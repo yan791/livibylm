@@ -85,6 +85,8 @@ export type LinhaPedido = {
   aviso_em: string | null
   /** conta da cliente no site (null: venda do painel, compra de teste ou pedido de antes das contas) */
   cliente_id: number | null
+  /** quando a loja recebeu o e-mail da venda (worker/aviso-de-venda.ts) */
+  venda_avisada_em: string | null
 }
 
 export type LinhaItemPedido = {

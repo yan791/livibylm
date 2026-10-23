@@ -98,6 +98,22 @@ Depois da senha, o painel pede o código de 6 números de um app autenticador (G
 - Servidor: `app/worker/dois-fatores.ts`, tabela em `app/migrations/0007_dois_fatores.sql`. O segredo fica cifrado com uma chave tirada do `SENHA_PEPPER`. Testes em `app/test/dois-fatores.test.ts`.
 - Hoje cada pessoa escolhe se liga. Dá para tornar obrigatório para todo mundo.
 
+## Aviso de venda por e-mail, feito (22/10), falta configurar
+
+Quando um pedido do site é pago pela InfinitePay, a loja recebe um e-mail no endereço dos dados da loja (Ajustes): peças, entrega, total, nome e WhatsApp da cliente e o link do pedido no painel.
+- Um e-mail por pedido, mesmo quando o aviso da InfinitePay e a volta da cliente aprovam ao mesmo tempo (coluna `venda_avisada_em`, `app/migrations/0008_aviso_de_venda.sql`).
+- Pago sem estoque e compra de teste têm assunto próprio. Pedido marcado como pago à mão no painel não manda e-mail.
+- Se o Resend falhar, o pagamento aprova igual, e o próximo aviso do pedido tenta mandar de novo.
+- Código em `app/worker/aviso-de-venda.ts`, testes em `app/test/aviso-de-venda.test.ts`.
+
+Para ligar (uma vez):
+1. Criar uma conta grátis em resend.com **com o e-mail da loja** (livibylm@gmail.com). Sem domínio próprio, o Resend só entrega para o e-mail de quem criou a conta.
+2. Em API Keys, criar uma chave com permissão só de envio.
+3. Dentro de `app`: `npx wrangler secret put RESEND_CHAVE` e colar a chave quando pedir.
+4. Fazer uma compra de teste pelo painel: o e-mail "Compra de teste paga" tem que chegar.
+
+Com o domínio `livibylm.com.br` verificado no Resend, o remetente pode ser da loja: `npx wrangler secret put EMAIL_REMETENTE` com, por exemplo, `Livi <pedidos@livibylm.com.br>`.
+
 ## Respostas da Livia
 
 Já respondidas (21/10):
@@ -117,7 +133,6 @@ Ainda faltam:
 - **Domínio próprio:** juntar site e painel no mesmo endereço. Também é o que permite mandar e-mail para a cliente sem cair no spam.
 - **Rota antiga:** apagar `/api/catalogo` em `app/worker/index.ts`. O GitHub Pages já usa `/api/loja`.
 - **Ideias para depois da abertura:**
-  - aviso de venda no celular;
   - etiqueta da SuperFrete pelo painel;
   - resumo de vendas;
   - lista de quem não terminou de pagar;
