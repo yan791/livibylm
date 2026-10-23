@@ -166,7 +166,7 @@ export function Pedido({ codigo }: { codigo: string }) {
             ? 'Seu pedido foi postado nos Correios.'
             : 'Seu pedido saiu para entrega.'
           : correios
-            ? 'Seu pagamento foi confirmado. Agora a gente prepara o envio pelos Correios.'
+            ? `Seu pagamento foi confirmado. Agora a gente prepara o envio pelos Correios: o pedido sai em ${site.prazoPostagem}.`
             : 'Seu pagamento foi confirmado. Vamos te chamar no WhatsApp para combinar a entrega.'
   } else if (p.situacao === 'sem_estoque') {
     titulo = 'Recebemos o seu pagamento.'

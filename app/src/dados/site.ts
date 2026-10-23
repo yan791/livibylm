@@ -16,6 +16,8 @@ export const site = {
    * (Ajustes); o daqui só vale se o servidor da loja não responder.
    */
   whatsapp: ajustes.whatsapp || '5582998115324',
+  /** política de envio da Livia: quando o pedido sai, contado da aprovação do pagamento */
+  prazoPostagem: 'até 3 dias úteis',
   /** arquivo do logo. Enquanto for null, aparece um espaço reservado. */
   logo: null as string | null,
 

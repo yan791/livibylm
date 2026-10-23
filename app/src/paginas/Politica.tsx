@@ -104,13 +104,14 @@ function Trocas() {
       <section>
         <h2>Troca de tamanho, cor ou peça</h2>
         <p>
-          Você tem até {ajustes.trocaDias} dias, contados do recebimento, para pedir a troca por outro tamanho, outra cor ou outra
-          peça, conforme o que tivermos disponível.
+          Você tem até {ajustes.trocaDias} dias corridos, contados do recebimento, para pedir a troca por outro tamanho, outra cor
+          ou outra peça, conforme o que tivermos disponível. Depois desse prazo, não fazemos a troca.
         </p>
         <p>
-          A peça precisa voltar sem uso, sem lavagem e com a etiqueta. Se a peça nova tiver outro valor, a gente acerta a
-          diferença com você. {FRETE_TROCA[ajustes.freteTroca]}
+          A peça precisa voltar na embalagem original, em perfeito estado, sem marcas de uso, sem lavagem e com as etiquetas. Se a
+          peça nova tiver outro valor, a gente acerta a diferença com você. {FRETE_TROCA[ajustes.freteTroca]}
         </p>
+        <p>A peça que chegou numa troca não pode ser trocada nem devolvida de novo, a não ser por defeito de fabricação.</p>
       </section>
 
       <section>
@@ -122,13 +123,20 @@ function Trocas() {
       </section>
 
       <section>
+        <h2>Reembolso</h2>
+        <p>Na desistência da compra, o reembolso pode ser pedido em até 7 dias corridos, contados do recebimento do pedido.</p>
+        <p>
+          No Pix, o valor volta para a mesma conta que fez o pagamento. Não fazemos devolução para a conta de outra pessoa.
+        </p>
+        <p>
+          No cartão de crédito, o estorno é feito em até 15 dias úteis e pode aparecer em até 2 faturas, conforme as regras da
+          operadora do cartão.
+        </p>
+      </section>
+      <section>
         <h2>Como pedir</h2>
         <p>
           Fale com a gente <Contato />, com o número do pedido. Respondemos com o endereço para o envio e os próximos passos.
-        </p>
-        <p>
-          O valor volta pelo mesmo meio do pagamento: no Pix, por Pix; no cartão de crédito, pedimos o estorno à operadora, e ele
-          aparece na fatura conforme o prazo do seu banco.
         </p>
         <a className="pilula cheia" href={linkWhatsApp('Olá! Vim pelo site da Livi e quero falar sobre uma troca ou devolução.')} target="_blank" rel="noreferrer">
           <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />

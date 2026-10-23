@@ -136,7 +136,7 @@ const duvidas: { p: string; r: ReactNode; ph?: boolean }[] = [
           ajustes.correios
             ? 'Para outras cidades, enviamos pelos Correios (PAC ou SEDEX), e o frete aparece pelo CEP antes de pagar.'
             : 'Para outras cidades, fale com a gente pelo WhatsApp.'
-        }`,
+        } O pedido sai em ${site.prazoPostagem} depois da aprovação do pagamento, e o prazo de entrega depende da forma escolhida.`,
       }
     : { p: 'Envio', r: '[Regiões atendidas, prazos e frete. Confirmar com a cliente.]', ph: true },
   ajustes.loja

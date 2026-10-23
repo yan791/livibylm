@@ -12,7 +12,7 @@
 */
 import { useEffect, useState, type FormEvent } from 'react'
 import { ajustes, precoBR, rotuloTamanho } from '../dados/colecoes'
-import { linkWhatsApp } from '../dados/site'
+import { linkWhatsApp, site } from '../dados/site'
 import { API } from '../lib/base'
 import type { detalhar } from '../lib/sacola'
 import { cn } from '../lib/cn'
@@ -312,15 +312,20 @@ function Formulario({ itens, voltar, entrar }: { itens: Item[]; voltar: () => vo
           )}
 
           {opcoes.length > 0 && (
-            <div className="compra-opcoes" role="radiogroup" aria-label="Forma de entrega">
-              {opcoes.map((o) => (
-                <label key={o.tipo} className={cn('compra-opcao', tipo === o.tipo && 'ativa')}>
-                  <input type="radio" name="entrega" checked={tipo === o.tipo} onChange={() => setTipo(o.tipo)} />
-                  <span>{o.nome}</span>
-                  <strong>{precoBR(o.centavos / 100)}</strong>
-                </label>
-              ))}
-            </div>
+            <>
+              <div className="compra-opcoes" role="radiogroup" aria-label="Forma de entrega">
+                {opcoes.map((o) => (
+                  <label key={o.tipo} className={cn('compra-opcao', tipo === o.tipo && 'ativa')}>
+                    <input type="radio" name="entrega" checked={tipo === o.tipo} onChange={() => setTipo(o.tipo)} />
+                    <span>{o.nome}</span>
+                    <strong>{precoBR(o.centavos / 100)}</strong>
+                  </label>
+                ))}
+              </div>
+              <p className="compra-prazo">
+                O pedido sai em {site.prazoPostagem} depois da aprovação do pagamento. O prazo de entrega depende da forma escolhida.
+              </p>
+            </>
           )}
 
           {opcoes.length > 0 && (
