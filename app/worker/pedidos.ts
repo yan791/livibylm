@@ -217,13 +217,8 @@ async function aprovar(db: D1Database, p: LinhaPedido, pg: Pagamento) {
 
   try {
     const [, marcado] = await db.batch([registro, marcar('pago')])
-    if (!marcado.meta.changes) {
-      // outro pagamento já tinha aprovado este pedido: a cliente pagou duas vezes
-      await db
-        .prepare(`UPDATE pedidos SET observacao = trim(observacao || char(10) || ?2) WHERE id = ?1`)
-        .bind(p.id, `Pagamento repetido na InfinitePay (transação ${pg.transacao}). Confira no app e devolva o valor, se for o caso.`)
-        .run()
-    }
+    // outro pagamento já tinha aprovado este pedido ao mesmo tempo: a cliente pagou duas vezes
+    if (!marcado.meta.changes) await anotarRepetido(db, p.id, pg.transacao)
     return 'pago'
   } catch (e) {
     if (repetido(e)) return 'ja'
@@ -250,9 +245,40 @@ function reciboValido(v: unknown) {
   }
 }
 
+/** a anotação que o painel mostra num pedido pago duas vezes, para a loja devolver */
+const anotarRepetido = (db: D1Database, pedidoId: number, transacao: string) =>
+  db
+    .prepare(`UPDATE pedidos SET observacao = trim(observacao || char(10) || ?2) WHERE id = ?1`)
+    .bind(pedidoId, `Pagamento repetido na InfinitePay (transação ${transacao}). Confira no app e devolva o valor, se for o caso.`)
+    .run()
+
+/**
+  Pedido já pago e chega outra transação: a cliente pode ter pago de novo (o
+  link continua valendo). Se a InfinitePay confirma, o pagamento fica
+  registrado e o pedido ganha a anotação para a loja devolver. A mesma
+  transação de antes (aviso repetido, a cliente recarregando a página) não faz nada.
+*/
+async function pagamentoRepetido(env: Env, p: LinhaPedido, d: { transacao: string; fatura: string }) {
+  if (!d.transacao || d.transacao === p.transacao) return 'ja'
+  if (await env.DB.prepare('SELECT 1 FROM pagamentos WHERE transacao = ?1').bind(d.transacao).first()) return 'ja'
+  const r = await conferirPagamento(env, { codigo: p.codigo, transacao: d.transacao, fatura: d.fatura || p.fatura })
+  if (!r.pago) return 'nao_pago'
+  try {
+    await env.DB.prepare('INSERT INTO pagamentos (transacao, pedido_id, valor_centavos, pago_centavos) VALUES (?1, ?2, ?3, ?4)')
+      .bind(d.transacao, p.id, r.valorCentavos, r.pagoCentavos)
+      .run()
+  } catch (e) {
+    // o aviso e a volta da cliente chegaram juntos com essa transação: o outro já registrou
+    if (repetido(e)) return 'ja'
+    throw e
+  }
+  await anotarRepetido(env.DB, p.id, d.transacao)
+  return 'repetido'
+}
+
 /** confere com a InfinitePay e, se estiver pago no valor certo, aprova */
 export async function processarPagamento(env: Env, p: LinhaPedido, d: { transacao: string; fatura: string; recibo: unknown }) {
-  if (p.pago_em) return 'ja'
+  if (p.pago_em) return pagamentoRepetido(env, p, d)
   const r = await conferirPagamento(env, { codigo: p.codigo, transacao: d.transacao, fatura: d.fatura || p.fatura })
   if (!r.pago) return 'nao_pago'
   if (r.valorCentavos !== p.total_centavos) {
@@ -591,7 +617,8 @@ compras.post('/:codigo/conferir', async (c) => {
   let { pedido, itens } = await pedidoDoSite(db, codigo)
   const corpo = await lerCorpo(c)
   const transacao = texto(corpo.transacao, 'A transação', 100)
-  if (!pedido.pago_em && transacao) {
+  // ainda sem pagamento, ou já pago e a cliente volta de outra transação (pagou de novo: processarPagamento registra)
+  if (transacao && (!pedido.pago_em || transacao !== pedido.transacao)) {
     if ((await usou(db, `conferir:${codigo}`, 900)) >= 30) throw falha(429, 'Muitas tentativas. Espere um pouco e recarregue a página.')
     await contar(db, `conferir:${codigo}`, 900)
     try {
