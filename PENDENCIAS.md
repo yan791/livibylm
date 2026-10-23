@@ -2,6 +2,44 @@
 
 Atualizado em 22/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`), 4.3 (compra na sacola com frete por região) e 4.5 (abrir as vendas pelo painel).
 
+## Para entregar (lista final, 22/10)
+
+As vendas pelo site já estão ligadas. Falta isto para entregar a loja:
+
+### 1. As peças de verdade no banco
+
+As 16 peças no ar são as de exemplo (`app/migrations/0002_pecas_iniciais.sql`): o tecido e a modelo estão como "[confirmar]", e o site mostra isso marcado para as clientes.
+- **A Livia manda**, para cada peça: coleção, nome, preço, descrição, tecido, cores, tamanhos, estoque de cada cor e tamanho, fotos, altura da modelo e o tamanho que ela veste, e se é sob encomenda (com o prazo).
+- **Quem cadastra:** pelo painel (Peças), a Livia ou alguém com acesso. As fotos sobem por lá mesmo.
+- **Depois:** apagar ou esconder as peças de exemplo que não existem. Confirmar com ela se as coleções (Lúmina, Velvet, Carmim, Confiança) são essas mesmo.
+
+### 2. Domínio `livibylm.com.br`
+
+1. **Livia:** registrar no Registro.br, no CPF dela (R$ 40 por ano).
+2. **Yan:** pôr o domínio na Cloudflare (plano grátis), na mesma conta do Worker. A Cloudflare mostra dois servidores de DNS.
+3. **Livia:** no Registro.br, trocar os servidores de DNS do domínio pelos da Cloudflare. A troca leva algumas horas.
+4. **Código:**
+   - o Worker passa a responder no domínio (`routes` com `custom_domain` em `app/wrangler.jsonc`, com o `www` levando para o endereço sem `www`);
+   - `SITE_PUBLICO` vazio: o próprio Worker publica o site, e site, painel e API ficam no mesmo endereço;
+   - o GitHub Pages passa a mandar quem chegar por lá para o domínio novo.
+5. **Yan:** `npm run publicar`.
+6. **Na Cloudflare, depois:** uma regra de limite por IP para `/api/*` (o plano grátis tem uma) e o modo anti-robô.
+
+Quem estiver logado no painel ou numa conta do site precisa entrar de novo no endereço novo. Os pedidos e os links de pagamento antigos continuam funcionando pelo `workers.dev`.
+
+### 3. E-mail a cada venda
+
+O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende do domínio**:
+- **sem o domínio:** a conta do Resend criada com o livibylm@gmail.com, e o Yan cadastra a chave (`RESEND_CHAVE`);
+- **com o domínio:** verificar o `livibylm.com.br` no Resend (os registros de DNS entram na Cloudflare) e trocar o remetente (`EMAIL_REMETENTE`) para um endereço da loja. É isso que permite, depois, mandar e-mail também para a cliente sem cair no spam.
+
+### 4. Textos do site
+
+- **A criadora** (`app/src/sections/Depois.tsx`): nome, foto e duas ou três frases de como a marca começou. Hoje aparece "[Nome da criadora]" e um espaço reservado para a foto.
+- **Tamanhos:** a tabela de medidas da Livia (busto, cintura e quadril de cada tamanho, em cm). Ela entra na resposta "Tamanhos" do "Como comprar", que hoje está marcada para confirmar, e num "Guia de medidas" na página da peça.
+- **Na página da peça,** a frase "A modelo tem ... e veste ..." aparece sempre marcada como "aguardando confirmação", mesmo com os valores certos. Corrigir junto (`app/src/components/Catalogo.tsx`).
+- **Também com espaço reservado:** as fotos da seção de looks (`app/src/sections/Looks.tsx`) e o logo em arquivo (`site.logo` em `app/src/dados/site.ts`; sem ele, aparece o nome escrito).
+
 ## O que já está pronto e publicado
 
 - **4.1 Pedidos e reserva.** Tabelas `pedidos`, `pedido_itens` e `pagamentos` (`app/migrations/0003_pedidos.sql`).
