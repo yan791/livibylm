@@ -182,7 +182,7 @@ describe('pagamento e página do pedido', () => {
     await criarPeca({ M: 2 })
     infinitePay()
     const token = await criarConta({ nome: 'Maria Silva Teste', email: 'maria.secreta@exemplo.com', whatsapp: '(82) 98765-4321' })
-    const correios = { tipo: 'pac', cep: '50030-000', rua: 'Rua Secreta', numero: '777', bairro: 'Bairro Escondido', cidade: 'Recife' }
+    const correios = { tipo: 'pac', cep: '50030-000', rua: 'Rua Secreta', numero: '777B', bairro: 'Bairro Escondido', cidade: 'Recife' }
     let r = await site('POST', '', { itens: [item()], cliente: { cpf: '529.982.247-25' }, entrega: correios }, '198.51.100.7', token)
     if (r.status === 400) {
       // sem a tabela de frete salva antes, salva pelo painel e tenta de novo
@@ -193,7 +193,8 @@ describe('pagamento e página do pedido', () => {
     expect(r.status).toBe(201)
     const { codigo } = (await r.json()) as { codigo: string }
     const publico = JSON.stringify(await (await site('GET', `/${codigo}`)).json())
-    for (const segredo of ['52998224725', '529.982', 'maria.secreta', '98765', '4321', 'Rua Secreta', '777', 'Bairro Escondido', '50030', 'Silva'])
+    // só números longos ou com letra: as datas em ms (13 dígitos) podem conter "777" ou "4321" por acaso
+    for (const segredo of ['52998224725', '529.982', 'maria.secreta', '98765-4321', '987654321', 'Rua Secreta', '777B', 'Bairro Escondido', '50030-000', '50030000', 'Silva'])
       expect(publico, segredo).not.toContain(segredo)
     expect(publico).toContain('"nome":"Maria"')
   })
