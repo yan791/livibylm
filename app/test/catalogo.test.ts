@@ -127,9 +127,11 @@ describe('páginas servidas pelo Worker', () => {
   })
 
   it('com o site no GitHub Pages, o endereço do Worker leva para lá, com o mesmo caminho', async () => {
+    // fixo aqui: o .dev.vars do PC esvazia o SITE_PUBLICO para o Worker mostrar o site
+    ambiente.SITE_PUBLICO = 'https://yan791.github.io/livibylm/'
     const r = await chamar('http://localhost/colecao/velvet?de=instagram', { redirect: 'manual' })
     expect(r.status).toBe(302)
-    expect(r.headers.get('Location')).toBe(`${String(original.SITE_PUBLICO).replace(/\/$/, '')}/colecao/velvet?de=instagram`)
+    expect(r.headers.get('Location')).toBe('https://yan791.github.io/livibylm/colecao/velvet?de=instagram')
   })
 
   it('com domínio próprio (sem SITE_PUBLICO), o catálogo vai dentro do HTML sem abrir brecha para script', async () => {
