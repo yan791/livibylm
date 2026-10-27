@@ -11,15 +11,21 @@ import { FaixaColecoes } from './components/Vivos'
 import { Gaveta } from './components/Gaveta'
 import { AvisoDesejo } from './components/Desejos'
 import { Catalogo } from './components/Catalogo'
+import { fundoDoCatalogo } from './lib/catalogo'
 import { Cortina } from './components/Cortina'
 import { movimentoReduzido } from './lib/midia'
 import { Pedido } from './paginas/Pedido'
 import { Politica } from './paginas/Politica'
 import { NovaSenha } from './paginas/NovaSenha'
+import { Pecas } from './paginas/Pecas'
+import { PorPeca } from './sections/PorPeca'
 
 export default function App() {
   const caminho = useCaminho()
   const rota = interpretar(caminho)
+  // aberto da página de peças, o catálogo fica por cima dela (e ela continua montada, no mesmo lugar)
+  const fundo = rota.nome === 'colecao' ? fundoDoCatalogo() : null
+  const pagina = fundo ? interpretar(fundo) : rota
 
   useEffect(() => {
     iniciarRolagem()
@@ -49,6 +55,11 @@ export default function App() {
           <NovaSenha key={rota.link} link={rota.link} />
           <Rodape rota={rota} />
         </>
+      ) : pagina.nome === 'pecas' ? (
+        <>
+          <Pecas tipo={pagina.tipo} tamanho={pagina.tamanho} />
+          <Rodape rota={pagina} />
+        </>
       ) : (
         <>
           <Cortina />
@@ -76,6 +87,7 @@ function Home({ rota }: { rota: Rota }) {
       <Apresentacao />
       <Looks />
       <FaixaColecoes />
+      <PorPeca />
       <Diferenciais />
       <Sobre />
       <ComoComprar />

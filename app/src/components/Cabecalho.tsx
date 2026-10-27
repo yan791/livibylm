@@ -15,9 +15,13 @@ const ease = [0.22, 1, 0.36, 1] as const
 /** abre o menu de qualquer lugar (ex.: o botão dentro da abertura) */
 export const abrirMenu = () => window.dispatchEvent(new CustomEvent('livi:menu'))
 
+/** o endereço de um item do menu: âncora da página inicial ("#sobre") ou página ("/pecas") */
+export const hrefDoMenu = (href: string) => comBase(href.startsWith('/') ? href : '/' + href)
+
 export function irPara(href: string, rota: Rota) {
   // "Coleções" vai direto para o catálogo, começando pela coleção atual
   if (href === '#colecoes') return mostrarCatalogo(site.abertura.colecao)
+  if (href.startsWith('/')) return navegar(href, { semTransicao: true })
   if (rota.nome === 'inicio') {
     rolarPara(href === '#inicio' ? 0 : href)
     history.replaceState(null, '', comBase(href === '#inicio' ? '/' : '/' + href))
@@ -72,6 +76,15 @@ export function Cabecalho({ rota }: { rota: Rota }) {
             Coleções
           </a>
           <a
+            href={comBase('/pecas')}
+            className="cab-link"
+            onClick={clicar('/pecas')}
+            aria-current={rota.nome === 'pecas' ? 'page' : undefined}
+            tabIndex={compacto ? 0 : -1}
+          >
+            Peças
+          </a>
+          <a
             href={linkWhatsApp()}
             target="_blank"
             rel="noreferrer"
@@ -112,7 +125,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
               {site.menu.map((m, i) => (
                 <motion.a
                   key={m.href}
-                  href={comBase('/' + m.href)}
+                  href={hrefDoMenu(m.href)}
                   onClick={clicar(m.href)}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}

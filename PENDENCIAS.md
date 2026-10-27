@@ -156,6 +156,19 @@ Para ligar (uma vez):
 
 Com o domínio `livibylm.com.br` verificado no Resend, o remetente pode ser da loja: `npx wrangler secret put EMAIL_REMETENTE` com, por exemplo, `Livi <pedidos@livibylm.com.br>`.
 
+## Peças por tipo, feita (27/10)
+
+Pedido da Livia: ver só as saias, só as blusas etc., de todas as coleções.
+- **Página `/pecas`** (`app/src/paginas/Pecas.tsx`):
+  - filtros por tipo, com endereço próprio para divulgar (`/pecas/saias`);
+  - filtro de tamanho, que mostra só as peças com estoque nele (`?tamanho=M`);
+  - as esgotadas vão para o fim.
+- **Abrir uma peça da grade:** o catálogo abre por cima da página. As setas passam pelas peças do filtro, de qualquer coleção, e o voltar devolve a cliente ao mesmo ponto da grade.
+- **Onde aparece:** um bloco "Já sabe o que procura?" na página inicial, logo depois das coleções (`app/src/sections/PorPeca.tsx`), e o item "Peças" no menu, no cabeçalho e no rodapé.
+- **O tipo vem da primeira palavra do nome da peça** (`app/src/dados/tipos.ts`): "Saia Muse marrom" entra em Saias. No painel não há nada para marcar.
+  - **Livia:** todo nome de peça precisa começar pelo tipo ("Top Aurora", "Calça Lis").
+  - Um tipo novo vira um filtro novo sozinho. Os plurais fora do "+s" (Calças, Macacões...) estão em `PLURAIS`, no mesmo arquivo.
+
 ## Respostas da Livia
 
 Já respondidas (21/10):

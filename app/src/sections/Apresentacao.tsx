@@ -14,7 +14,7 @@ import { gsap } from '../lib/scroll'
 import { TextEffect } from '../components/core/text-effect'
 import { SpinningText } from '../components/core/spinning-text'
 import { Logo } from '../components/Logo'
-import { abrirMenu, irPara } from '../components/Cabecalho'
+import { abrirMenu, hrefDoMenu, irPara } from '../components/Cabecalho'
 import { Menu, SetaDiagonal } from '../components/icones'
 import { GuiaRolar } from '../components/Vivos'
 import { BotaoDesejos, BotaoSacola } from '../components/Gaveta'
@@ -200,7 +200,7 @@ export function Apresentacao() {
               {site.menu.map((m, i) => (
                 <a
                   key={m.href}
-                  href={comBase('/' + m.href)}
+                  href={hrefDoMenu(m.href)}
                   className={i === 0 ? 'ativo' : undefined}
                   aria-current={i === 0 ? 'page' : undefined}
                   onClick={(e) => {

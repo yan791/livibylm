@@ -2,7 +2,7 @@ import { site, linkWhatsApp } from '../dados/site'
 import { ajustes, colecoes } from '../dados/colecoes'
 import { type Rota } from '../lib/rota'
 import { mostrarCatalogo } from '../lib/catalogo'
-import { irPara } from './Cabecalho'
+import { hrefDoMenu, irPara } from './Cabecalho'
 import { Logo } from './Logo'
 import { Instagram, SetaDiagonal, WhatsApp } from './icones'
 import { comBase } from '../lib/base'
@@ -27,7 +27,7 @@ export function Rodape({ rota }: { rota: Rota }) {
         {site.menu.map((m) => (
           <a
             key={m.href}
-            href={comBase('/' + m.href)}
+            href={hrefDoMenu(m.href)}
             onClick={(e) => {
               e.preventDefault()
               irPara(m.href, rota)

@@ -5,6 +5,8 @@
   O coração das peças só salva na lista de desejos (não leva à compra).
   O que aparece aqui vem do endereço (/colecao/velvet/vestido-velvet): o link
   da peça pode ser compartilhado e abre direto nela.
+  Peça aberta da página de peças (/pecas/saias): as setas passam pelas peças
+  do filtro, de qualquer coleção, e o voltar leva de volta à grade.
 */
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
@@ -22,10 +24,21 @@ import {
   type Peca,
 } from '../dados/colecoes'
 import { linkWhatsApp, mensagemEsgotada, mensagemPeca } from '../dados/site'
-import { corrigirEndereco, fecharCatalogo, trocarColecao, useCatalogo, verPeca, voltarDaPeca } from '../lib/catalogo'
+import {
+  corrigirEndereco,
+  fecharCatalogo,
+  fundoDoCatalogo,
+  pecaDaLista,
+  trocarColecao,
+  useCatalogo,
+  verDaLista,
+  verPeca,
+  voltarDaPeca,
+} from '../lib/catalogo'
+import { nomeDoFiltro, pecasDoFiltro, type ItemPeca } from '../dados/tipos'
 import { abrirSacola, adicionarNaSacola, idDoItem, useSacola } from '../lib/sacola'
 import { fotoPequena } from '../lib/base'
-import { suportaTransicao } from '../lib/rota'
+import { interpretar, suportaTransicao } from '../lib/rota'
 import { pausarRolagem } from '../lib/scroll'
 import { cn } from '../lib/cn'
 import { Espaco, Ph } from './Espaco'
@@ -36,11 +49,23 @@ import { Fechar, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
 const ease = [0.22, 1, 0.36, 1] as const
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
 
+/** as peças do filtro da página de peças que está por baixo (aberta da grade), ou null */
+function listaDoFundo(): { nome: string; itens: ItemPeca[] } | null {
+  const fundo = pecaDaLista() ? fundoDoCatalogo() : null
+  const rota = fundo ? interpretar(fundo) : null
+  if (rota?.nome !== 'pecas') return null
+  const filtro = { tipo: rota.tipo, tamanho: rota.tamanho }
+  return { nome: nomeDoFiltro(filtro), itens: pecasDoFiltro(filtro) }
+}
+
 export function Catalogo() {
   const estado = useCatalogo()
   const colecao = estado ? acharColecao(estado.colecao) : undefined
   const peca = colecao && estado?.peca ? colecao.pecas.find((p) => p.slug === estado.peca) : undefined
   const enderecoErrado = Boolean(estado && (!colecao || (estado.peca && !peca)))
+  const lista = peca ? listaDoFundo() : null
+  // o título da aba antes de abrir (o da página inicial ou o da página de peças), para devolver ao fechar
+  const tituloAntes = useRef<string | null>(null)
 
   // link antigo: a peça pode ter mudado de coleção; se saiu do site, fica a vitrine (ou a página, se a coleção saiu)
   useLayoutEffect(() => {
@@ -60,11 +85,13 @@ export function Catalogo() {
       raiz.style.removeProperty('--fundo-catalogo')
     }
     pausarRolagem(Boolean(colecao), 'catalogo')
-    document.title = !colecao
-      ? 'Livi by LM | Moda feminina autoral'
-      : peca
-        ? `${peca.nome} | Coleção ${colecao.nome} | Livi by LM`
-        : `Coleção ${colecao.nome} | Livi by LM`
+    if (!colecao) {
+      if (tituloAntes.current !== null) document.title = tituloAntes.current
+      tituloAntes.current = null
+      return
+    }
+    tituloAntes.current ??= document.title
+    document.title = peca ? `${peca.nome} | Coleção ${colecao.nome} | Livi by LM` : `Coleção ${colecao.nome} | Livi by LM`
   }, [colecao, peca])
 
   useEffect(() => {
@@ -99,7 +126,7 @@ export function Catalogo() {
           <header className="cat-topo">
             {peca ? (
               <button type="button" className="cat-voltar" onClick={voltarDaPeca}>
-                <SetaEsquerda className="ico" /> {colecao.nome}
+                <SetaEsquerda className="ico" /> {lista?.nome ?? colecao.nome}
               </button>
             ) : (
               <p className="sobretitulo">Catálogo</p>
@@ -115,7 +142,7 @@ export function Catalogo() {
 
           <div className="cat-corpo">
             <Vitrine colecao={colecao} oculta={Boolean(peca)} />
-            <AnimatePresence>{peca && <Detalhe key={peca.slug} colecao={colecao} peca={peca} />}</AnimatePresence>
+            <AnimatePresence>{peca && <Detalhe key={peca.slug} colecao={colecao} peca={peca} lista={lista} />}</AnimatePresence>
           </div>
         </motion.div>
       )}
@@ -266,7 +293,7 @@ function Trilho({ colecao }: { colecao: Colecao }) {
 }
 
 /** a peça aberta: fotos, informações e compra */
-function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
+function Detalhe({ colecao, peca, lista }: { colecao: Colecao; peca: Peca; lista: { nome: string; itens: ItemPeca[] } | null }) {
   const sacola = useSacola()
   const esgotada = pecaEsgotada(peca)
   const unico = peca.tamanhos.length === 1
@@ -282,9 +309,12 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
   const naSacola = tamanho ? sacola.find((i) => idDoItem(i) === idDoItem({ peca: peca.slug, cor: cor.nome, tamanho })) : undefined
   const [aviso, setAviso] = useState(false)
   const [adicionou, setAdicionou] = useState(false)
-  const posicao = colecao.pecas.indexOf(peca)
-  const anterior = colecao.pecas[posicao - 1]
-  const proxima = colecao.pecas[posicao + 1]
+  // as setas andam pela coleção ou, aberta da grade, pelas peças do filtro
+  const itens = lista?.itens ?? colecao.pecas.map((p) => ({ colecao, peca: p }))
+  const posicao = itens.findIndex((i) => i.peca.slug === peca.slug)
+  const anterior = posicao > 0 ? itens[posicao - 1] : undefined
+  const proxima = posicao >= 0 ? itens[posicao + 1] : undefined
+  const ver = (i: ItemPeca) => (lista ? verDaLista(i.colecao.slug, i.peca.slug) : verPeca(i.peca.slug))
 
   const adicionar = () => {
     if (esgotada) return
@@ -304,7 +334,8 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
     <motion.article
       className="cat-peca"
       aria-label={peca.nome}
-      initial={{ opacity: 0, x: 32 }}
+      // vinda da grade com passagem suave, a foto tocada já faz a entrada
+      initial={document.documentElement.dataset.transicao === 'lista' ? false : { opacity: 0, x: 32 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease }}
@@ -314,16 +345,22 @@ function Detalhe({ colecao, peca }: { colecao: Colecao; peca: Peca }) {
       <div className="cat-info">
         <div className="cat-navega">
           <p className="sobretitulo">
-            Coleção {colecao.nome} <i>·</i>{' '}
-            <span className="cat-contagem">
-              {doisDigitos(posicao + 1)} / {doisDigitos(colecao.pecas.length)}
-            </span>
+            {lista ? lista.nome : `Coleção ${colecao.nome}`}
+            {posicao >= 0 && (
+              <>
+                {' '}
+                <i>·</i>{' '}
+                <span className="cat-contagem">
+                  {doisDigitos(posicao + 1)} / {doisDigitos(itens.length)}
+                </span>
+              </>
+            )}
           </p>
           <div className="cat-setas">
-            <button type="button" onClick={() => anterior && verPeca(anterior.slug)} disabled={!anterior} aria-label="Peça anterior">
+            <button type="button" onClick={() => anterior && ver(anterior)} disabled={!anterior} aria-label="Peça anterior">
               <SetaEsquerda />
             </button>
-            <button type="button" onClick={() => proxima && verPeca(proxima.slug)} disabled={!proxima} aria-label="Próxima peça">
+            <button type="button" onClick={() => proxima && ver(proxima)} disabled={!proxima} aria-label="Próxima peça">
               <SetaDireita />
             </button>
           </div>

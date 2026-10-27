@@ -45,6 +45,8 @@ export const site = {
   menu: [
     { rotulo: 'Início', href: '#inicio' },
     { rotulo: 'Coleções', href: '#colecoes' },
+    // página com as peças de todas as coleções, por tipo (paginas/Pecas.tsx)
+    { rotulo: 'Peças', href: '/pecas' },
     { rotulo: 'Sobre', href: '#sobre' },
     { rotulo: 'Contato', href: '#contato' },
   ],

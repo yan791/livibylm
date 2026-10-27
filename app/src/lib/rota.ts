@@ -3,6 +3,7 @@
   "/colecao/velvet/vestido-velvet" abre o catálogo por cima dela (lib/catalogo)
   "/pedido/<código>" é a página de uma compra (para onde a InfinitePay devolve a cliente)
   "/trocas" e "/privacidade" são as páginas das políticas da loja
+  "/pecas/saias?tamanho=M" são as peças de todas as coleções, por tipo (dados/tipos)
   e "/nova-senha/<link>" é onde a cliente cria uma senha nova para a conta.
   As trocas passam pela View Transitions API quando o navegador suporta,
   para a peça "voar" de um lugar para o outro sem corte seco.
@@ -19,6 +20,7 @@ export type Rota =
   | { nome: 'colecao'; colecao: string; peca?: string }
   | { nome: 'pedido'; codigo: string }
   | { nome: 'trocas' | 'privacidade' }
+  | { nome: 'pecas'; tipo?: string; tamanho?: string }
   | { nome: 'nova-senha'; link: string }
 
 const ouvintes = new Set<() => void>()
@@ -35,18 +37,20 @@ function assinar(cb: () => void) {
 export function useCaminho() {
   return useSyncExternalStore(
     assinar,
-    () => semBase(location.pathname) + location.hash,
+    () => semBase(location.pathname) + location.search + location.hash,
     () => '/',
   )
 }
 
 export function interpretar(caminho: string): Rota {
   const [semHash, hash] = caminho.split('#')
-  const partes = semHash.split('/').filter(Boolean)
+  const [semBusca, busca = ''] = semHash.split('?')
+  const partes = semBusca.split('/').filter(Boolean)
   if (partes[0] === 'colecao' && partes[1]) return { nome: 'colecao', colecao: partes[1], peca: partes[2] }
   if (partes[0] === 'pedido' && partes[1]) return { nome: 'pedido', codigo: partes[1] }
   if (partes[0] === 'trocas' || partes[0] === 'privacidade') return { nome: partes[0] }
   if (partes[0] === 'nova-senha' && partes[1]) return { nome: 'nova-senha', link: partes[1] }
+  if (partes[0] === 'pecas') return { nome: 'pecas', tipo: partes[1], tamanho: new URLSearchParams(busca).get('tamanho') || undefined }
   return { nome: 'inicio', ancora: hash }
 }
 
