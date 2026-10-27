@@ -7,8 +7,9 @@
     /api/painel/...   painel da loja (login obrigatório, menos entrar e convite)
     /fotos/...        fotos enviadas pelo painel (R2)
     /painel/...       o painel em si
-    o resto           o site, já com o catálogo dentro do HTML; ou, se
-                      SITE_PUBLICO estiver definido, um redirecionamento para lá
+    o resto           o site, já com o catálogo dentro do HTML
+  Páginas e painel abertos fora do endereço do site (SITE_PUBLICO, o domínio
+  da loja) vão para ele, com o mesmo caminho: o workers.dev, o www e o http.
 */
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
@@ -25,6 +26,19 @@ app.onError((e, c) => {
   if (e instanceof HTTPException) return c.json({ erro: e.message }, e.status)
   console.error(e)
   return c.json({ erro: 'Algo deu errado do nosso lado. Tente de novo em instantes.' }, 500)
+})
+
+/*
+  Um endereço só para o site e o painel (a sessão do painel e a conta da cliente
+  ficam presas ao endereço). A API e as fotos seguem respondendo em qualquer um:
+  pedidos feitos antes do domínio mandam o aviso de pagamento para o workers.dev.
+*/
+app.use('*', async (c, next) => {
+  if (!c.env.SITE_PUBLICO) return next()
+  const url = new URL(c.req.url)
+  const site = new URL(c.env.SITE_PUBLICO)
+  if (url.origin === site.origin || /^\/(api|fotos)\//.test(url.pathname)) return next()
+  return c.redirect(site.origin + site.pathname.replace(/\/$/, '') + url.pathname + url.search, 301)
 })
 
 app.use('/api/*', async (c, next) => {
@@ -68,11 +82,6 @@ app.get('/painel/*', paginaPainel)
   assim o site já abre com as peças, sem esperar outra requisição.
 */
 app.get('*', async (c) => {
-  // o site público mora em outro endereço (GitHub Pages): aqui fica só o painel
-  if (c.env.SITE_PUBLICO) {
-    const url = new URL(c.req.url)
-    return c.redirect(c.env.SITE_PUBLICO.replace(/\/$/, '') + url.pathname + url.search, 302)
-  }
   const r = await c.env.ASSETS.fetch(c.req.raw)
   if (!r.headers.get('content-type')?.includes('text/html')) return r
   let dados: string

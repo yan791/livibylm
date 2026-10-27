@@ -31,11 +31,19 @@
       "bucket_name": "livi-fotos"
     }
   ],
-  // site público (GitHub Pages): quem abre o endereço do Worker fora do /painel vai para lá.
-  // Vazio = o próprio Worker publica o site (ex.: quando houver domínio próprio aqui)
+  // o domínio da loja (a zona livibylm.com.br fica nesta mesma conta da Cloudflare);
+  // o workers.dev continua ligado: pedidos antigos mandam o aviso de pagamento para lá
+  "routes": [
+    { "pattern": "livibylm.com.br", "custom_domain": true },
+    { "pattern": "www.livibylm.com.br", "custom_domain": true }
+  ],
+  "workers_dev": true,
+  // SITE_PUBLICO: o endereço do site. Páginas e painel abertos por outro endereço
+  // (workers.dev, www, http) vão para lá; a API e as fotos respondem em qualquer um.
+  // Vazio = sem redirecionar (o .dev.vars do PC deixa vazio)
   // INFINITEPAY_HANDLE: a InfiniteTag da loja, que recebe os pagamentos do site (sem o $).
   // Uma chave de API, se um dia existir, vai só como segredo: npx wrangler secret put INFINITEPAY_CHAVE
   // Aviso de venda por e-mail (worker/aviso-de-venda.ts): a chave do Resend vai só como segredo: npx wrangler secret put RESEND_CHAVE
-  "vars": { "SITE_PUBLICO": "https://yan791.github.io/livibylm", "INFINITEPAY_HANDLE": "liviamoraesloureiro" },
+  "vars": { "SITE_PUBLICO": "https://livibylm.com.br", "INFINITEPAY_HANDLE": "liviamoraesloureiro" },
   "observability": { "enabled": true }
 }

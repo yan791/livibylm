@@ -1,5 +1,7 @@
-# Publica o site no GitHub Pages a cada push na branch "ajustes" (ou pelo botão
-# "Run workflow" na aba Actions). O link fica em https://<dono>.github.io/<repositorio>/
+# O site mora no domínio livibylm.com.br, publicado pelo Worker da Cloudflare
+# ("npm run publicar" em app/). O GitHub Pages ficou só para quem ainda chega
+# pelo endereço antigo (https://<dono>.github.io/<repositorio>/...): leva para o
+# mesmo caminho no domínio. Roda a cada push na "ajustes" ou pelo "Run workflow".
 name: Publicar site (GitHub Pages)
 
 on:
@@ -23,36 +25,38 @@ jobs:
     # (Settings > Secrets and variables > Actions > Variables); nos outros, é pulado em vez de falhar
     if: github.event_name == 'workflow_dispatch' || vars.PUBLICAR_PAGES == 'sim'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: app
     steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: app/package-lock.json
-
-      - name: Instalar dependências
-        run: npm ci
-
-      # o site fica numa subpasta com o nome do repositório (/livibylm/) e busca
-      # as peças no servidor da loja (Worker na Cloudflare, onde mora o painel)
-      - name: Gerar o site
-        run: npm run build -- --base=/${{ github.event.repository.name }}/
+      # index.html e 404.html iguais: qualquer caminho antigo (/livibylm/colecao/...)
+      # vai para o mesmo caminho no domínio; sem JavaScript, vai para o início
+      - name: Página que leva para o domínio
         env:
-          VITE_API: ${{ vars.LIVI_API || 'https://livi.yanyago2529.workers.dev' }}
-
-      # o GitHub Pages não conhece as rotas do site (/colecao/...): o 404 vira o
-      # próprio site, que lê o endereço e abre a página certa
-      - name: Abrir links diretos de coleções e peças
-        run: cp dist/index.html dist/404.html
+          SITE: ${{ vars.LIVI_SITE || 'https://livibylm.com.br' }}
+          PASTA: /${{ github.event.repository.name }}
+        run: |
+          mkdir -p saida
+          cat > saida/index.html <<EOF
+          <!doctype html>
+          <html lang="pt-BR">
+          <head>
+          <meta charset="utf-8">
+          <meta name="robots" content="noindex">
+          <link rel="canonical" href="$SITE/">
+          <title>Livi by LM</title>
+          <script>
+            var p = location.pathname, pasta = '$PASTA'
+            if (p.indexOf(pasta) === 0) p = p.slice(pasta.length)
+            location.replace('$SITE' + (p.charAt(0) === '/' ? p : '/' + p) + location.search + location.hash)
+          </script>
+          <noscript><meta http-equiv="refresh" content="0; url=$SITE/"></noscript>
+          </head>
+          <body><a href="$SITE/">livibylm.com.br</a></body>
+          </html>
+          EOF
+          cp saida/index.html saida/404.html
 
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: app/dist
+          path: saida
 
   publicar:
     needs: gerar

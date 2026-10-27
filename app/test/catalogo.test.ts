@@ -126,12 +126,34 @@ describe('páginas servidas pelo Worker', () => {
     ambiente.ASSETS = original.ASSETS
   })
 
-  it('com o site no GitHub Pages, o endereço do Worker leva para lá, com o mesmo caminho', async () => {
+  it('páginas e painel abertos fora do domínio (workers.dev, www, http) levam para ele, com o mesmo caminho', async () => {
     // fixo aqui: o .dev.vars do PC esvazia o SITE_PUBLICO para o Worker mostrar o site
-    ambiente.SITE_PUBLICO = 'https://yan791.github.io/livibylm/'
-    const r = await chamar('http://localhost/colecao/velvet?de=instagram', { redirect: 'manual' })
-    expect(r.status).toBe(302)
-    expect(r.headers.get('Location')).toBe('https://yan791.github.io/livibylm/colecao/velvet?de=instagram')
+    ambiente.SITE_PUBLICO = 'https://livibylm.com.br'
+    for (const [de, para] of [
+      ['https://livi.yanyago2529.workers.dev/colecao/velvet?de=instagram', 'https://livibylm.com.br/colecao/velvet?de=instagram'],
+      ['https://livi.yanyago2529.workers.dev/painel/pedido/7', 'https://livibylm.com.br/painel/pedido/7'],
+      ['https://www.livibylm.com.br/', 'https://livibylm.com.br/'],
+      ['http://livibylm.com.br/pedido/ABC123', 'https://livibylm.com.br/pedido/ABC123'],
+    ]) {
+      const r = await chamar(de, { redirect: 'manual' })
+      expect(r.status, de).toBe(301)
+      expect(r.headers.get('Location'), de).toBe(para)
+    }
+  })
+
+  it('a API e as fotos seguem respondendo no workers.dev (avisos de pagamento de pedidos antigos)', async () => {
+    ambiente.SITE_PUBLICO = 'https://livibylm.com.br'
+    expect((await chamar('https://livi.yanyago2529.workers.dev/api/loja')).status).toBe(200)
+    expect((await chamar('https://livi.yanyago2529.workers.dev/api/pagamento/aviso', { method: 'POST' })).status).not.toBe(301)
+    expect((await chamar('https://livi.yanyago2529.workers.dev/fotos/nao-existe.webp')).status).toBe(404)
+  })
+
+  it('no próprio domínio, o site abre com o catálogo dentro', async () => {
+    ambiente.SITE_PUBLICO = 'https://livibylm.com.br'
+    ambiente.ASSETS = assetsFalsos
+    const r = await chamar('https://livibylm.com.br/colecao/velvet')
+    expect(r.status).toBe(200)
+    expect(await r.text()).toContain('<script id="livi-loja"')
   })
 
   it('com domínio próprio (sem SITE_PUBLICO), o catálogo vai dentro do HTML sem abrir brecha para script', async () => {
@@ -154,9 +176,10 @@ describe('páginas servidas pelo Worker', () => {
   })
 
   it('o painel abre com proteção contra moldura, robôs e cache', async () => {
+    ambiente.SITE_PUBLICO = 'https://livibylm.com.br'
     ambiente.ASSETS = assetsFalsos
     for (const caminho of ['/painel', '/painel/pedidos', '/painel/convite/abc']) {
-      const r = await chamar(`http://localhost${caminho}`)
+      const r = await chamar(`https://livibylm.com.br${caminho}`)
       expect(r.status, caminho).toBe(200)
       expect(r.headers.get('X-Frame-Options')).toBe('DENY')
       expect(r.headers.get('X-Robots-Tag')).toBe('noindex, nofollow')

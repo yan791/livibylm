@@ -41,7 +41,8 @@ function avisarSemApi() {
 }
 
 /*
-  Versão do GitHub Pages:
+  Versão do GitHub Pages (desde o domínio próprio o site mora no Worker e o
+  GitHub Pages só redireciona; fica aqui para o caso de voltar a usá-lo):
   - /painel (e o que vier depois) leva ao painel, que mora no servidor da
     loja. Roda antes de qualquer outra coisa da página, sem carregar o site.
   - começa a baixar o catálogo e os ajustes junto com a página, antes do JavaScript.
