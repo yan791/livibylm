@@ -22,5 +22,9 @@ export const API = (import.meta.env.VITE_API ?? '').replace(/\/$/, '')
 /** endereço de uma foto do catálogo: as do painel (/fotos/...) moram no servidor da loja */
 export const enderecoFoto = (caminho: string) => (caminho.startsWith('/fotos/') ? API + caminho : comBase(caminho))
 
-/** versão pequena (vitrine, sacola, miniaturas) de uma foto enviada pelo painel; as outras ficam como estão */
-export const fotoPequena = (src: string) => src.replace(/(\/fotos\/p\/[0-9a-f-]{36})\.(\w+)$/, '$1-p.$2')
+/**
+  versão pequena (vitrine, sacola, miniaturas) de uma foto enviada pelo painel
+  ou das que vieram no projeto (/img/pecas/<coleção>/<peça>/1.webp); as outras ficam como estão
+*/
+export const fotoPequena = (src: string) =>
+  src.replace(/(\/fotos\/p\/[0-9a-f-]{36})\.(\w+)$/, '$1-p.$2').replace(/(\/img\/pecas\/[a-z0-9-]+\/[a-z0-9-]+\/\d+)\.webp$/, '$1-p.webp')

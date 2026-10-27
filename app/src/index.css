@@ -1204,6 +1204,13 @@ img {
   align-items: center;
 }
 
+.sobre-foto img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+}
+
 .sobre-texto {
   max-width: 540px;
 }

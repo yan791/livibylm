@@ -59,8 +59,9 @@ export async function enviarFoto(arquivo: File) {
   return { src, proporcao: foto.largura / foto.altura }
 }
 
-/** endereço da versão pequena (só as fotos enviadas pelo painel têm uma) */
-export const pequena = (src: string) => (src.startsWith('/fotos/p/') ? src.replace(/\.(\w+)$/, '-p.$1') : src)
+/** endereço da versão pequena (das fotos enviadas pelo painel e das que vieram no projeto, em /img/pecas) */
+export const pequena = (src: string) =>
+  src.startsWith('/fotos/p/') ? src.replace(/\.(\w+)$/, '-p.$1') : src.replace(/^(\/img\/pecas\/[a-z0-9-]+\/[a-z0-9-]+\/\d+)\.webp$/, '$1-p.webp')
 
 export const descartarFotos = (fotos: string[]) => {
   if (fotos.length) api('POST', '/fotos/descartar', { fotos }).catch(() => {})

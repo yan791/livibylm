@@ -8,7 +8,8 @@ import { motion } from 'motion/react'
 import { linkWhatsApp, mensagens, site } from '../dados/site'
 import { ajustes, precoBR } from '../dados/colecoes'
 import { LinkPolitica } from '../paginas/Politica'
-import { Espaco, Ph } from '../components/Espaco'
+import { Ph } from '../components/Espaco'
+import { comBase } from '../lib/base'
 import { Ima, TituloVivo } from '../components/Vivos'
 import {
   IconeAgulha,
@@ -85,7 +86,7 @@ export function Sobre() {
   return (
     <section className="sobre" id="sobre" aria-labelledby="sobre-titulo">
       <motion.div className="sobre-foto" {...aparece}>
-        <Espaco rotulo="Foto da criadora" proporcao="4 / 5" />
+        <img src={comBase('/img/criadora.webp')} alt="Retrato da criadora da Livi" width={1086} height={1448} loading="lazy" decoding="async" />
       </motion.div>
       <motion.div className="sobre-texto" {...aparece} transition={{ ...aparece.transition, delay: 0.1 }}>
         <p className="sobretitulo">A criadora</p>

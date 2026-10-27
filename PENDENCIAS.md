@@ -8,10 +8,13 @@ As vendas pelo site já estão ligadas. Falta isto para entregar a loja:
 
 ### 1. As peças de verdade no banco
 
-As 16 peças no ar são as de exemplo (`app/migrations/0002_pecas_iniciais.sql`): o tecido e a modelo estão como "[confirmar]", e o site mostra isso marcado para as clientes.
-- **A Livia manda**, para cada peça: coleção, nome, preço, descrição, tecido, cores, tamanhos, estoque de cada cor e tamanho, fotos, altura da modelo e o tamanho que ela veste, e se é sob encomenda (com o prazo).
-- **Quem cadastra:** pelo painel (Peças), a Livia ou alguém com acesso. As fotos sobem por lá mesmo.
-- **Depois:** apagar ou esconder as peças de exemplo que não existem. Confirmar com ela se as coleções (Lúmina, Velvet, Carmim, Confiança) são essas mesmo.
+As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations/0009_pecas_reais.sql`, nas coleções Lúmina, Velvet, Carmim, Confiança e nas novas Sinfonia e Brasil. A migration apaga as 16 de exemplo. As fotos ficam em `app/public/img/pecas/<coleção>/<peça>/`. Cada cor do WhatsApp virou uma peça, porque o site guarda as fotos por peça.
+- **Yan:** `npm run publicar`, que aplica a migration. Até lá, a loja no ar continua vendendo as peças de exemplo.
+- **Livia confirma, no painel (Peças):**
+  - o estoque e os tamanhos. As 9 peças com "APENAS 1 NO M" no catálogo entraram só com essa unidade; as outras 61 entraram com 1 por tamanho, do PP ao GG, provisório. Com as vendas ligadas, vale acertar logo depois de publicar.
+  - a altura da modelo e o tamanho que ela veste (vazios em todas).
+  - os textos das coleções Sinfonia e Brasil (escritos a partir das fotos) e a ordem das coleções.
+- **Ainda não tem no site:** o preço "de/por" das peças em promoção. Elas aparecem só com o preço atual.
 
 ### 2. Domínio `livibylm.com.br`
 
@@ -35,7 +38,7 @@ O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende
 
 ### 4. Textos do site
 
-- **A criadora** (`app/src/sections/Depois.tsx`): nome, foto e duas ou três frases de como a marca começou. Hoje aparece "[Nome da criadora]" e um espaço reservado para a foto.
+- **A criadora** (`app/src/sections/Depois.tsx`): a foto já está no site. Faltam o nome e duas ou três frases de como a marca começou; hoje aparece "[Nome da criadora]".
 - **Tamanhos:** a tabela de medidas da Livia (busto, cintura e quadril de cada tamanho, em cm). Ela entra na resposta "Tamanhos" do "Como comprar", que hoje está marcada para confirmar, e num "Guia de medidas" na página da peça.
 - **Na página da peça,** a frase "A modelo tem ... e veste ..." aparece sempre marcada como "aguardando confirmação", mesmo com os valores certos. Corrigir junto (`app/src/components/Catalogo.tsx`).
 - **Também com espaço reservado:** as fotos da seção de looks (`app/src/sections/Looks.tsx`) e o logo em arquivo (`site.logo` em `app/src/dados/site.ts`; sem ele, aparece o nome escrito).
