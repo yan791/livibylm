@@ -86,13 +86,13 @@ export function Sobre() {
   return (
     <section className="sobre" id="sobre" aria-labelledby="sobre-titulo">
       <motion.div className="sobre-foto" {...aparece}>
-        <img src={comBase('/img/criadora.webp')} alt="Retrato da criadora da Livi" width={1086} height={1448} loading="lazy" decoding="async" />
+        <img src={comBase('/img/criadora.webp')} alt="Lívia Moraes, criadora da Livi" width={1086} height={1448} loading="lazy" decoding="async" />
       </motion.div>
       <motion.div className="sobre-texto" {...aparece} transition={{ ...aparece.transition, delay: 0.1 }}>
         <p className="sobretitulo">A criadora</p>
         <TituloVivo id="sobre-titulo" className="titulo-secao" partes={['Por trás de cada peça,', 'quebra', { em: 'um olhar.' }]} />
         <p>
-          A Livi leva as iniciais de quem desenha cada peça: LM. <Ph>[Nome da criadora]</Ph> cria pensando no caimento, no
+          A Livi leva as iniciais de quem desenha cada peça: LM, de Lívia Moraes. Ela cria pensando no caimento, no
           tecido e em como a roupa acompanha quem veste.
         </p>
         <p>
