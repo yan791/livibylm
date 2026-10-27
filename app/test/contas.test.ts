@@ -1,11 +1,18 @@
 /*
   Conta da cliente no site (worker/contas.ts): criar, entrar, sair, a compra
   que fica na conta, os pedidos que ela vê em qualquer aparelho e a senha nova
-  pelo link que a loja manda.
+  pelo link que a loja manda, ou no próprio site (WhatsApp e e-mail da conta).
 */
 import { env } from 'cloudflare:workers'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CONTAS_POR_IP, ERROS_POR_CONTA, ERROS_POR_IP } from '../worker/contas'
+import {
+  CONTAS_POR_IP,
+  EMAILS_ERRADOS_POR_CONTA,
+  EMAILS_ERRADOS_POR_IP,
+  ERROS_POR_CONTA,
+  ERROS_POR_IP,
+  ESQUECI_POR_IP,
+} from '../worker/contas'
 import { CONSULTAS_POR_IP, gravarPedido, MAX_CONSULTA, novoCodigo } from '../worker/pedidos'
 import { agora } from '../worker/seguranca'
 import { conta, criarConta, criarPeca, entrar, novoZap, painel, reservar, site } from './ajuda'
@@ -454,5 +461,105 @@ describe('senha nova pelo link que a loja manda', () => {
     expect((await painel('sessao-inventada', 'POST', `/pedidos/${id}/nova-senha`)).status).toBe(401)
     expect((await painel(sessao, 'POST', `/pedidos/${id}/nova-senha`)).status).toBe(401)
     expect(await env.DB.prepare('SELECT count(*) AS n FROM senhas_novas').first<number>('n')).toBe(0)
+  })
+})
+
+describe('esqueci a senha, no próprio site', () => {
+  const esqueci = async (whatsapp: unknown, ip?: string) => {
+    const r = await conta('POST', '/esqueci', { whatsapp }, undefined, ip)
+    return { status: r.status, dados: (await r.json()) as { conta?: boolean; erro?: string } }
+  }
+  const trocar = async (corpo: Record<string, unknown>, ip?: string) => {
+    const r = await conta('POST', '/esqueci/senha', corpo, undefined, ip)
+    return { status: r.status, dados: (await r.json()) as Dados }
+  }
+
+  it('diz se o número tem conta (sem conta, o site oferece criar)', async () => {
+    const { dados } = await criar({ whatsapp: '(82) 98111-2222' })
+    expect(await esqueci('82 98111 2222')).toEqual({ status: 200, dados: { conta: true } })
+    expect(await esqueci('(82) 98111-3333')).toEqual({ status: 200, dados: { conta: false } })
+    expect((await esqueci('123')).status).toBe(400)
+    expect((await esqueci('')).status).toBe(400)
+    // a consulta não muda nada na conta
+    expect((await entrarNaConta('(82) 98111-2222', SENHA)).status).toBe(200)
+    expect(dados.conta.whatsapp).toBe('5582981112222')
+  })
+
+  it('com o e-mail da conta (maiúsculas e espaços não importam), troca a senha e já entra; a velha e os aparelhos antigos saem', async () => {
+    const { dados } = await criar({ whatsapp: '(82) 98111-2222' })
+    const r = await trocar({ whatsapp: '82981112222', email: '  maria@EXEMPLO.com ', senha: 'senha-nova-boa' })
+    expect(r.status).toBe(200)
+    expect(r.dados.conta).toEqual({ nome: 'Maria Teste', whatsapp: '5582981112222', email: 'maria@exemplo.com' })
+    expect((await dadosDa(dados.token)).status).toBe(401)
+    expect((await dadosDa(r.dados.token)).status).toBe(200)
+    expect((await entrarNaConta('(82) 98111-2222', SENHA)).status).toBe(401)
+    expect((await entrarNaConta('(82) 98111-2222', 'senha-nova-boa')).status).toBe(200)
+  })
+
+  it('e-mail errado não troca nada; número sem conta dá 404', async () => {
+    await criar({ whatsapp: '(82) 98111-2222' })
+    const errado = await trocar({ whatsapp: '(82) 98111-2222', email: 'outra@exemplo.com', senha: 'senha-de-quem-invadiu' })
+    expect(errado.status).toBe(403)
+    expect(errado.dados.erro).toMatch(/e-mail/)
+    expect((await entrarNaConta('(82) 98111-2222', SENHA)).status).toBe(200)
+    expect((await entrarNaConta('(82) 98111-2222', 'senha-de-quem-invadiu')).status).toBe(401)
+    expect((await trocar({ whatsapp: '(82) 98111-3333', email: 'maria@exemplo.com', senha: 'senha-nova-boa' })).status).toBe(404)
+  })
+
+  it('confere o e-mail e a senha nova antes de tudo (e isso não conta como erro)', async () => {
+    await criar({ whatsapp: '(82) 98111-2222' })
+    for (let i = 0; i < EMAILS_ERRADOS_POR_CONTA + 1; i++) {
+      expect((await trocar({ whatsapp: '(82) 98111-2222', email: '', senha: 'senha-nova-boa' })).status).toBe(400)
+      expect((await trocar({ whatsapp: '(82) 98111-2222', email: 'maria@exemplo.com', senha: 'curta' })).status).toBe(400)
+    }
+    expect((await trocar({ whatsapp: '(82) 98111-2222', email: 'maria@exemplo.com', senha: 'senha-nova-boa' })).status).toBe(200)
+  })
+
+  it(`${EMAILS_ERRADOS_POR_CONTA} e-mails errados travam o número por 1 hora, mesmo com o e-mail certo; a senha velha continua entrando`, async () => {
+    await criar({ whatsapp: '(82) 98111-2222' })
+    for (let i = 0; i < EMAILS_ERRADOS_POR_CONTA; i++)
+      expect((await trocar({ whatsapp: '(82) 98111-2222', email: `chute${i}@exemplo.com`, senha: 'senha-nova-boa' })).status).toBe(403)
+    const travado = await trocar({ whatsapp: '(82) 98111-2222', email: 'maria@exemplo.com', senha: 'senha-nova-boa' })
+    expect(travado.status).toBe(429)
+    expect(travado.dados.erro).toMatch(/1 hora/)
+    expect((await entrarNaConta('(82) 98111-2222', SENHA)).status).toBe(200)
+    // passada a hora, volta a valer
+    await env.DB.prepare(`UPDATE tentativas SET desde = desde - 3601 WHERE chave LIKE 'esqueci-conta%'`).run()
+    expect((await trocar({ whatsapp: '(82) 98111-2222', email: 'maria@exemplo.com', senha: 'senha-nova-boa' })).status).toBe(200)
+  })
+
+  it(`e-mails errados demais do mesmo IP (${EMAILS_ERRADOS_POR_IP}) travam aquele IP`, async () => {
+    const zaps = Array.from({ length: Math.ceil(EMAILS_ERRADOS_POR_IP / EMAILS_ERRADOS_POR_CONTA) + 1 }, () => novoZap())
+    for (const z of zaps) await criar({ whatsapp: z })
+    for (let i = 0; i < EMAILS_ERRADOS_POR_IP; i++)
+      await trocar({ whatsapp: zaps[Math.floor(i / EMAILS_ERRADOS_POR_CONTA)], email: 'chute@exemplo.com', senha: 'senha-nova-boa' }, '203.0.113.9')
+    const ultimo = zaps.at(-1)!
+    expect((await trocar({ whatsapp: ultimo, email: 'maria@exemplo.com', senha: 'senha-nova-boa' }, '203.0.113.9')).status).toBe(429)
+    expect((await trocar({ whatsapp: ultimo, email: 'maria@exemplo.com', senha: 'senha-nova-boa' }, '203.0.113.10')).status).toBe(200)
+  })
+
+  it(`consultas de número demais do mesmo IP (${ESQUECI_POR_IP} em 15 minutos) esperam`, async () => {
+    for (let i = 0; i < ESQUECI_POR_IP; i++) expect((await esqueci(novoZap(), '203.0.113.20')).dados).toEqual({ conta: false })
+    expect((await esqueci(novoZap(), '203.0.113.20')).status).toBe(429)
+    expect((await esqueci(novoZap(), '203.0.113.21')).status).toBe(200)
+  })
+
+  it('a senha nova destrava o número travado por senhas erradas', async () => {
+    await criar({ whatsapp: '(82) 98111-2222' })
+    for (let i = 0; i < ERROS_POR_CONTA; i++) await entrarNaConta('(82) 98111-2222', 'errada')
+    expect((await entrarNaConta('(82) 98111-2222', SENHA)).status).toBe(429)
+    expect((await trocar({ whatsapp: '(82) 98111-2222', email: 'maria@exemplo.com', senha: 'senha-nova-boa' })).status).toBe(200)
+    expect((await entrarNaConta('(82) 98111-2222', 'senha-nova-boa')).status).toBe(200)
+  })
+
+  it('6 clientes trocam a senha ao mesmo tempo, cada uma a sua', async () => {
+    const zaps = Array.from({ length: 6 }, () => novoZap())
+    for (const z of zaps) await criar({ whatsapp: z })
+    const r = await Promise.all(zaps.map((z, i) => trocar({ whatsapp: z, email: 'maria@exemplo.com', senha: `senha-nova-${i}-boa` }, `198.51.100.${i + 1}`)))
+    expect(r.map((x) => x.status)).toEqual(Array(6).fill(200))
+    for (const [i, z] of zaps.entries()) {
+      expect((await entrarNaConta(z, `senha-nova-${i}-boa`)).status).toBe(200)
+      expect((await entrarNaConta(z, `senha-nova-${(i + 1) % 6}-boa`)).status).toBe(401)
+    }
   })
 })

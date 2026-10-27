@@ -189,6 +189,29 @@ export async function definirSenhaNova(link: string, senha: string) {
   }
 }
 
+/** "Esqueci minha senha", primeiro passo: esse WhatsApp tem conta? */
+export async function conferirNumero(whatsapp: string): Promise<'tem' | 'sem-conta' | { erro: string }> {
+  try {
+    const { status, dados } = await chamar('POST', '/esqueci', { whatsapp })
+    if (status !== 200) return { erro: String(dados.erro ?? SEM_REDE) }
+    return dados.conta ? 'tem' : 'sem-conta'
+  } catch {
+    return { erro: SEM_REDE }
+  }
+}
+
+/** "Esqueci minha senha", segundo passo: troca a senha com o e-mail da conta e já entra; devolve a mensagem de erro, ou '' se deu certo */
+export async function trocarSenhaEsquecida(d: { whatsapp: string; email: string; senha: string }) {
+  try {
+    const { status, dados } = await chamar('POST', '/esqueci/senha', d)
+    if (status !== 200) return String(dados.erro ?? SEM_REDE)
+    abrir(dados as Resposta)
+    return ''
+  } catch {
+    return SEM_REDE
+  }
+}
+
 /** "5582999998888" -> "(82) 99999-8888" */
 export const telefoneTexto = (n: string) => n.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3')
 

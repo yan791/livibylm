@@ -7,6 +7,8 @@
     POST /pedidos             os pedidos da conta e os que o aparelho guardou
     GET  /nova-senha/:token   o link de senha nova ainda vale? (e o primeiro nome, para a página)
     POST /nova-senha/:token   troca a senha e entra
+    POST /esqueci             "Esqueci minha senha": esse WhatsApp tem conta? ({ conta: true | false })
+    POST /esqueci/senha       troca a senha com o WhatsApp e o e-mail da conta, e entra
   A conta nasce na compra: a sacola pede para entrar ou criar a conta antes do
   pagamento, e a compra fica na conta (pedidos.cliente_id). A sessão vai no
   cabeçalho Authorization (worker/seguranca.ts).
@@ -14,8 +16,11 @@
   prova de que é dela: feito com a conta aberta, ou um código que o aparelho
   já guardava, de um pedido com o mesmo WhatsApp da conta. Quem cria uma conta
   com o WhatsApp de outra pessoa não vê os pedidos dela.
-  Esqueceu a senha: a loja manda um link de senha nova pelo WhatsApp da conta
-  (painel, na página do pedido), que vale por 24 horas e uma vez só.
+  Esqueceu a senha: no próprio site, com o WhatsApp e o e-mail que ela pôs ao
+  criar a conta (só o número não basta: quem soubesse o WhatsApp de outra
+  pessoa veria o CPF e o endereço dela). Se não lembrar o e-mail, a loja manda
+  um link de senha nova pelo WhatsApp da conta (painel, na página do pedido),
+  que vale por 24 horas e uma vez só.
 */
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
@@ -47,9 +52,17 @@ export const SENHA_MINIMA = 8
 export const PEDIDOS_DA_CONTA = 50
 /** quanto tempo vale o link de senha nova */
 const LINK_HORAS = 24
+/** "Esqueci minha senha": números consultados por IP em 15 minutos */
+export const ESQUECI_POR_IP = 30
+/** e-mails errados ao trocar a senha, em 1 hora: por WhatsApp e por IP */
+export const EMAILS_ERRADOS_POR_CONTA = 5
+export const EMAILS_ERRADOS_POR_IP = 20
+const HORA = 3600
 
 const JA_TEM_CONTA = 'Esse WhatsApp já tem conta na Livi. Entre com a sua senha.'
 const LINK_VENCIDO = 'Este link de senha nova venceu ou já foi usado. Peça outro pelo WhatsApp.'
+const SEM_CONTA = 'Não achamos conta com esse WhatsApp.'
+const EMAIL_ERRADO = 'Esse não é o e-mail da conta. Use o mesmo que você colocou quando criou a conta.'
 
 /** pedido que ninguém pagou e cuja reserva venceu: não aparece na conta */
 const VIVO = `NOT (p.situacao = 'aguardando' AND p.reserva_ate <= ?2)`
@@ -106,11 +119,17 @@ contas.post('/criar', async (c) => {
   return c.json({ token, ...(await dadosDaConta(db, id!)) }, 201)
 })
 
+/** o WhatsApp de quem entra ou esqueceu a senha, só com os dígitos (55 + DDD + número) */
+function lerWhatsApp(v: unknown) {
+  const whatsapp = numeroWhatsApp(texto(v, 'seu WhatsApp', 30, true))
+  if (!whatsapp) throw falha(400, 'Confira o WhatsApp: DDD e número, ex.: (82) 99999-9999.')
+  return whatsapp
+}
+
 contas.post('/entrar', async (c) => {
   const db = c.env.DB
   const corpo = await lerCorpo(c)
-  const whatsapp = numeroWhatsApp(texto(corpo.whatsapp, 'seu WhatsApp', 30, true))
-  if (!whatsapp) throw falha(400, 'Confira o WhatsApp: DDD e número, ex.: (82) 99999-9999.')
+  const whatsapp = lerWhatsApp(corpo.whatsapp)
   const senha = typeof corpo.senha === 'string' ? corpo.senha.slice(0, 200) : ''
   if (!senha) throw falha(400, 'Preencha a sua senha.')
 
@@ -208,19 +227,60 @@ contas.get('/nova-senha/:token', async (c) => {
   return c.json({ nome: link.nome.split(/\s+/)[0] ?? '' })
 })
 
+/** grava a senha nova e entra: os links deixam de valer, os aparelhos que estavam na conta saem e as tentativas erradas zeram */
+async function trocarSenha(db: D1Database, cliente: { id: number; whatsapp: string }, senha: string, pepper: string) {
+  const hash = await gerarHashSenha(senha, pepper)
+  await db.batch([
+    db.prepare('UPDATE clientes SET senha = ?1 WHERE id = ?2').bind(hash, cliente.id),
+    db.prepare('DELETE FROM senhas_novas WHERE cliente_id = ?1').bind(cliente.id),
+    db.prepare('DELETE FROM sessoes_clientes WHERE cliente_id = ?1').bind(cliente.id),
+    db.prepare('DELETE FROM tentativas WHERE chave IN (?1, ?2)').bind(`entrar-conta:${cliente.whatsapp}`, `esqueci-conta:${cliente.whatsapp}`),
+  ])
+  const token = await abrirSessaoCliente(db, cliente.id)
+  return { token, ...(await dadosDaConta(db, cliente.id)) }
+}
+
 contas.post('/nova-senha/:token', async (c) => {
   const db = c.env.DB
   const link = await acharLink(db, c.req.param('token'))
   if (!link) throw falha(404, LINK_VENCIDO)
   const corpo = await lerCorpo(c)
-  const hash = await gerarHashSenha(validarSenha(corpo.senha, SENHA_MINIMA), c.env.SENHA_PEPPER)
-  // senha nova: o link deixa de valer, os aparelhos que estavam na conta saem e as tentativas erradas zeram
-  await db.batch([
-    db.prepare('UPDATE clientes SET senha = ?1 WHERE id = ?2').bind(hash, link.id),
-    db.prepare('DELETE FROM senhas_novas WHERE cliente_id = ?1').bind(link.id),
-    db.prepare('DELETE FROM sessoes_clientes WHERE cliente_id = ?1').bind(link.id),
-    db.prepare('DELETE FROM tentativas WHERE chave = ?1').bind(`entrar-conta:${link.whatsapp}`),
-  ])
-  const token = await abrirSessaoCliente(db, link.id)
-  return c.json({ token, ...(await dadosDaConta(db, link.id)) })
+  const senha = validarSenha(corpo.senha, SENHA_MINIMA)
+  return c.json(await trocarSenha(db, link, senha, c.env.SENHA_PEPPER))
+})
+
+/* ---------- esqueci a senha, no próprio site ---------- */
+
+/** primeiro passo: o número tem conta? Sem conta, o site oferece criar uma */
+contas.post('/esqueci', async (c) => {
+  const db = c.env.DB
+  // cada consulta conta: ninguém testa uma lista de números atrás de quem tem conta
+  const doIp = `esqueci-ip:${c.req.header('CF-Connecting-IP') ?? 'local'}`
+  if ((await usou(db, doIp, JANELA)) >= ESQUECI_POR_IP) throw falha(429, 'Muitas consultas seguidas. Espere 15 minutos e tente de novo.')
+  await contar(db, doIp, JANELA)
+  const whatsapp = lerWhatsApp((await lerCorpo(c)).whatsapp)
+  // sem conta não é erro: é o caminho para criar uma (e o navegador não acusa erro no console)
+  return c.json({ conta: !!(await db.prepare('SELECT 1 FROM clientes WHERE whatsapp = ?1').bind(whatsapp).first()) })
+})
+
+/** segundo passo: o e-mail da conta confirma que é ela, e a senha nova já vale */
+contas.post('/esqueci/senha', async (c) => {
+  const db = c.env.DB
+  const corpo = await lerCorpo(c)
+  const whatsapp = lerWhatsApp(corpo.whatsapp)
+  const doNumero = `esqueci-conta:${whatsapp}`
+  const doIp = `esqueci-conta-ip:${c.req.header('CF-Connecting-IP') ?? 'local'}`
+  if ((await usou(db, doNumero, HORA)) >= EMAILS_ERRADOS_POR_CONTA || (await usou(db, doIp, HORA)) >= EMAILS_ERRADOS_POR_IP)
+    throw falha(429, 'Muitas tentativas erradas. Espere 1 hora ou fale com a loja pelo WhatsApp.')
+  const email = texto(corpo.email, 'o e-mail da conta', 200, true).toLowerCase()
+  const senha = validarSenha(corpo.senha, SENHA_MINIMA)
+
+  const conta = await db.prepare('SELECT id, whatsapp, email FROM clientes WHERE whatsapp = ?1').bind(whatsapp).first<{ id: number; whatsapp: string; email: string }>()
+  if (!conta) throw falha(404, SEM_CONTA)
+  if (conta.email.toLowerCase() !== email) {
+    await contar(db, doNumero, HORA)
+    await contar(db, doIp, HORA)
+    throw falha(403, EMAIL_ERRADO)
+  }
+  return c.json(await trocarSenha(db, conta, senha, c.env.SENHA_PEPPER))
 })

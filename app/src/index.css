@@ -5227,6 +5227,16 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   justify-self: stretch;
 }
 
+/* "Esqueci minha senha" com um número sem conta: o aviso e o caminho para criar */
+.conta-sem {
+  display: grid;
+  gap: 12px;
+}
+
+.conta-sem .pilula {
+  justify-self: stretch;
+}
+
 /* "Ainda não tem conta?" separado do entrar por uma linha fina */
 .conta-criar {
   padding-top: 22px;

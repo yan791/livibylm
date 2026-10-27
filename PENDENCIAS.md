@@ -126,8 +126,9 @@ Antes de pagar, a sacola pede a conta: "Entrar" (WhatsApp e senha) e, embaixo, "
 - Cada pedido do site fica na conta (`pedidos.cliente_id`), e a aba "Pedidos" mostra os da conta em qualquer aparelho. Nome, WhatsApp e e-mail do pedido vêm da conta; a próxima compra já vem com a última entrega e o CPF.
 - Sem SMS: um pedido antigo só entra na conta com o código guardado no aparelho e o mesmo WhatsApp. Vendas do painel e compras de teste nunca aparecem numa conta.
 - Limites: 20 contas novas por IP por hora; 5 senhas erradas por número e 20 por IP a cada 15 minutos.
-- **Esqueceu a senha:** a cliente chama no WhatsApp. No painel, na página de um pedido dela, "Esqueceu a senha? Gerar link" cria um link de senha nova (24 horas, uma vez só) para mandar pelo WhatsApp da conta. Página `/nova-senha/<link>` no site.
-- Testes: `app/test/contas.test.ts` (35, inclusive 6 clientes entrando ao mesmo tempo e a mesma cliente em 6 aparelhos).
+- **Esqueceu a senha (27/10), no próprio site:** "Esqueci minha senha" pede o WhatsApp. Se o número tem conta, pede o e-mail que ela pôs ao criar a conta e a senha nova, e já entra; a senha velha e os outros aparelhos saem. Se não tem conta, na sacola leva para "Criar conta e continuar" com o número já preenchido; na aba Pedidos, para a sacola. Só o número não basta porque quem soubesse o WhatsApp de outra cliente veria o CPF e o endereço dela. Limites: 30 números consultados por IP a cada 15 minutos; 5 e-mails errados por número e 20 por IP a cada hora. Rotas `POST /api/conta/esqueci` e `/api/conta/esqueci/senha`.
+- Quem não lembra o e-mail toca em "Não lembro o e-mail" e fala com a loja: no painel, na página de um pedido dela, "Esqueceu a senha? Gerar link" cria um link de senha nova (24 horas, uma vez só) para mandar pelo WhatsApp da conta. Página `/nova-senha/<link>` no site.
+- Testes: `app/test/contas.test.ts` (44, inclusive 6 clientes entrando ao mesmo tempo, a mesma cliente em 6 aparelhos e 6 trocando a senha ao mesmo tempo).
 
 ## Verificação em duas etapas do painel, feita (22/10)
 

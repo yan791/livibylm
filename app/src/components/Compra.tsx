@@ -61,6 +61,8 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
   const dentro = sessao.situacao === 'dentro'
   // sem conta aberta: primeiro a tela de entrar; "Criar conta e continuar" leva para os dados
   const [criando, setCriando] = useState(false)
+  // o WhatsApp do "Esqueci minha senha" que não tinha conta: a conta nova já vem com ele
+  const [numero, setNumero] = useState('')
 
   if (sessao.situacao === 'carregando')
     return (
@@ -73,15 +75,19 @@ export function Compra({ itens, voltar }: { itens: Item[]; voltar: () => void })
       </div>
     )
 
-  if (!dentro && !criando) return <Acesso itens={itens} voltar={voltar} criar={() => setCriando(true)} />
-  return <Formulario itens={itens} voltar={voltar} entrar={() => setCriando(false)} />
+  const criar = (whatsapp = '') => {
+    setNumero(whatsapp)
+    setCriando(true)
+  }
+  if (!dentro && !criando) return <Acesso itens={itens} voltar={voltar} criar={criar} />
+  return <Formulario itens={itens} voltar={voltar} whatsapp={numero} entrar={() => setCriando(false)} />
 }
 
 /** total das peças, sem a entrega */
 const totalPecas = (itens: Item[]) => itens.reduce((s, i) => s + i.peca.preco * i.qtd, 0)
 
 /** antes dos dados: entrar na conta ou criar uma */
-function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; criar: () => void }) {
+function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; criar: (whatsapp?: string) => void }) {
   return (
     <div className="compra">
       <div className="compra-corpo">
@@ -89,7 +95,7 @@ function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; c
           <SetaEsquerda className="ico" /> Voltar para a sacola
         </button>
 
-        <Entrar titulo="Entrar" texto="Se você já tem conta, entre com o seu WhatsApp e a senha." />
+        <Entrar titulo="Entrar" texto="Se você já tem conta, entre com o seu WhatsApp e a senha." criar={criar} />
 
         <section className="compra-bloco conta-criar" aria-labelledby="conta-criar-titulo">
           <h3 className="conta-titulo" id="conta-criar-titulo">
@@ -98,7 +104,7 @@ function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; c
           <p className="conta-texto">
             Crie agora, junto com os dados da compra. Com ela você acompanha os seus pedidos de qualquer aparelho.
           </p>
-          <button type="button" className="pilula" onClick={criar}>
+          <button type="button" className="pilula" onClick={() => criar()}>
             Criar conta e continuar
           </button>
         </section>
@@ -123,10 +129,10 @@ function Acesso({ itens, voltar, criar }: { itens: Item[]; voltar: () => void; c
 }
 
 /** os dados da compra; sem conta aberta, também os da conta nova (com a senha) */
-function Formulario({ itens, voltar, entrar }: { itens: Item[]; voltar: () => void; entrar: () => void }) {
+function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; voltar: () => void; whatsapp?: string; entrar: () => void }) {
   const sessao = useConta()
   const conta = sessao.situacao === 'dentro' ? sessao : null
-  const [dados, setDados] = useState({ nome: '', whatsapp: '', email: '', cpf: '', senha: '' })
+  const [dados, setDados] = useState({ nome: '', whatsapp, email: '', cpf: '', senha: '' })
   const [cep, setCep] = useState('')
   const [endereco, setEndereco] = useState({ rua: '', numero: '', complemento: '', bairro: '', cidade: '' })
   const [frete, setFrete] = useState<Frete | null>(null)
