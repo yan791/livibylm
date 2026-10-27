@@ -20,7 +20,7 @@ import { cabecalhoConta, criarConta, sairDaConta, SENHA_MINIMA, sessaoEncerrada,
 import { SetaEsquerda, WhatsApp } from './icones'
 import { LinkPolitica } from '../paginas/Politica'
 import { guardarPedido } from '../lib/meus-pedidos'
-import { Campo, CampoSenha } from './Campo'
+import { Campo, CampoSenha, CampoWhatsApp, WHATSAPP_INCOMPLETO, whatsappCompleto } from './Campo'
 import { Entrar } from './Entrar'
 
 type Item = ReturnType<typeof detalhar>[number]
@@ -188,6 +188,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
       if (dados.nome.trim().length < 3) return 'Preencha seu nome completo.'
       if (!dados.email.trim()) return 'Preencha seu e-mail.'
       if (!dados.whatsapp.trim()) return 'Preencha seu WhatsApp, com DDD.'
+      if (!whatsappCompleto(dados.whatsapp)) return WHATSAPP_INCOMPLETO
       if (dados.senha.length < SENHA_MINIMA) return `Crie uma senha com pelo menos ${SENHA_MINIMA} caracteres.`
     }
     if (digitos.length !== 8) return 'Preencha o CEP.'
@@ -277,12 +278,9 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
             </p>
             <Campo rotulo="Nome completo" valor={dados.nome} mudar={campo('nome')} autoComplete="name" />
             <Campo rotulo="E-mail" valor={dados.email} mudar={campo('email')} tipo="email" autoComplete="email" />
-            <Campo
-              rotulo="WhatsApp, com DDD"
+            <CampoWhatsApp
               valor={dados.whatsapp}
               mudar={campo('whatsapp')}
-              tipo="tel"
-              autoComplete="username"
               dica="É por ele que a gente fala sobre o pedido, e é com ele que você entra na conta."
             />
             <CampoSenha

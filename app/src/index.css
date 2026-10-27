@@ -4578,6 +4578,11 @@ html[data-movimento='reduzido'] .lk-bloco-info {
     box-shadow 0.2s var(--ease);
 }
 
+.compra-campo input::placeholder {
+  color: var(--taupe);
+  opacity: 0.55;
+}
+
 .compra-campo input:focus {
   outline: none;
   border-color: var(--vinho);

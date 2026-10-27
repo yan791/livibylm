@@ -10,7 +10,7 @@ import { useState, type FormEvent } from 'react'
 import { linkWhatsApp } from '../dados/site'
 import { conferirNumero, entrarNaConta, SENHA_MINIMA, trocarSenhaEsquecida } from '../lib/conta'
 import { abrirGaveta } from '../lib/lista'
-import { Campo, CampoSenha } from './Campo'
+import { Campo, CampoSenha, CampoWhatsApp, WHATSAPP_INCOMPLETO, whatsappCompleto } from './Campo'
 
 type Props = {
   titulo: string
@@ -29,6 +29,7 @@ export function Entrar({ titulo, texto, criar }: Props) {
   const entrar = async (e: FormEvent) => {
     e.preventDefault()
     if (!whatsapp.trim() || !senha) return setErro('Preencha o seu WhatsApp e a senha.')
+    if (!whatsappCompleto(whatsapp)) return setErro(WHATSAPP_INCOMPLETO)
     setEnviando(true)
     setErro(await entrarNaConta(whatsapp, senha))
     setEnviando(false)
@@ -51,7 +52,7 @@ export function Entrar({ titulo, texto, criar }: Props) {
     <form className="compra-bloco conta-entrar" onSubmit={entrar} noValidate>
       <h3 className="conta-titulo">{titulo}</h3>
       <p className="conta-texto">{texto}</p>
-      <Campo rotulo="WhatsApp, com DDD" valor={whatsapp} mudar={setWhatsapp} tipo="tel" autoComplete="username" />
+      <CampoWhatsApp valor={whatsapp} mudar={setWhatsapp} />
       <CampoSenha rotulo="Senha" valor={senha} mudar={setSenha} />
       {erro && (
         <p className="compra-erro" role="alert">
@@ -91,6 +92,7 @@ function EsqueciSenha({
   const procurar = async (e: FormEvent) => {
     e.preventDefault()
     if (!whatsapp.trim()) return setErro('Digite o WhatsApp da sua conta.')
+    if (!whatsappCompleto(whatsapp)) return setErro(WHATSAPP_INCOMPLETO)
     setEnviando(true)
     setErro('')
     const r = await conferirNumero(whatsapp)
@@ -140,15 +142,12 @@ function EsqueciSenha({
     <form className="compra-bloco conta-entrar" onSubmit={procurar} noValidate>
       <h3 className="conta-titulo">Esqueceu a senha?</h3>
       <p className="conta-texto">Digite o WhatsApp da sua conta para criar uma senha nova.</p>
-      <Campo
-        rotulo="WhatsApp, com DDD"
+      <CampoWhatsApp
         valor={whatsapp}
         mudar={(v) => {
           mudarWhatsapp(v)
           setSemConta(false)
         }}
-        tipo="tel"
-        autoComplete="username"
       />
       {aviso}
       {semConta ? (
