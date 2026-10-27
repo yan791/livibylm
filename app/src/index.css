@@ -1204,6 +1204,13 @@ img {
   align-items: center;
 }
 
+/* até 460 px: a foto tem 1086 px, e assim fica nítida também em tela de alta resolução */
+.sobre-foto {
+  width: 100%;
+  max-width: 460px;
+  justify-self: center;
+}
+
 .sobre-foto img {
   display: block;
   width: 100%;
