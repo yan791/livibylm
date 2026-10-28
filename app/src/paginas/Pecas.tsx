@@ -31,7 +31,7 @@ import { BotaoDesejo } from '../components/Desejos'
 import { WhatsApp } from '../components/icones'
 
 const ease = [0.22, 1, 0.36, 1] as const
-const TITULO_SITE = 'Livi by LM | Moda feminina autoral'
+const TITULO_SITE = 'Liví by LM | Moda feminina autoral'
 const quantas = (n: number) => `${n} ${n === 1 ? 'peça' : 'peças'}`
 
 export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
@@ -57,7 +57,7 @@ export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
 
   // o catálogo aberto por cima cuida do título da aba enquanto estiver aberto
   useLayoutEffect(() => {
-    if (!document.documentElement.dataset.catalogo) document.title = `${nome} | Livi by LM`
+    if (!document.documentElement.dataset.catalogo) document.title = `${nome} | Liví by LM`
   }, [nome])
 
   // tipo ou tamanho que não existe mais (link antigo, peça que saiu do site): fica o endereço certo
@@ -196,7 +196,7 @@ export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
               </button>
               <a
                 className="pilula"
-                href={linkWhatsApp(`Olá! Vim pelo site da Livi e procuro ${nome.toLowerCase()} no tamanho ${rotuloCurto(filtro.tamanho ?? '')}.`)}
+                href={linkWhatsApp(`Olá! Vim pelo site da Liví e procuro ${nome.toLowerCase()} no tamanho ${rotuloCurto(filtro.tamanho ?? '')}.`)}
                 target="_blank"
                 rel="noreferrer"
               >

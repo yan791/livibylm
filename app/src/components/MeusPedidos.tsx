@@ -273,7 +273,7 @@ function ListaPedidos({ fechar, entrar }: { fechar: () => void; entrar: () => vo
             </button>
           </>
         )}
-        <a className="pilula" href={linkWhatsApp('Olá! Fiz um pedido no site da Livi e queria saber dele.')} target="_blank" rel="noreferrer">
+        <a className="pilula" href={linkWhatsApp('Olá! Fiz um pedido no site da Liví e queria saber dele.')} target="_blank" rel="noreferrer">
           <WhatsApp className="ico" /> Falar no WhatsApp
         </a>
       </div>

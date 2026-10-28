@@ -308,7 +308,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
           {frete?.estado === 'pronto' && !opcoes.length && (
             <p className="compra-aviso">
               Ainda não entregamos nesse CEP pelo site.{' '}
-              <a href={linkWhatsApp('Olá! Vim pelo site da Livi e queria saber da entrega para o meu CEP: ' + comHifen(digitos))} target="_blank" rel="noreferrer">
+              <a href={linkWhatsApp('Olá! Vim pelo site da Liví e queria saber da entrega para o meu CEP: ' + comHifen(digitos))} target="_blank" rel="noreferrer">
                 Fale com a gente pelo WhatsApp
               </a>
               .

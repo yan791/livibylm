@@ -15,7 +15,7 @@ definirMovimento()
 function SemCatalogo() {
   return (
     <main className="sem-catalogo">
-      <p className="sem-catalogo-marca">Livi</p>
+      <p className="sem-catalogo-marca">Liví</p>
       <p>Não conseguimos carregar as peças agora.</p>
       <button type="button" onClick={() => location.reload()}>
         Tentar de novo

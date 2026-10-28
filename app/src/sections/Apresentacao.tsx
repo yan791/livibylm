@@ -116,7 +116,7 @@ export function Apresentacao() {
 
         <h1 className="ap-palavras">
           <span className="sr-only">
-            Livi by LM, {a.esquerda} {a.direita}
+            Liví by LM, {a.esquerda} {a.direita}
           </span>
           {/* a entrada anima por dentro e a rolagem (GSAP) por fora: se os dois mexessem no
               mesmo elemento, ao mudar o tamanho da tela o GSAP o devolveria invisível */}
@@ -193,7 +193,7 @@ export function Apresentacao() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, ease, delay: 0.2 + d0 }}
           >
-            <a href={comBase('/')} className="ap-logo" aria-label="Livi by LM, início" onClick={(e) => e.preventDefault()}>
+            <a href={comBase('/')} className="ap-logo" aria-label="Liví by LM, início" onClick={(e) => e.preventDefault()}>
               <Logo claro />
             </a>
             <nav className="ap-menu" aria-label="Menu principal">

@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 /* ============================================================
-   IDENTIDADE LIVI: cores e fontes
+   IDENTIDADE LIVÍ: cores e fontes
    ============================================================ */
 :root {
   --creme: #f4efea;
@@ -1360,10 +1360,14 @@ img {
   transform: rotate(0deg);
 }
 
-.comprar-duvidas details p {
+.comprar-resposta {
   padding-bottom: 22px;
   font-size: 0.95rem;
   line-height: 1.7;
+}
+
+.comprar-resposta .medidas {
+  margin-top: 16px;
 }
 
 .comprar-chamada {
@@ -2455,6 +2459,73 @@ html[data-catalogo]:has(.gaveta) {
   opacity: 0.85;
 }
 
+/* "Guia de medidas" da peça: abre a tabela logo abaixo dos tamanhos */
+.cat-medidas {
+  margin-top: 12px;
+}
+
+.cat-medidas summary {
+  display: inline-block;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.85;
+}
+
+.cat-medidas summary::-webkit-details-marker {
+  display: none;
+}
+
+.cat-medidas summary:hover,
+.cat-medidas[open] summary {
+  opacity: 1;
+}
+
+.cat-medidas .medidas {
+  margin-top: 12px;
+}
+
+/* tabela de medidas (cm), no "Como comprar" e na peça; as cores seguem o texto, então serve no fundo claro e no escuro */
+.medidas {
+  width: 100%;
+  max-width: 420px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.medidas caption {
+  caption-side: bottom;
+  padding-top: 8px;
+  font-size: 0.75rem;
+  text-align: left;
+  opacity: 0.7;
+}
+
+.medidas th,
+.medidas td {
+  padding: 8px 6px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.medidas thead th {
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.medidas tbody th {
+  font-weight: 500;
+}
+
+.medidas tr.ativo {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+
 .cat-aviso {
   margin-top: 8px;
   font-size: 0.82rem;
@@ -2984,7 +3055,8 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   left: 0;
   right: 0;
   top: 9svh;
-  padding: 0.14em 0 0.22em;
+  /* em cima, o espaço do acento do Í (LIVÍ), para ele não subir até a barra do topo */
+  padding: 0.24em 0 0.22em;
   text-align: center;
   font-weight: 600;
   line-height: 0.82;

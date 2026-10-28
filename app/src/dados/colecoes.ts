@@ -1,5 +1,5 @@
 /*
-  COLEÇÕES E PEÇAS DA LIVI
+  COLEÇÕES E PEÇAS DA LIVÍ
   Agora moram no banco da loja e são editadas pelo painel (/painel), junto
   com os ajustes da loja (WhatsApp e parcelamento), que chegam no mesmo pacote.
   - Publicado pelo Worker: tudo já vem dentro da página (<script id="livi-loja">).

@@ -142,7 +142,7 @@ export function mensagemSacola(lista: ItemSacola[]) {
   )
   const total = itens.reduce((s, i) => s + i.peca.preco * i.qtd, 0)
   return [
-    `Olá! Vim pelo site da Livi e separei ${varias ? 'estas peças' : 'esta peça'}:`,
+    `Olá! Vim pelo site da Liví e separei ${varias ? 'estas peças' : 'esta peça'}:`,
     ...pecas,
     varias ? `*Total: ${precoBR(total)}*` : '',
     'Podemos combinar o pagamento e a entrega?',

@@ -89,7 +89,7 @@ const acompanhar = (p: Pick<Pedido, 'codigo' | 'origem'>, texto = 'Acompanhe o s
 
 /** link de senha nova da conta do site (vale por 24 horas e uma vez só) */
 export const mensagemSenhaNova = (nome: string, link: string) =>
-  `Oi, ${primeiroNome(nome)}! Para criar uma senha nova na sua conta do site da Livi, é só abrir este link (ele vale por 24 horas):\n\n${link}`
+  `Oi, ${primeiroNome(nome)}! Para criar uma senha nova na sua conta do site da Liví, é só abrir este link (ele vale por 24 horas):\n\n${link}`
 
 /** "pagamento confirmado": a primeira mensagem depois que a compra cai */
 export function mensagemConfirmacao(p: Pedido) {
@@ -99,7 +99,7 @@ export function mensagemConfirmacao(p: Pedido) {
       ? 'Vamos combinar o melhor horário para a entrega por aqui.'
       : 'Vamos combinar a entrega por aqui.'
   return [
-    `Oi, ${primeiroNome(p.nome)}! Aqui é da Livi.`,
+    `Oi, ${primeiroNome(p.nome)}! Aqui é da Liví.`,
     `Recebemos o seu pedido nº ${p.id} e o pagamento está confirmado. ${proximo}`,
     ...acompanhar(p),
     'Obrigada pela compra!',
@@ -108,7 +108,7 @@ export function mensagemConfirmacao(p: Pedido) {
 
 /** "seu pedido foi enviado": com o código de rastreio, nos Correios */
 export function mensagemEnvio(p: Pedido) {
-  const oi = `Oi, ${primeiroNome(p.nome)}! Aqui é da Livi.`
+  const oi = `Oi, ${primeiroNome(p.nome)}! Aqui é da Liví.`
   if (pelosCorreios(p.entrega) && p.rastreio)
     return [
       oi,

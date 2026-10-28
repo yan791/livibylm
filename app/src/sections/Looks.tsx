@@ -133,7 +133,7 @@ export function Looks() {
           <CircularGallery
             ref={galeria}
             items={itens}
-            label="Coleções Livi"
+            label="Coleções Liví"
             gap={celular ? 16 : 40}
             paused={catalogoAberto}
             onActiveChange={aoTrocar}

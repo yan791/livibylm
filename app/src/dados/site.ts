@@ -7,7 +7,7 @@ import { comBase } from '../lib/base'
 import { ajustes, colecoes, precoBR, rotuloTamanho, type Colecao, type Peca } from './colecoes'
 
 export const site = {
-  marca: 'Livi',
+  marca: 'Liví',
   assinatura: 'by LM',
   instagram: 'https://www.instagram.com/livibylm/',
   instagramArroba: '@livibylm',
@@ -23,7 +23,7 @@ export const site = {
 
   /** abertura (versão do Yan): o nome da marca gigante, como o título de uma revista, e a coleção em destaque */
   abertura: {
-    marca: 'LIVI',
+    marca: 'LIVÍ',
     esquerda: 'Coleção',
     direita: 'Velvet',
     /** coleção atual: o menu "Coleções" abre o catálogo por ela (se ela sair do site pelo painel, abre a primeira) */
@@ -52,6 +52,14 @@ export const site = {
   ],
 }
 
+/** tabela de medidas da Liví, em centímetros (aparece no "Como comprar" e no "Guia de medidas" da peça) */
+export const medidas = [
+  { tamanho: 'PP', busto: 86, cintura: 67, quadril: 98 },
+  { tamanho: 'P', busto: 90, cintura: 70, quadril: 100 },
+  { tamanho: 'M', busto: 94, cintura: 74, quadril: 104 },
+  { tamanho: 'G', busto: 98, cintura: 78, quadril: 108 },
+]
+
 /*
   MENSAGENS DO WHATSAPP
   Cada botão abre a conversa com uma mensagem pronta, de acordo com o pedido.
@@ -59,11 +67,11 @@ export const site = {
 */
 export const mensagens = {
   /** topo, menu, abertura e rodapé */
-  geral: 'Olá! Vim pelo site da Livi e gostaria de atendimento.',
+  geral: 'Olá! Vim pelo site da Liví e gostaria de atendimento.',
   /** "Disponível agora" */
-  disponiveis: 'Olá! Vim pelo site da Livi e gostaria de conhecer as peças disponíveis.',
+  disponiveis: 'Olá! Vim pelo site da Liví e gostaria de conhecer as peças disponíveis.',
   /** "Ficou com alguma dúvida?" (como comprar): termina com dois-pontos para a cliente escrever a dúvida */
-  duvida: 'Olá! Vim pelo site da Livi e fiquei com uma dúvida:',
+  duvida: 'Olá! Vim pelo site da Liví e fiquei com uma dúvida:',
 }
 
 export function linkWhatsApp(mensagem = mensagens.geral) {
@@ -73,7 +81,7 @@ export function linkWhatsApp(mensagem = mensagens.geral) {
 /** "Quero essa peça": uma peça, com cor e tamanho escolhidos */
 export function mensagemPeca(colecao: Colecao, peca: Peca, cor: string, tamanho: string) {
   return [
-    'Olá! Vim pelo site da Livi e tenho interesse nesta peça:',
+    'Olá! Vim pelo site da Liví e tenho interesse nesta peça:',
     [`*${peca.nome}*`, `Coleção ${colecao.nome}`, `Cor: ${cor}`, `Tamanho: ${rotuloTamanho(tamanho)}`, `Valor: ${precoBR(peca.preco)}`].join('\n'),
     'Está disponível nesse tamanho?',
   ].join('\n\n')
@@ -82,7 +90,7 @@ export function mensagemPeca(colecao: Colecao, peca: Peca, cor: string, tamanho:
 /** peça esgotada: a cliente pergunta se ela volta */
 export function mensagemEsgotada(colecao: Colecao, peca: Peca) {
   return [
-    'Olá! Vim pelo site da Livi e gostei desta peça, que está esgotada:',
+    'Olá! Vim pelo site da Liví e gostei desta peça, que está esgotada:',
     [`*${peca.nome}*`, `Coleção ${colecao.nome}`].join('\n'),
     'Ela vai voltar?',
   ].join('\n\n')

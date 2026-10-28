@@ -24,12 +24,12 @@ export function NovaSenha({ link }: { link: string }) {
   useLayoutEffect(() => rolarPara(0, { imediato: true }), [])
 
   useEffect(() => {
-    document.title = 'Senha nova · Livi'
+    document.title = 'Senha nova · Liví'
     let vivo = true
     void conferirLinkSenha(link).then((r) => vivo && setEstado(r))
     return () => {
       vivo = false
-      document.title = 'Livi by LM | Moda feminina autoral'
+      document.title = 'Liví by LM | Moda feminina autoral'
     }
   }, [link])
 
@@ -61,7 +61,7 @@ export function NovaSenha({ link }: { link: string }) {
             <h1 className="pedido-titulo">Este link não vale mais.</h1>
             <p className="pedido-texto">{estado.erro}</p>
             <div className="pedido-botoes">
-              <a className="pilula cheia" href={linkWhatsApp('Olá! O link de senha nova da minha conta no site da Livi não abriu. Pode mandar outro?')} target="_blank" rel="noreferrer">
+              <a className="pilula cheia" href={linkWhatsApp('Olá! O link de senha nova da minha conta no site da Liví não abriu. Pode mandar outro?')} target="_blank" rel="noreferrer">
                 <WhatsApp className="ico" /> Pedir outro link
               </a>
             </div>

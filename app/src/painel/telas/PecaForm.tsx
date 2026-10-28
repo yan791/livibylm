@@ -9,7 +9,7 @@ import { descartarFotos, enviarFoto, pequena } from '../imagem'
 import { aoClicar, ir, segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, confirmar, FalhaCarga, Icone, Interruptor, useCarregar } from '../ui'
 
-/** tamanhos que aparecem como opção, nessa ordem; a peça nova já vem com a grade da Livi (sem o GG) */
+/** tamanhos que aparecem como opção, nessa ordem; a peça nova já vem com a grade da Liví (sem o GG) */
 const PADRAO = ['PP', 'P', 'M', 'G', 'GG']
 const GRADE_NOVA = ['PP', 'P', 'M', 'G']
 const MAX_FOTOS = 10

@@ -394,7 +394,7 @@ function FolhaImpressa({ p, endereco, whatsappLoja }: { p: Pedido; endereco: str
   return (
     <section className="folha" aria-hidden="true">
       <header>
-        <p className="folha-marca">Livi</p>
+        <p className="folha-marca">Liví</p>
         <div>
           <p className="folha-numero">Pedido nº {p.id}</p>
           <p>{dataCompleta(p.criadoEm)}</p>

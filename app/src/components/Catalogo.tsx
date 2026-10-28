@@ -23,7 +23,7 @@ import {
   type Colecao,
   type Peca,
 } from '../dados/colecoes'
-import { linkWhatsApp, mensagemEsgotada, mensagemPeca } from '../dados/site'
+import { linkWhatsApp, medidas, mensagemEsgotada, mensagemPeca } from '../dados/site'
 import {
   corrigirEndereco,
   fecharCatalogo,
@@ -45,6 +45,7 @@ import { Espaco, Ph } from './Espaco'
 import { BotaoDesejos, BotaoSacola } from './Gaveta'
 import { BotaoDesejo } from './Desejos'
 import { Fechar, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
+import { TabelaMedidas } from './Medidas'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
@@ -91,7 +92,7 @@ export function Catalogo() {
       return
     }
     tituloAntes.current ??= document.title
-    document.title = peca ? `${peca.nome} | Coleção ${colecao.nome} | Livi by LM` : `Coleção ${colecao.nome} | Livi by LM`
+    document.title = peca ? `${peca.nome} | Coleção ${colecao.nome} | Liví by LM` : `Coleção ${colecao.nome} | Liví by LM`
   }, [colecao, peca])
 
   useEffect(() => {
@@ -438,6 +439,12 @@ function Detalhe({ colecao, peca, lista }: { colecao: Colecao; peca: Peca; lista
             })}
           </div>
           {!peca.sobEncomenda && restam === 1 && <p className="cat-ultima">Última unidade nesse tamanho</p>}
+          {peca.tamanhos.some((t) => medidas.some((m) => m.tamanho === t)) && (
+            <details className="cat-medidas">
+              <summary>Guia de medidas</summary>
+              <TabelaMedidas destaque={tamanho} />
+            </details>
+          )}
           {peca.modelo.altura && peca.modelo.veste && (
             <p className="cat-modelo">
               A modelo tem <Ph>{peca.modelo.altura}</Ph> e veste <Ph>{peca.modelo.veste}</Ph>.
