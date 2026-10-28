@@ -16,18 +16,19 @@ As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations
   - os textos das coleções Sinfonia e Brasil (escritos a partir das fotos) e a ordem das coleções.
 - **Ainda não tem no site:** o preço "de/por" das peças em promoção. Elas aparecem só com o preço atual.
 
-### 2. Domínio `livibylm.com.br`
+### 2. Domínio `livibylm.com.br`: no ar desde 28/10/2026
+
+**Como publicar agora:** o site, o painel e a API moram só no Worker da Cloudflare. Quem publica é o `npm run publicar` (dentro de `app`). O push no `ajustes` não atualiza mais o site: o GitHub Pages só leva os links antigos (`yan791.github.io/livibylm/...`) para o domínio.
 
 1. **Livia:** registrar no Registro.br. **Feito em 27/10/2026.** O domínio nasceu com o DNS do próprio Registro.br (`a.auto.dns.br` e `b.auto.dns.br`) e com DNSSEC ligado.
-2. **Yan:** pôr o domínio na Cloudflare (plano grátis), na mesma conta do Worker. A Cloudflare mostra dois servidores de DNS.
-3. **Livia:** no Registro.br, trocar os servidores de DNS do domínio pelos da Cloudflare. A troca leva algumas horas.
-   - Conferir se o DNSSEC (registro DS) saiu junto. Se ficar o DS antigo, o domínio não abre em boa parte da internet.
-4. **Código: pronto (27/10), esperando a Cloudflare marcar o domínio como Ativo.**
+2. **Yan:** pôr o domínio na Cloudflare (plano grátis), na mesma conta do Worker. **Feito em 27/10.** Servidores: `quincy.ns.cloudflare.com` e `samara.ns.cloudflare.com`.
+3. **Livia:** no Registro.br, trocar os servidores de DNS do domínio pelos da Cloudflare. **Feito em 28/10.** O DS do DNSSEC saiu sozinho, e o domínio ficou Ativo na Cloudflare às 12h15.
+4. **Código: publicado em 28/10** (Worker `0e6f4172`).
    - O Worker responde em `livibylm.com.br` e `www.livibylm.com.br` (`routes` com `custom_domain` em `app/wrangler.jsonc`), e o `workers.dev` continua ligado.
    - `SITE_PUBLICO` = `https://livibylm.com.br`. Páginas e painel abertos pelo `workers.dev`, pelo `www` ou por `http` vão para o domínio, com o mesmo caminho (301). A API e as fotos respondem em qualquer endereço, porque os pedidos antigos mandam o aviso de pagamento para o `workers.dev`.
    - O GitHub Pages (`.github/workflows/publicar.yml`) não gera mais o site: publica só uma página que leva cada caminho antigo (`/livibylm/...`) para o mesmo caminho no domínio.
    - A prévia do link no WhatsApp e no Instagram (`og:url` e `og:image` em `app/index.html`) usa o domínio.
-5. **Yan:** `npm run publicar` e, depois de conferir o domínio no ar, `git push origin main main:ajustes`. Publicar o GitHub Pages antes manda as pessoas para um domínio que ainda não abre.
+5. **Yan:** `npm run publicar` e o redirecionamento do GitHub. **Feito em 28/10.** Conferido: site, página Peças, sacola, painel, `www`, `http`, `workers.dev` e os links antigos do GitHub.
 6. **Na Cloudflare, depois:** uma regra de limite por IP para `/api/*` (o plano grátis tem uma).
    - **Não ligar o "Bot Fight Mode"** (modo anti-robô). Ele barra o aviso de pagamento da InfinitePay, que é um robô, e no plano grátis não dá para abrir exceção.
    - DNSSEC na Cloudflare: opcional. Ligar em DNS > Configurações e copiar o DS para o Registro.br.
