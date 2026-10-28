@@ -107,7 +107,7 @@ export function GuiaRolar({ ar, escuro = false }: { ar: number; escuro?: boolean
 /** faixa contínua com os nomes das coleções */
 export function FaixaColecoes({ escura = false, reverso = false }: { escura?: boolean; reverso?: boolean }) {
   return (
-    <section className={cn('faixa', escura && 'escura')} aria-label="Coleções Livi">
+    <section className={cn('faixa', escura && 'escura')} aria-label="Coleções Liví">
       <InfiniteSlider gap={0} speed={38} speedOnHover={14} reverse={reverso}>
         {colecoes.map((c) => (
           <a

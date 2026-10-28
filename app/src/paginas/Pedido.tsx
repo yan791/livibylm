@@ -57,7 +57,7 @@ export function Pedido({ codigo }: { codigo: string }) {
   useLayoutEffect(() => rolarPara(0, { imediato: true }), [])
 
   useEffect(() => {
-    document.title = 'Seu pedido · Livi'
+    document.title = 'Seu pedido · Liví'
     let vivo = true
     let relogio: ReturnType<typeof setTimeout> | undefined
     // o endereço fica limpo (sem os dados da transação) para compartilhar ou recarregar
@@ -86,7 +86,7 @@ export function Pedido({ codigo }: { codigo: string }) {
     return () => {
       vivo = false
       clearTimeout(relogio)
-      document.title = 'Livi by LM | Moda feminina autoral'
+      document.title = 'Liví by LM | Moda feminina autoral'
     }
   }, [codigo, dados])
 
@@ -99,7 +99,7 @@ export function Pedido({ codigo }: { codigo: string }) {
       )
   }, [pedido, codigo])
 
-  const conversa = (n?: number) => linkWhatsApp(n ? `Olá! Fiz o pedido nº ${n} no site da Livi e queria falar sobre ele.` : undefined)
+  const conversa = (n?: number) => linkWhatsApp(n ? `Olá! Fiz o pedido nº ${n} no site da Liví e queria falar sobre ele.` : undefined)
   const verColecoes = () => {
     navegar('/', { semTransicao: true })
     requestAnimationFrame(() => mostrarCatalogo(site.abertura.colecao))
@@ -241,7 +241,7 @@ export function Pedido({ codigo }: { codigo: string }) {
             </a>
           )}
           <a className={p.situacao === 'aguardando' ? 'pilula' : 'pilula cheia'} href={conversa(p.numero)} target="_blank" rel="noreferrer">
-            <WhatsApp className="ico" /> Falar com a Livi
+            <WhatsApp className="ico" /> Falar com a Liví
           </a>
           {p.situacao !== 'aguardando' && (
             <button type="button" className="pilula" onClick={verColecoes}>

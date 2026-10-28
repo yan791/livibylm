@@ -1,5 +1,5 @@
 /*
-  Cortina de entrada (versão do Yan): abertura rápida em vinho com "LIVI"
+  Cortina de entrada (versão do Yan): abertura rápida em vinho com "LIVÍ"
   subindo letra a letra, só na primeira visita da sessão e só na página
   inicial. A abertura espera a cortina sair para começar a entrar.
 */
@@ -58,7 +58,7 @@ export function Cortina() {
           transition={{ duration: 0.95, ease: [0.76, 0, 0.24, 1] }}
         >
           <div className="cortina-marca">
-            {'LIVI'.split('').map((l, i) => (
+            {'LIVÍ'.split('').map((l, i) => (
               <motion.span
                 key={i}
                 initial={{ y: '110%', opacity: 0 }}

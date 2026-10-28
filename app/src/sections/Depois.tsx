@@ -9,6 +9,7 @@ import { linkWhatsApp, mensagens, site } from '../dados/site'
 import { ajustes, precoBR } from '../dados/colecoes'
 import { LinkPolitica } from '../paginas/Politica'
 import { Ph } from '../components/Espaco'
+import { TabelaMedidas } from '../components/Medidas'
 import { comBase } from '../lib/base'
 import { Ima, TituloVivo } from '../components/Vivos'
 import {
@@ -86,20 +87,20 @@ export function Sobre() {
   return (
     <section className="sobre" id="sobre" aria-labelledby="sobre-titulo">
       <motion.div className="sobre-foto" {...aparece}>
-        <img src={comBase('/img/criadora.webp')} alt="Lívia Moraes, criadora da Livi" width={1086} height={1448} loading="lazy" decoding="async" />
+        <img src={comBase('/img/criadora.webp')} alt="Lívia Moraes, criadora da Liví" width={1086} height={1448} loading="lazy" decoding="async" />
       </motion.div>
       <motion.div className="sobre-texto" {...aparece} transition={{ ...aparece.transition, delay: 0.1 }}>
         <p className="sobretitulo">A criadora</p>
         <TituloVivo id="sobre-titulo" className="titulo-secao" partes={['Por trás de cada peça,', 'quebra', { em: 'um olhar.' }]} />
         <p>
-          A Livi leva as iniciais de quem desenha cada peça: LM, de Lívia Moraes. Ela cria pensando no caimento, no
+          A Liví leva as iniciais de quem desenha cada peça: LM, de Lívia Moraes. Ela cria pensando no caimento, no
           tecido e em como a roupa acompanha quem veste.
         </p>
         <p>
           <Ph>[Contar aqui, em duas ou três frases, como a marca começou. Confirmar com a cliente.]</Ph>
         </p>
         <p className="sobre-assina">
-          <span>LM</span> criadora da Livi
+          <span>LM</span> criadora da Liví
         </p>
       </motion.div>
     </section>
@@ -112,18 +113,26 @@ const passos = ajustes.vendasOnline
       { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
       { titulo: 'Leve para a sacola', texto: 'Junte tudo o que quiser. As dúvidas, a gente tira no WhatsApp.' },
       { titulo: 'Pague no site', texto: 'Entre na sua conta (ou crie na hora) e pague por Pix ou cartão. O frete aparece pelo CEP.' },
-      { titulo: 'Receba a sua Livi', texto: 'Acompanhe cada etapa do pedido na sua conta, de qualquer aparelho.' },
+      { titulo: 'Receba a sua Liví', texto: 'Acompanhe cada etapa do pedido na sua conta, de qualquer aparelho.' },
     ]
   : [
       { titulo: 'Escolha a peça', texto: 'Navegue pelas coleções e escolha a peça, a cor e o tamanho.' },
       { titulo: 'Chame no WhatsApp', texto: 'O botão da peça já abre a conversa com tudo preenchido.' },
       { titulo: 'Confirme os detalhes', texto: 'Tiramos dúvidas de medidas, pagamento e envio.' },
-      { titulo: 'Receba a sua Livi', texto: 'Sua peça chega até você.' },
+      { titulo: 'Receba a sua Liví', texto: 'Sua peça chega até você.' },
     ]
 
 /** ph = texto que ainda espera a cliente confirmar (aparece marcado) */
 const duvidas: { p: string; r: ReactNode; ph?: boolean }[] = [
-  { p: 'Tamanhos', r: '[Grade do PP ao GG e tabela de medidas em cada peça. Confirmar com a cliente.]', ph: true },
+  {
+    p: 'Tamanhos',
+    r: (
+      <>
+        Do PP ao G. Em cada peça, o “Guia de medidas” fica junto dos tamanhos. Na dúvida entre dois, chame a gente no WhatsApp.
+        <TabelaMedidas />
+      </>
+    ),
+  },
   ajustes.vendasOnline
     ? {
         p: 'Pagamento',
@@ -177,7 +186,7 @@ export function ComoComprar() {
                 {d.p}
                 <span aria-hidden="true" />
               </summary>
-              <p>{d.ph ? <Ph>{d.r}</Ph> : d.r}</p>
+              <div className="comprar-resposta">{d.ph ? <Ph>{d.r}</Ph> : d.r}</div>
             </details>
           ))}
         </div>

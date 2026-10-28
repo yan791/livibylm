@@ -80,7 +80,7 @@ export function Rodape({ rota }: { rota: Rota }) {
         )}
       </div>
       <div className="rodape-fim">
-        <p>© {new Date().getFullYear()} Livi by LM. Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} Liví by LM. Todos os direitos reservados.</p>
         {loja && (
           <p className="rodape-loja">
             {[loja.nome, `${loja.documento.length > 14 ? 'CNPJ' : 'CPF'} ${loja.documento}`, loja.endereco, loja.email].join(' · ')}

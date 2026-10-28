@@ -129,7 +129,7 @@ function EsqueciSenha({
         <button type="submit" className="pilula cheia" disabled={enviando}>
           {enviando ? 'Salvando…' : 'Salvar e entrar'}
         </button>
-        <a className="conta-link" href={linkWhatsApp(`Olá! Esqueci a senha e o e-mail da minha conta no site da Livi. O WhatsApp da conta é ${whatsapp.trim()}.`)} target="_blank" rel="noreferrer">
+        <a className="conta-link" href={linkWhatsApp(`Olá! Esqueci a senha e o e-mail da minha conta no site da Liví. O WhatsApp da conta é ${whatsapp.trim()}.`)} target="_blank" rel="noreferrer">
           Não lembro o e-mail
         </a>
         <button type="button" className="conta-link" onClick={voltar}>

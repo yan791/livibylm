@@ -59,7 +59,7 @@ export const EMAILS_ERRADOS_POR_CONTA = 5
 export const EMAILS_ERRADOS_POR_IP = 20
 const HORA = 3600
 
-const JA_TEM_CONTA = 'Esse WhatsApp já tem conta na Livi. Entre com a sua senha.'
+const JA_TEM_CONTA = 'Esse WhatsApp já tem conta na Liví. Entre com a sua senha.'
 const LINK_VENCIDO = 'Este link de senha nova venceu ou já foi usado. Peça outro pelo WhatsApp.'
 const SEM_CONTA = 'Não achamos conta com esse WhatsApp.'
 const EMAIL_ERRADO = 'Esse não é o e-mail da conta. Use o mesmo que você colocou quando criou a conta.'

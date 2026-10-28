@@ -167,7 +167,7 @@ export const quandoEtapa = (ms: number) =>
   new Date(ms).toLocaleString('pt-BR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 
 /** mensagem para pedir o código de rastreio pelo WhatsApp */
-export const mensagemRastreio = (numero: number) => `Olá! Fiz o pedido nº ${numero} no site da Livi e queria o código de rastreio.`
+export const mensagemRastreio = (numero: number) => `Olá! Fiz o pedido nº ${numero} no site da Liví e queria o código de rastreio.`
 
 /** "22 de out. de 2026" */
 export const dataDoPedido = (ms: number) => new Date(ms).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })

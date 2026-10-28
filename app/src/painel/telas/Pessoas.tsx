@@ -15,7 +15,7 @@ import { CampoCodigo, CampoSenha } from '../acesso'
 type Link = { para: string; link: string; dias: number }
 
 function CartaoLink({ l, fechar }: { l: Link; fechar: () => void }) {
-  const texto = `Oi! Este é o seu link de acesso ao painel da Livi. Abra para criar sua senha (vale ${l.dias} dias): ${l.link}`
+  const texto = `Oi! Este é o seu link de acesso ao painel da Liví. Abra para criar sua senha (vale ${l.dias} dias): ${l.link}`
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(l.link)
@@ -113,7 +113,7 @@ function DuasEtapas({ ligada, aoMudar }: { ligada: boolean; aoMudar: () => void 
 
   const copiar = async () => {
     try {
-      await navigator.clipboard.writeText(`Códigos de recuperação do painel da Livi (cada um vale uma vez):\n${codigos.join('\n')}`)
+      await navigator.clipboard.writeText(`Códigos de recuperação do painel da Liví (cada um vale uma vez):\n${codigos.join('\n')}`)
       avisar('Códigos copiados.')
     } catch {
       avisar('Não deu para copiar. Anote os códigos no papel.', 'erro')

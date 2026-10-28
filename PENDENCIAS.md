@@ -43,7 +43,7 @@ O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende
 ### 4. Textos do site
 
 - **A criadora** (`app/src/sections/Depois.tsx`): a foto e o nome (Lívia Moraes) já estão no site. Faltam duas ou três frases de como a marca começou, que hoje aparecem marcadas para confirmar.
-- **Tamanhos:** a tabela de medidas da Livia (busto, cintura e quadril de cada tamanho, em cm). Ela entra na resposta "Tamanhos" do "Como comprar", que hoje está marcada para confirmar, e num "Guia de medidas" na página da peça.
+- **Tamanhos:** a tabela de medidas (PP ao G, em cm) já está no "Como comprar" e no "Guia de medidas" da peça (`medidas` em `app/src/dados/site.ts`). Ela não tem GG, mas as 61 peças com estoque provisório entraram com GG: confirmar com a Livia se o GG sai.
 - **Na página da peça,** a frase "A modelo tem ... e veste ..." aparece sempre marcada como "aguardando confirmação", mesmo com os valores certos. Corrigir junto (`app/src/components/Catalogo.tsx`).
 - **Também com espaço reservado:** as fotos da seção de looks (`app/src/sections/Looks.tsx`) e o logo em arquivo (`site.logo` em `app/src/dados/site.ts`; sem ele, aparece o nome escrito).
 

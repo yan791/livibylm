@@ -113,7 +113,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
     <div className="moldura">
       <header className="topo">
         <a className="topo-marca" href="/painel" onClick={aoClicar('/painel')}>
-          Livi <small>painel</small>
+          Liví <small>painel</small>
         </a>
         <nav className="topo-nav" aria-label="Seções do painel">
           {NAV.map((n) => (

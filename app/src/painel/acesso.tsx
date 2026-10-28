@@ -9,7 +9,7 @@ import { avisar, Campo, Carregando, Icone } from './ui'
 function Marca() {
   return (
     <header className="acesso-marca">
-      <p className="acesso-logo">Livi</p>
+      <p className="acesso-logo">Liví</p>
       <p className="acesso-sub">Painel da loja</p>
     </header>
   )

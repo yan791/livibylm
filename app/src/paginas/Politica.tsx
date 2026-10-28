@@ -47,10 +47,10 @@ const ATUALIZADA = 'outubro de 2026'
 
 export function Politica({ nome }: { nome: NomePolitica }) {
   useLayoutEffect(() => {
-    document.title = `${TITULOS[nome]} | Livi by LM`
+    document.title = `${TITULOS[nome]} | Liví by LM`
     rolarPara(0, { imediato: true })
     return () => {
-      document.title = 'Livi by LM | Moda feminina autoral'
+      document.title = 'Liví by LM | Moda feminina autoral'
     }
   }, [nome])
 
@@ -138,7 +138,7 @@ function Trocas() {
         <p>
           Fale com a gente <Contato />, com o número do pedido. Respondemos com o endereço para o envio e os próximos passos.
         </p>
-        <a className="pilula cheia" href={linkWhatsApp('Olá! Vim pelo site da Livi e quero falar sobre uma troca ou devolução.')} target="_blank" rel="noreferrer">
+        <a className="pilula cheia" href={linkWhatsApp('Olá! Vim pelo site da Liví e quero falar sobre uma troca ou devolução.')} target="_blank" rel="noreferrer">
           <WhatsApp className="ico" /> Falar no WhatsApp <SetaDiagonal className="seta" />
         </a>
       </section>
@@ -151,7 +151,7 @@ function Privacidade() {
   return (
     <>
       <p className="politica-intro">
-        Aqui está quais dados a Livi recebe, para que usa e com quem divide. Seguimos a Lei Geral de Proteção de Dados (LGPD).
+        Aqui está quais dados a Liví recebe, para que usa e com quem divide. Seguimos a Lei Geral de Proteção de Dados (LGPD).
       </p>
 
       <section>
@@ -159,10 +159,10 @@ function Privacidade() {
         <p>
           {loja ? (
             <>
-              {loja.nome}, {loja.documento.length > 14 ? 'CNPJ' : 'CPF'} {loja.documento}, responsável pela Livi by LM.
+              {loja.nome}, {loja.documento.length > 14 ? 'CNPJ' : 'CPF'} {loja.documento}, responsável pela Liví by LM.
             </>
           ) : (
-            'A Livi by LM.'
+            'A Liví by LM.'
           )}{' '}
           Para qualquer pedido sobre os seus dados, fale com a gente <Contato />.
         </p>
@@ -182,7 +182,7 @@ function Privacidade() {
           </li>
           <li>
             <strong>No pagamento:</strong> ele é feito na página da InfinitePay. Os dados do seu cartão não passam pelo site da
-            Livi: recebemos só a confirmação, a forma de pagamento e o comprovante.
+            Liví: recebemos só a confirmação, a forma de pagamento e o comprovante.
           </li>
           <li>
             <strong>Sacola e desejos:</strong> ficam guardados só no seu navegador, e não vão para a loja até você fechar uma
