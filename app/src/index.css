@@ -1233,6 +1233,17 @@ img {
   color: var(--chocolate);
 }
 
+/* o texto da Livia, em primeira pessoa */
+.sobre-carta {
+  margin-top: 1.6em;
+  padding-left: 20px;
+  border-left: 1px solid rgb(79 15 16 / 0.25);
+}
+
+.sobre-texto .sobre-carta p:first-child {
+  margin-top: 0;
+}
+
 .sobre-assina {
   margin-top: 2.4rem;
   display: flex;

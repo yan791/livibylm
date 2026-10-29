@@ -87,20 +87,34 @@ export function Sobre() {
   return (
     <section className="sobre" id="sobre" aria-labelledby="sobre-titulo">
       <motion.div className="sobre-foto" {...aparece}>
-        <img src={comBase('/img/criadora.webp')} alt="Lívia Moraes, criadora da Liví" width={1086} height={1448} loading="lazy" decoding="async" />
+        <img src={comBase('/img/criadora.webp')} alt="Livia Moraes, criadora da Liví" width={1086} height={1448} loading="lazy" decoding="async" />
       </motion.div>
       <motion.div className="sobre-texto" {...aparece} transition={{ ...aparece.transition, delay: 0.1 }}>
         <p className="sobretitulo">A criadora</p>
         <TituloVivo id="sobre-titulo" className="titulo-secao" partes={['Por trás de cada peça,', 'quebra', { em: 'um olhar.' }]} />
         <p>
-          A Liví leva as iniciais de quem desenha cada peça: LM, de Lívia Moraes. Ela cria pensando no caimento, no
-          tecido e em como a roupa acompanha quem veste.
+          A Liví leva as iniciais de quem desenha cada peça: LM, de Livia Moraes. Ela cria pensando no caimento, no
+          tecido e em como as peças acompanham quem veste.
         </p>
-        <p>
-          <Ph>[Contar aqui, em duas ou três frases, como a marca começou. Confirmar com a cliente.]</Ph>
-        </p>
+        {/* nas palavras da Livia (texto dela, de 29/10/2026) */}
+        <blockquote className="sobre-carta">
+          <p>
+            Estamos muito felizes em poder compartilhar com vocês mais uma etapa da realização desse sonho: a LIVÍ.
+            Desde muito nova já amava esse mundo da moda, da costura, da modelagem, do processo, que é tão lindo e
+            enriquecedor.
+          </p>
+          <p>
+            Porém, a vida me levou para outros caminhos, completamente distintos; mas como sei que Deus tem o tempo
+            determinado para absolutamente tudo em nossas vidas, esse tempo chegou e sou muitíssimo grata por tudo e por
+            Ele estar me proporcionando essa alegria. Que toda honra seja dada a Ele.
+          </p>
+          <p>
+            E hoje, junto com minha filha Letícia, estamos apresentando a vocês o site da Liví. Cada peça tem muito amor,
+            carinho e dedicação.
+          </p>
+        </blockquote>
         <p className="sobre-assina">
-          <span>LM</span> criadora da Liví
+          <span>LM</span> Livia Moraes, autora e fundadora
         </p>
       </motion.div>
     </section>
