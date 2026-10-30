@@ -14,6 +14,7 @@
 import type { CorPeca, LinhaColecao, LinhaEstoque, LinhaPeca } from './tipos'
 import { ajustesPublicos, consultaAjustes, deLinha } from './ajustes'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
+import { comDesconto } from './descontos'
 
 /** o máximo que o site enxerga de uma combinação (e que a sacola deixa levar) */
 export const LIMITE_VISIVEL = 10
@@ -85,7 +86,10 @@ function pecaPublica(p: LinhaPeca, estoque: LinhaEstoque[], seguras: Map<string,
   return {
     slug: p.slug,
     nome: p.nome,
-    preco: p.preco_centavos / 100,
+    // o que a cliente paga; com desconto, o site mostra também o preço cheio riscado
+    preco: comDesconto(p.preco_centavos, p.desconto) / 100,
+    precoCheio: p.preco_centavos / 100,
+    desconto: p.desconto,
     descricao: p.descricao,
     tecido: p.tecido,
     cores: cores.map(({ nome, hex }) => ({ nome, hex })),

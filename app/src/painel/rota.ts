@@ -8,6 +8,7 @@
     /painel/colecao/3         editar a coleção 3
     /painel/pessoas           quem tem acesso
     /painel/ajustes           ajustes da loja
+    /painel/cupons            cupons de desconto
     /painel/pedidos           pedidos (compras do site e vendas registradas)
     /painel/pedido/12         o pedido 12
     /painel/pedido/novo       registrar uma venda feita fora do site
@@ -24,6 +25,7 @@ export type Tela =
   | { nome: 'colecao'; id: number | 'nova' }
   | { nome: 'pessoas' }
   | { nome: 'ajustes' }
+  | { nome: 'cupons' }
   | { nome: 'pedidos' }
   | { nome: 'pedido'; id: number }
   | { nome: 'venda' }
@@ -41,6 +43,7 @@ export function interpretar(caminho: string, busca = ''): Tela {
   if (p[0] === 'colecao' && id(p[1])) return { nome: 'colecao', id: id(p[1])! }
   if (p[0] === 'pessoas') return { nome: 'pessoas' }
   if (p[0] === 'ajustes') return { nome: 'ajustes' }
+  if (p[0] === 'cupons') return { nome: 'cupons' }
   if (p[0] === 'pedidos') return { nome: 'pedidos' }
   if (p[0] === 'pedido' && p[1] === 'novo') return { nome: 'venda' }
   if (p[0] === 'pedido' && Number(p[1]) > 0) return { nome: 'pedido', id: Number(p[1]) }

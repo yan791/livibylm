@@ -33,6 +33,8 @@ import { compraTeste, estadoTeste } from './compra-teste'
 import { REGIOES, type TabelaFrete } from './frete'
 import { RESERVA_MINUTOS } from './pedidos'
 import { conferirSenhaDeNovo, desligar, doisFatores, gastarCodigo, recuperacaoRestantes } from './dois-fatores'
+import { cupons } from './cupons'
+import { DESCONTO_MAXIMO } from './descontos'
 
 export const painel = new Hono<Ambiente>()
 painel.use('*', mesmaOrigem)
@@ -182,6 +184,7 @@ painel.get('/eu', (c) => c.json({ ...c.get('admin'), site: c.env.SITE_PUBLICO ??
 painel.route('/pedidos', painelPedidos)
 painel.route('/compra-teste', compraTeste)
 painel.route('/dois-fatores', doisFatores)
+painel.route('/cupons', cupons)
 
 /* ---------- coleções ---------- */
 
@@ -319,6 +322,8 @@ function lerPeca(corpo: Corpo) {
     colecaoId: inteiro(corpo.colecaoId, 'Coleção', 1, 1e9),
     nome: texto(corpo.nome, 'o nome da peça', 120, true),
     precoCentavos: inteiro(corpo.precoCentavos, 'Preço', 1, 10_000_000),
+    // null = o painel não mandou (versão antiga aberta): a peça nova fica sem, a que já existe mantém o que tinha
+    desconto: corpo.desconto === undefined ? null : inteiro(corpo.desconto, 'O desconto', 0, DESCONTO_MAXIMO),
     descricao: texto(corpo.descricao, 'A descrição', 1500),
     tecido: texto(corpo.tecido, 'O tecido', 120),
     cores,
@@ -340,6 +345,7 @@ const pecaParaPainel = (p: LinhaPeca, estoque: LinhaEstoque[], reservas: Map<str
   slug: p.slug,
   nome: p.nome,
   precoCentavos: p.preco_centavos,
+  desconto: p.desconto,
   descricao: p.descricao,
   tecido: p.tecido,
   cores: JSON.parse(p.cores) as CorPeca[],
@@ -378,6 +384,7 @@ painel.get('/pecas', async (c) => {
         nome: p.nome,
         slug: p.slug,
         precoCentavos: p.preco_centavos,
+        desconto: p.desconto,
         foto: (JSON.parse(p.fotos) as string[])[0] ?? null,
         visivel: p.visivel === 1,
         sobEncomenda: p.sob_encomenda === 1,
@@ -411,8 +418,8 @@ painel.post('/pecas', async (c) => {
     db
       .prepare(
         `INSERT INTO pecas (colecao_id, slug, nome, preco_centavos, descricao, tecido, cores, tamanhos, fotos,
-         modelo_altura, modelo_veste, sob_encomenda, prazo_encomenda, visivel, ordem)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+         modelo_altura, modelo_veste, sob_encomenda, prazo_encomenda, visivel, desconto, ordem)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15,
            (SELECT COALESCE(MAX(ordem), 0) + 1 FROM pecas WHERE colecao_id = ?1))`,
       )
       .bind(
@@ -430,6 +437,7 @@ painel.post('/pecas', async (c) => {
         v.sobEncomenda ? 1 : 0,
         v.prazoEncomenda,
         v.visivel ? 1 : 0,
+        v.desconto ?? 0,
       ),
     ...v.estoque.map((e) =>
       db.prepare(`INSERT INTO estoque (peca_id, cor, tamanho, quantidade) VALUES (${doSlug}, ?2, ?3, ?4)`).bind(slug, e.cor, e.tamanho, e.quantidade),
@@ -481,7 +489,7 @@ painel.put('/pecas/:id', async (c) => {
         .prepare(
           `UPDATE pecas SET colecao_id = ?1, nome = ?2, preco_centavos = ?3, descricao = ?4, tecido = ?5, cores = ?6,
            tamanhos = ?7, fotos = ?8, modelo_altura = ?9, modelo_veste = ?10, sob_encomenda = ?11, prazo_encomenda = ?12,
-           visivel = ?13, atualizado_em = datetime('now'),
+           visivel = ?13, desconto = COALESCE(?16, desconto), atualizado_em = datetime('now'),
            ordem = CASE WHEN ?14 THEN (SELECT COALESCE(MAX(ordem), 0) + 1 FROM pecas WHERE colecao_id = ?1) ELSE ordem END
            WHERE id = ?15`,
         )
@@ -501,6 +509,7 @@ painel.put('/pecas/:id', async (c) => {
           v.visivel ? 1 : 0,
           mudouColecao ? 1 : 0,
           id,
+          v.desconto,
         ),
       ...estoque,
     ])

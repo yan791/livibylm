@@ -16,7 +16,12 @@ export type Cor = { nome: string; hex: string }
 export type Peca = {
   slug: string
   nome: string
+  /** o que a cliente paga (já com o desconto da peça) */
   preco: number
+  /** o preço sem desconto (igual ao preço quando a peça não tem desconto) */
+  precoCheio: number
+  /** desconto da peça, em % (0 = sem desconto) */
+  desconto: number
   descricao: string
   tecido: string
   cores: Cor[]
@@ -105,7 +110,8 @@ function preparar(dados: unknown): Colecao[] {
   return (dados as Colecao[]).map((c) => ({
     ...c,
     capa: c.capa ? enderecoFoto(c.capa) : '',
-    pecas: c.pecas.map((p) => ({ ...p, fotos: p.fotos.map(enderecoFoto) })),
+    // servidor sem desconto por peça (versão antiga): a peça fica sem desconto
+    pecas: c.pecas.map((p) => ({ ...p, precoCheio: p.precoCheio ?? p.preco, desconto: p.desconto ?? 0, fotos: p.fotos.map(enderecoFoto) })),
   }))
 }
 

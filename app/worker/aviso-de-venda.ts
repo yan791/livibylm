@@ -56,6 +56,7 @@ function texto(p: LinhaPedido, itens: LinhaItemPedido[], painel: string) {
     'Peças:',
     ...itens.map((i) => `- ${i.quantidade}x ${[i.nome, i.cor_nome, i.tamanho].filter(Boolean).join(' · ')}: ${reais(i.preco_centavos * i.quantidade)}`),
     '',
+    ...(p.desconto_centavos ? [`Cupom ${p.cupom} (${p.cupom_percentual}%): -${reais(p.desconto_centavos)}`] : []),
     `Entrega: ${entrega}${destino}${p.frete_centavos ? `: ${reais(p.frete_centavos)}` : ''}`,
     `Total: ${reais(p.total_centavos)}${pagamento ? ` (${pagamento})` : ''}`,
     '',

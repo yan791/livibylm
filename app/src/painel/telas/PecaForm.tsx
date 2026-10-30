@@ -8,6 +8,7 @@ import { api, centavosDe, enderecoSite, mensagemDe, textoDe, type Colecao, type 
 import { descartarFotos, enviarFoto, pequena } from '../imagem'
 import { aoClicar, ir, segurarSaida } from '../rota'
 import { avisar, Campo, Carregando, confirmar, FalhaCarga, Icone, Interruptor, useCarregar } from '../ui'
+import { comDesconto, DESCONTO_MAXIMO } from '../../../worker/descontos'
 
 /** tamanhos que aparecem como opção, nessa ordem; a peça nova já vem com a grade da Liví (sem o GG) */
 const PADRAO = ['PP', 'P', 'M', 'G', 'GG']
@@ -33,6 +34,8 @@ type Rascunho = {
   colecaoId: number | null
   nome: string
   preco: string
+  /** desconto da peça em %, como digitado ('' = sem desconto) */
+  desconto: string
   descricao: string
   tecido: string
   cores: CorPeca[]
@@ -61,6 +64,7 @@ function deUmaPeca(p: Peca): Rascunho {
     colecaoId: p.colecaoId,
     nome: p.nome,
     preco: textoDe(p.precoCentavos),
+    desconto: p.desconto ? String(p.desconto) : '',
     descricao: p.descricao,
     tecido: p.tecido,
     cores: p.cores,
@@ -79,6 +83,7 @@ const vazio = (colecaoId: number | null): Rascunho => ({
   colecaoId,
   nome: '',
   preco: '',
+  desconto: '',
   descricao: '',
   tecido: '',
   cores: [],
@@ -91,6 +96,13 @@ const vazio = (colecaoId: number | null): Rascunho => ({
   visivel: true,
   estoque: {},
 })
+
+/** embaixo do desconto: como o preço aparece no site */
+function dicaDesconto(precoCentavos: number | null, desconto: number) {
+  if (!desconto) return 'Vazio, a peça fica sem desconto. Com desconto, o site mostra o preço cheio riscado.'
+  if (!precoCentavos) return `${desconto}% sobre o preço.`
+  return `No site: de R$ ${textoDe(precoCentavos)} por R$ ${textoDe(comDesconto(precoCentavos, desconto))}.`
+}
 
 export function PecaForm({ id, colecaoInicial }: { id: number | 'nova'; colecaoInicial?: number }) {
   const colecoes = useCarregar(() => api<Colecao[]>('GET', '/colecoes'))
@@ -180,6 +192,7 @@ function Formulario({
       (!r.colecaoId && 'Escolha a coleção.') ||
       (!r.nome.trim() && 'Preencha o nome da peça.') ||
       (!precoCentavos && 'Preencha o preço (ex.: 459,90).') ||
+      (Number(r.desconto) > DESCONTO_MAXIMO && `O desconto vai até ${DESCONTO_MAXIMO}%.`) ||
       (r.cores.length === 0 && 'Adicione pelo menos uma cor.') ||
       (r.cores.some((c) => !c.nome.trim()) && 'Dê um nome para cada cor.') ||
       (r.tamanhos.length === 0 && 'Escolha pelo menos um tamanho.') ||
@@ -191,6 +204,7 @@ function Formulario({
       colecaoId: r.colecaoId,
       nome: r.nome,
       precoCentavos,
+      desconto: Number(r.desconto) || 0,
       descricao: r.descricao,
       tecido: r.tecido,
       cores: r.cores.map((c) => ({ ...c, nome: c.nome.trim() })),
@@ -301,6 +315,18 @@ function Formulario({
             )}
           </Campo>
         </div>
+        <Campo rotulo="Desconto da peça (%)" dica={dicaDesconto(centavosDe(r.preco), Number(r.desconto) || 0)}>
+          {(i) => (
+            <input
+              id={i}
+              className="campo-curto"
+              inputMode="numeric"
+              value={r.desconto}
+              onChange={(e) => campo('desconto')(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              placeholder="0"
+            />
+          )}
+        </Campo>
         <Campo rotulo="Tecido">
           {(i) => <input id={i} value={r.tecido} onChange={(e) => campo('tecido')(e.target.value)} maxLength={120} placeholder="Ex.: Crepe acetinado" />}
         </Campo>

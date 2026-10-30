@@ -277,12 +277,11 @@ function Tela({ inicial, whatsappLoja }: { inicial: Pedido; whatsappLoja: string
           ))}
         </ul>
         <dl className="totais">
-          {p.freteCentavos > 0 && (
-            <>
-              <Dado rotulo="Peças">{reais(p.itensCentavos)}</Dado>
-              <Dado rotulo="Entrega">{reais(p.freteCentavos)}</Dado>
-            </>
+          {(p.freteCentavos > 0 || p.descontoCentavos > 0) && <Dado rotulo="Peças">{reais(p.itensCentavos)}</Dado>}
+          {p.descontoCentavos > 0 && (
+            <Dado rotulo={`Cupom ${p.cupom} (${p.cupomPercentual}%)`}>−{reais(p.descontoCentavos)}</Dado>
           )}
+          {p.freteCentavos > 0 && <Dado rotulo="Entrega">{reais(p.freteCentavos)}</Dado>}
           <Dado rotulo="Total" forte>
             {reais(p.totalCentavos)}
           </Dado>

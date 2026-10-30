@@ -72,7 +72,23 @@ describe('catálogo do site (/api/loja)', () => {
     const p = pecaDoSite(await lerDoSite())!
     expect(p.preco).toBe(100)
     expect(Object.keys(p).sort()).toEqual(
-      ['cores', 'descricao', 'disponivel', 'esgotados', 'fotos', 'modelo', 'nome', 'prazo', 'preco', 'slug', 'sobEncomenda', 'tamanhos', 'tecido'].sort(),
+      [
+        'cores',
+        'desconto',
+        'descricao',
+        'disponivel',
+        'esgotados',
+        'fotos',
+        'modelo',
+        'nome',
+        'prazo',
+        'preco',
+        'precoCheio',
+        'slug',
+        'sobEncomenda',
+        'tamanhos',
+        'tecido',
+      ].sort(),
     )
     expect(p.cores).toEqual([{ nome: 'Preto', hex: '#000000' }])
   })

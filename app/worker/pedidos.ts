@@ -3,6 +3,7 @@
   Rotas abertas (o site do GitHub Pages também chama):
     POST /api/pedidos                    monta o pedido com os preços do banco, segura as peças e devolve o link de pagamento
                                          (só com a conta aberta: o pedido fica na conta da cliente, worker/contas.ts)
+    GET  /api/pedidos/cupom?codigo=...    confere um cupom de desconto (a sacola mostra o desconto antes de pagar)
     GET  /api/pedidos/:codigo            situação do pedido (página /pedido/... do site)
     POST /api/pedidos/consulta           vários pedidos de uma vez (aba "Pedidos" da gaveta: os feitos naquele aparelho)
     POST /api/pedidos/:codigo/conferir   a cliente voltou da InfinitePay: confere o pagamento
@@ -30,6 +31,7 @@ import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type Ite
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
 import { avisarVenda } from './aviso-de-venda'
+import { CODIGO_CUPOM, comDesconto, descontoDe, descontoDoCupom, normalizarCupom } from './descontos'
 
 /** quanto tempo as peças ficam seguras esperando o pagamento */
 export const RESERVA_MINUTOS = 30
@@ -125,7 +127,11 @@ export type DadosPedido = {
   observacao: string
   /** conta da cliente no site (compra pelo site) */
   clienteId?: number | null
+  /** cupom de desconto já conferido (vale sobre as peças) */
+  cupom?: Cupom | null
 }
+
+export type Cupom = { codigo: string; percentual: number }
 
 /**
   Grava o pedido e as peças num batch só (tudo ou nada). `depois` entra no
@@ -133,13 +139,15 @@ export type DadosPedido = {
 */
 export async function gravarPedido(db: D1Database, p: DadosPedido, itens: ItemNovo[], depois: D1PreparedStatement[] = []) {
   const itensCentavos = itens.reduce((s, i) => s + i.precoCentavos * i.quantidade, 0)
+  const descontoCentavos = p.cupom ? descontoDoCupom(itens, p.cupom.percentual) : 0
   const doCodigo = '(SELECT id FROM pedidos WHERE codigo = ?1)'
   await db.batch([
     db
       .prepare(
         `INSERT INTO pedidos (codigo, origem, situacao, reserva_ate, nome, whatsapp, email, cpf, entrega, cep, rua, numero,
-         complemento, bairro, cidade, uf, itens_centavos, frete_centavos, total_centavos, pagamento, observacao, cliente_id)
-         VALUES (?1, ?2, 'aguardando', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)`,
+         complemento, bairro, cidade, uf, itens_centavos, frete_centavos, total_centavos, pagamento, observacao, cliente_id,
+         cupom, cupom_percentual, desconto_centavos)
+         VALUES (?1, ?2, 'aguardando', ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)`,
       )
       .bind(
         p.codigo,
@@ -159,10 +167,13 @@ export async function gravarPedido(db: D1Database, p: DadosPedido, itens: ItemNo
         p.uf,
         itensCentavos,
         p.freteCentavos,
-        itensCentavos + p.freteCentavos,
+        itensCentavos - descontoCentavos + p.freteCentavos,
         p.pagamento,
         p.observacao,
         p.clienteId ?? null,
+        p.cupom?.codigo ?? '',
+        p.cupom?.percentual ?? 0,
+        descontoCentavos,
       ),
     ...itens.map((i) =>
       db
@@ -310,6 +321,8 @@ export const FRETES_POR_IP = 60
 export const CONSULTAS_POR_IP = 120
 /** pedidos numa consulta só (o site guarda os últimos 30 do aparelho) */
 export const MAX_CONSULTA = 30
+/** cupons conferidos por IP em 15 minutos: a cliente digita um ou dois; mais que isso é alguém chutando códigos */
+export const CUPONS_POR_IP = 30
 
 /** quantas vezes algo aconteceu (pedidos de um IP, conferências de um pedido) dentro da janela */
 export async function usou(db: D1Database, chave: string, janela: number) {
@@ -328,6 +341,21 @@ export async function contar(db: D1Database, chave: string, janela: number) {
     .bind(chave, agora(), janela)
     .run()
 }
+
+/* ---------- cupom de desconto ---------- */
+
+/** o código do cupom que a cliente digitou, já normalizado ('' = sem cupom) */
+function lerCupom(v: unknown) {
+  if (v === undefined || v === null) return ''
+  if (typeof v !== 'string') throw falha(400, 'Confira o cupom.')
+  const codigo = normalizarCupom(v)
+  if (codigo && !CODIGO_CUPOM.test(codigo)) throw falha(400, 'Esse cupom não existe. Confira as letras e os números.')
+  return codigo
+}
+
+/** o cupom ligado com esse código; null se não existe ou foi desligado no painel */
+const cupomAtivo = (db: D1Database, codigo: string) =>
+  db.prepare('SELECT codigo, percentual FROM cupons WHERE codigo = ?1 AND ativo = 1').bind(codigo).first<Cupom>()
 
 /* ---------- compra pelo site ---------- */
 
@@ -422,7 +450,7 @@ async function itensDaSacola(db: D1Database, v: unknown): Promise<ItemNovo[]> {
       cor: cor.id,
       tamanho: x.tamanho,
       quantidade: x.qtd,
-      precoCentavos: p.preco_centavos,
+      precoCentavos: comDesconto(p.preco_centavos, p.desconto),
       sobEncomenda: p.sob_encomenda === 1,
       nome: p.nome,
       corNome: cor.nome,
@@ -463,6 +491,9 @@ export function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
     itensCentavos: p.itens_centavos,
     freteCentavos: p.frete_centavos,
     totalCentavos: p.total_centavos,
+    cupom: p.cupom,
+    cupomPercentual: p.cupom_percentual,
+    descontoCentavos: p.desconto_centavos,
     pagamento: p.pagamento,
     parcelas: p.parcelas,
     recibo: p.recibo,
@@ -513,6 +544,18 @@ compras.get('/frete', async (c) => {
   return c.json({ uf, opcoes: opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios) })
 })
 
+/** confere o cupom antes de fechar a compra, para a sacola mostrar o desconto (quem cobra é o POST /) */
+compras.get('/cupom', async (c) => {
+  const codigo = lerCupom(c.req.query('codigo'))
+  if (!codigo) throw falha(400, 'Digite o cupom.')
+  const chave = `cupom:${c.req.header('CF-Connecting-IP') ?? 'local'}`
+  if ((await usou(c.env.DB, chave, 900)) >= CUPONS_POR_IP) throw falha(429, 'Muitas tentativas seguidas. Espere um pouco e tente de novo.')
+  await contar(c.env.DB, chave, 900)
+  const cupom = await cupomAtivo(c.env.DB, codigo)
+  if (!cupom) throw falha(404, 'Esse cupom não existe ou não vale mais.')
+  return c.json(cupom)
+})
+
 compras.post('/', async (c) => {
   const db = c.env.DB
   const ajustes = await lerAjustes(db)
@@ -533,6 +576,9 @@ compras.post('/', async (c) => {
   if (entrega.entrega !== 'maceio' && !cliente.cpf)
     throw falha(400, 'Para enviar pelos Correios, preencha o CPF: ele vai na declaração de conteúdo do pacote.')
   const itens = await conferirDisponivel(db, await itensDaSacola(db, corpo.itens))
+  const codigoCupom = lerCupom(corpo.cupom)
+  const cupom = codigoCupom ? await cupomAtivo(db, codigoCupom) : null
+  if (codigoCupom && !cupom) throw falha(409, `O cupom ${codigoCupom} não vale mais. Tire o cupom ou use outro.`)
 
   const abertos = await db
     .prepare("SELECT COUNT(*) AS n FROM pedidos WHERE whatsapp = ?1 AND situacao = 'aguardando' AND reserva_ate > unixepoch()")
@@ -545,7 +591,7 @@ compras.post('/', async (c) => {
   try {
     await gravarPedido(
       db,
-      { codigo, origem: 'site', reservaAte: agora() + RESERVA_MINUTOS * 60, ...cliente, ...entrega, pagamento: '', observacao: '', clienteId: conta.id },
+      { codigo, origem: 'site', reservaAte: agora() + RESERVA_MINUTOS * 60, ...cliente, ...entrega, pagamento: '', observacao: '', clienteId: conta.id, cupom },
       itens,
     )
   } catch (e) {
@@ -558,7 +604,12 @@ compras.post('/', async (c) => {
   try {
     const pagar = await abrirPagamento(c, codigo, {
       itens: [
-        ...itens.map((i) => ({ descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}`, quantidade: i.quantidade, precoCentavos: i.precoCentavos })),
+        // com cupom, cada peça já vai com o desconto: a soma bate com o total do pedido
+        ...itens.map((i) => ({
+          descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}${cupom ? ` · cupom ${cupom.codigo}` : ''}`,
+          quantidade: i.quantidade,
+          precoCentavos: i.precoCentavos - (cupom ? descontoDe(i.precoCentavos, cupom.percentual) : 0),
+        })),
         ...(entrega.freteCentavos > 0 ? [{ descricao: NOME_ENTREGA[entrega.entrega], quantidade: 1, precoCentavos: entrega.freteCentavos }] : []),
       ],
       cliente,

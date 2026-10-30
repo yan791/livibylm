@@ -37,6 +37,8 @@ export type ResumoPeca = {
   nome: string
   slug: string
   precoCentavos: number
+  /** desconto da peça, em % */
+  desconto: number
   foto: string | null
   visivel: boolean
   sobEncomenda: boolean
@@ -50,7 +52,9 @@ export type Peca = {
   colecaoId: number
   slug: string
   nome: string
+  /** preço cheio; com desconto, o site cobra o preço menos o desconto */
   precoCentavos: number
+  desconto: number
   descricao: string
   tecido: string
   cores: CorPeca[]
@@ -135,6 +139,10 @@ export type Pedido = Omit<ResumoPedido, 'unidades' | 'foto' | 'primeira'> & {
   endereco: { cep: string; rua: string; numero: string; complemento: string; bairro: string; cidade: string; uf: string }
   itensCentavos: number
   freteCentavos: number
+  /** cupom usado na compra (vazio = sem cupom) e quanto ele tirou */
+  cupom: string
+  cupomPercentual: number
+  descontoCentavos: number
   pagamento: string
   parcelas: number
   pagoCentavos: number
@@ -233,3 +241,12 @@ export function telefone(n: string) {
 /** valor para o campo de preço, sem o "R$" (ele fica fixo no campo) */
 export const textoDe = (centavos: number) =>
   (centavos / 100).toLocaleString('pt-BR', { minimumFractionDigits: centavos % 100 ? 2 : 0, maximumFractionDigits: 2 })
+
+export type Cupom = {
+  id: number
+  codigo: string
+  percentual: number
+  ativo: boolean
+  /** compras pagas que usaram o cupom */
+  usos: number
+}

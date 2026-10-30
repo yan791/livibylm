@@ -15,11 +15,13 @@ import { Ajustes } from './telas/Ajustes'
 import { Pedidos } from './telas/Pedidos'
 import { EVENTO_PEDIDOS, PedidoDetalhe } from './telas/PedidoDetalhe'
 import { NovaVenda } from './telas/NovaVenda'
+import { Cupons } from './telas/Cupons'
 
 const NAV = [
   { caminho: '/painel/pedidos', rotulo: 'Pedidos', icone: Icone.pedidos, telas: ['pedidos', 'pedido', 'venda'] },
   { caminho: '/painel', rotulo: 'Peças', icone: Icone.pecas, telas: ['pecas', 'peca'] },
   { caminho: '/painel/colecoes', rotulo: 'Coleções', icone: Icone.colecoes, telas: ['colecoes', 'colecao'] },
+  { caminho: '/painel/cupons', rotulo: 'Cupons', icone: Icone.cupom, telas: ['cupons'] },
   { caminho: '/painel/pessoas', rotulo: 'Acesso', icone: Icone.pessoas, telas: ['pessoas'] },
   { caminho: '/painel/ajustes', rotulo: 'Ajustes', icone: Icone.ajustes, telas: ['ajustes'] },
 ]
@@ -145,6 +147,7 @@ function Moldura({ admin, tela, aoSair }: { admin: Admin; tela: Tela; aoSair: ()
         {tela.nome === 'pedidos' && <Pedidos />}
         {tela.nome === 'pedido' && <PedidoDetalhe key={tela.id} id={tela.id} />}
         {tela.nome === 'venda' && <NovaVenda />}
+        {tela.nome === 'cupons' && <Cupons />}
       </main>
 
       <nav className="abas" aria-label="Seções do painel">

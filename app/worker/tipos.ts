@@ -37,6 +37,8 @@ export type LinhaPeca = {
   modelo_veste: string
   sob_encomenda: number
   prazo_encomenda: string
+  /** desconto da peça, em % (0 = sem desconto) */
+  desconto: number
   ordem: number
   visivel: number
 }
@@ -66,7 +68,12 @@ export type LinhaPedido = {
   uf: string
   itens_centavos: number
   frete_centavos: number
+  /** itens - desconto do cupom + frete */
   total_centavos: number
+  /** o cupom usado (vazio = sem cupom), com a porcentagem da hora da compra */
+  cupom: string
+  cupom_percentual: number
+  desconto_centavos: number
   pagamento: string
   parcelas: number
   pago_centavos: number
@@ -104,4 +111,12 @@ export type LinhaItemPedido = {
   foto: string
   /** endereço da peça no site, quando a consulta junta com pecas (null se a peça foi apagada) */
   peca_slug?: string | null
+}
+
+export type LinhaCupom = {
+  id: number
+  codigo: string
+  percentual: number
+  ativo: number
+  criado_em: string
 }

@@ -22,11 +22,17 @@ import { LinkPolitica } from '../paginas/Politica'
 import { guardarPedido } from '../lib/meus-pedidos'
 import { Campo, CampoSenha, CampoWhatsApp, WHATSAPP_INCOMPLETO, whatsappCompleto } from './Campo'
 import { Entrar } from './Entrar'
+import { descontoDoCupom, normalizarCupom } from '../../worker/descontos'
 
 type Item = ReturnType<typeof detalhar>[number]
 type TipoEntrega = 'maceio' | 'pac' | 'sedex'
 type Opcao = { tipo: TipoEntrega; nome: string; centavos: number }
 type Frete = { estado: 'consultando' } | { estado: 'pronto'; opcoes: Opcao[] } | { estado: 'erro'; mensagem: string }
+type Cupom = { codigo: string; percentual: number }
+
+/** quanto o cupom tira das peças, a mesma conta do servidor (worker/descontos.ts) */
+const descontoCupom = (itens: Item[], cupom: Cupom | null) =>
+  cupom ? descontoDoCupom(itens.map((i) => ({ precoCentavos: Math.round(i.peca.preco * 100), quantidade: i.qtd })), cupom.percentual) / 100 : 0
 
 const correios = (t: TipoEntrega | null) => t === 'pac' || t === 'sedex'
 
@@ -141,11 +147,39 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
   // o WhatsApp digitado já tem conta: mostra o botão para entrar
   const [jaTem, setJaTem] = useState(false)
   const [enviando, setEnviando] = useState(false)
+  // cupom de desconto: o que ela digitou e o cupom que a loja confirmou
+  const [textoCupom, setTextoCupom] = useState('')
+  const [cupom, setCupom] = useState<Cupom | null>(null)
+  const [erroCupom, setErroCupom] = useState('')
+  const [conferindo, setConferindo] = useState(false)
 
   const digitos = cep.replace(/\D/g, '').slice(0, 8)
   const opcoes = frete?.estado === 'pronto' ? frete.opcoes : []
   const escolhida = opcoes.find((o) => o.tipo === tipo)
-  const total = totalPecas(itens) + (escolhida ? escolhida.centavos / 100 : 0)
+  const desconto = descontoCupom(itens, cupom)
+  const total = totalPecas(itens) - desconto + (escolhida ? escolhida.centavos / 100 : 0)
+
+  const aplicarCupom = async () => {
+    const codigo = normalizarCupom(textoCupom)
+    if (!codigo) return setErroCupom('Digite o cupom.')
+    setConferindo(true)
+    setErroCupom('')
+    try {
+      const r = await fetch(`${API}/api/pedidos/cupom?codigo=${encodeURIComponent(codigo)}`)
+      const resposta = (await r.json()) as Partial<Cupom> & { erro?: string }
+      if (r.ok && resposta.codigo && resposta.percentual) setCupom({ codigo: resposta.codigo, percentual: resposta.percentual })
+      else setErroCupom(resposta.erro ?? 'Não conseguimos conferir o cupom. Tente de novo.')
+    } catch {
+      setErroCupom('Não conseguimos falar com a loja agora. Confira a internet e tente de novo.')
+    }
+    setConferindo(false)
+  }
+
+  const tirarCupom = () => {
+    setCupom(null)
+    setTextoCupom('')
+    setErroCupom('')
+  }
 
   // com a conta aberta, a última entrega e o CPF já vêm preenchidos (uma vez, sem apagar o que ela digitou)
   const ultima = conta?.entrega
@@ -226,6 +260,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
           itens: itens.map((i) => ({ peca: i.peca.slug, cor: i.cor, tamanho: i.tamanho, qtd: i.qtd })),
           cliente: { cpf: correios(tipo) ? dados.cpf : '' },
           entrega: { tipo, cep: digitos, ...endereco },
+          cupom: cupom?.codigo ?? '',
         }),
       })
       const resposta = (await r.json()) as { codigo?: string; pagar?: string; erro?: string }
@@ -238,6 +273,8 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
       }
       // a sessão venceu: volta para a tela de entrar
       if (r.status === 401) sessaoEncerrada()
+      // o cupom foi desligado enquanto ela fechava a compra: sai do resumo, e o total volta ao normal
+      if (r.status === 409 && cupom && resposta.erro?.includes(cupom.codigo)) setCupom(null)
       setErro(resposta.erro ?? 'Não conseguimos fechar a compra agora. Tente de novo em instantes.')
     } catch {
       setErro('Não conseguimos falar com a loja agora. Confira a internet e tente de novo.')
@@ -368,6 +405,14 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
                 <span>{precoBR(i.peca.preco * i.qtd)}</span>
               </li>
             ))}
+            {cupom && (
+              <li className="compra-resumo-desconto">
+                <span>
+                  Cupom {cupom.codigo} ({cupom.percentual}% nas peças)
+                </span>
+                <span>−{precoBR(desconto)}</span>
+              </li>
+            )}
             {escolhida && (
               <li>
                 <span>{escolhida.nome}</span>
@@ -375,6 +420,45 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
               </li>
             )}
           </ul>
+          {cupom ? (
+            <p className="compra-cupom-ok">
+              Cupom <strong>{cupom.codigo}</strong> aplicado.{' '}
+              <button type="button" className="conta-link" onClick={tirarCupom}>
+                Tirar o cupom
+              </button>
+            </p>
+          ) : (
+            <div className="compra-cupom">
+              <label className="compra-campo">
+                <span>Cupom de desconto</span>
+                <input
+                  value={textoCupom}
+                  onChange={(e) => {
+                    setTextoCupom(normalizarCupom(e.target.value).slice(0, 20))
+                    setErroCupom('')
+                  }}
+                  onKeyDown={(e) => {
+                    // Enter aplica o cupom, em vez de ir para o pagamento
+                    if (e.key !== 'Enter') return
+                    e.preventDefault()
+                    void aplicarCupom()
+                  }}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="Ex.: LIVI10"
+                />
+              </label>
+              <button type="button" className="pilula" onClick={() => void aplicarCupom()} disabled={conferindo}>
+                {conferindo ? 'Conferindo…' : 'Aplicar'}
+              </button>
+            </div>
+          )}
+          {erroCupom && (
+            <p className="compra-aviso" role="alert">
+              {erroCupom}
+            </p>
+          )}
         </section>
 
         <a className="compra-duvida" href={linkWhatsApp()} target="_blank" rel="noreferrer">

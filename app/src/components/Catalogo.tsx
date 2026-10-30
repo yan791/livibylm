@@ -46,6 +46,7 @@ import { BotaoDesejos, BotaoSacola } from './Gaveta'
 import { BotaoDesejo } from './Desejos'
 import { Fechar, SetaDireita, SetaEsquerda, WhatsApp } from './icones'
 import { TabelaMedidas } from './Medidas'
+import { PrecoPeca } from './Preco'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const doisDigitos = (n: number) => String(n).padStart(2, '0')
@@ -275,7 +276,9 @@ function Trilho({ colecao }: { colecao: Colecao }) {
                   )}
                 </span>
                 <span className="cat-card-nome">{p.nome}</span>
-                <span className="cat-card-preco">{precoBR(p.preco)}</span>
+                <span className="cat-card-preco">
+                  <PrecoPeca peca={p} />
+                </span>
               </button>
               <BotaoDesejo className="cat-card-desejo" item={{ colecao: colecao.slug, peca: p.slug }} />
             </article>
@@ -372,7 +375,7 @@ function Detalhe({ colecao, peca, lista }: { colecao: Colecao; peca: Peca; lista
           <BotaoDesejo className="cat-nome-desejo" item={{ colecao: colecao.slug, peca: peca.slug }} />
         </div>
         <p className="cat-preco">
-          {precoBR(peca.preco)}
+          <PrecoPeca peca={peca} />
           {esgotada && <span className="cat-selo">Esgotado</span>}
         </p>
         {!esgotada && textoParcelas() && <p className="cat-parcelas">{textoParcelas()}</p>}

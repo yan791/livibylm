@@ -30,9 +30,9 @@ export function texto(v: unknown, campo: string, max: number, obrigatorio = fals
 }
 
 /** o número no endereço (/pecas/12); qualquer outra coisa é "não encontrada" (ou "não encontrado") */
-export function idDe(c: Context<Ambiente>, oque: 'Peça' | 'Coleção' | 'Pessoa' | 'Pedido') {
+export function idDe(c: Context<Ambiente>, oque: 'Peça' | 'Coleção' | 'Pessoa' | 'Pedido' | 'Cupom') {
   const id = Number(c.req.param('id'))
-  if (!Number.isInteger(id) || id < 1) throw falha(404, `${oque} não ${oque === 'Pedido' ? 'encontrado' : 'encontrada'}.`)
+  if (!Number.isInteger(id) || id < 1) throw falha(404, `${oque} não ${oque === 'Pedido' || oque === 'Cupom' ? 'encontrado' : 'encontrada'}.`)
   return id
 }
 

@@ -2179,6 +2179,29 @@ html[data-catalogo]:has(.gaveta) {
   line-height: 1.2;
 }
 
+/* peça com desconto: o preço cheio riscado, o preço que ela paga e a porcentagem */
+.preco-promo {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.5em;
+}
+
+.preco-promo s {
+  font-size: 0.88em;
+  opacity: 0.6;
+}
+
+.preco-promo-selo {
+  align-self: center;
+  padding: 0.12em 0.5em;
+  border-radius: 999px;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
 .cat-card-preco {
   font-size: 0.9rem;
   letter-spacing: 0.06em;
@@ -4738,6 +4761,28 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* cupom de desconto, no resumo da compra */
+.compra-cupom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.compra-cupom .pilula {
+  min-height: 46px;
+}
+
+.compra-cupom-ok {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.compra-resumo-desconto {
+  color: var(--bordo);
 }
 
 .compra-resumo ul {

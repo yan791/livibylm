@@ -230,6 +230,13 @@ export const Icone = {
       <path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.9c1.6.8 2.7 2.6 3 5.1" />
     </>,
   ),
+  // etiqueta de preço com um furo (cupons)
+  cupom: svg(
+    <>
+      <path d="M3.5 11.6V4.5a1 1 0 0 1 1-1h7.1a1 1 0 0 1 .7.3l8.2 8.2a1 1 0 0 1 0 1.4l-7.1 7.1a1 1 0 0 1-1.4 0l-8.2-8.2a1 1 0 0 1-.3-.7Z" />
+      <circle cx="8" cy="8" r="1.4" />
+    </>,
+  ),
   mais: svg(<path d="M12 5v14M5 12h14" />),
   voltar: svg(<path d="M15 5l-7 7 7 7" />),
   esquerda: svg(<path d="M14 6l-6 6 6 6" />),

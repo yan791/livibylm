@@ -86,6 +86,10 @@ export type PedidoPublico = {
   itensCentavos: number
   freteCentavos: number
   totalCentavos: number
+  /** cupom usado (vazio = sem cupom); servidor antigo não manda */
+  cupom?: string
+  cupomPercentual?: number
+  descontoCentavos?: number
   pagamento: string
   parcelas: number
   recibo: string

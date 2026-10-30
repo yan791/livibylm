@@ -29,6 +29,7 @@ import { cn } from '../lib/cn'
 import { Espaco } from '../components/Espaco'
 import { BotaoDesejo } from '../components/Desejos'
 import { WhatsApp } from '../components/icones'
+import { PrecoPeca } from '../components/Preco'
 
 const ease = [0.22, 1, 0.36, 1] as const
 const TITULO_SITE = 'Liví by LM | Moda feminina autoral'
@@ -277,7 +278,9 @@ function Cartao({ item, primeiro }: { item: ItemPeca; primeiro: boolean }) {
         </span>
         <span className="pecas-card-colecao">{colecao.nome}</span>
         <span className="cat-card-nome">{peca.nome}</span>
-        <span className="cat-card-preco">{precoBR(peca.preco)}</span>
+        <span className="cat-card-preco">
+          <PrecoPeca peca={peca} />
+        </span>
       </a>
       <BotaoDesejo className="cat-card-desejo" item={{ colecao: colecao.slug, peca: peca.slug }} />
     </article>

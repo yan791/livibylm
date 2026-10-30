@@ -6,6 +6,7 @@ import { api, mensagemDe, reais, type Colecao, type ResumoPeca } from '../api'
 import { aoClicar } from '../rota'
 import { pequena } from '../imagem'
 import { avisar, Carregando, FalhaCarga, Icone, useCarregar } from '../ui'
+import { comDesconto } from '../../../worker/descontos'
 
 const semAcento = (s: string) =>
   s
@@ -142,7 +143,9 @@ export function Pecas() {
                     <span className="miniatura">{p.foto ? <img src={pequena(p.foto)} alt="" loading="lazy" /> : Icone.foto}</span>
                     <span className="linha-texto">
                       <strong>{p.nome}</strong>
-                      <span>{reais(p.precoCentavos)}</span>
+                      <span>
+                        {p.desconto ? `${reais(comDesconto(p.precoCentavos, p.desconto))} (−${p.desconto}% de ${reais(p.precoCentavos)})` : reais(p.precoCentavos)}
+                      </span>
                       <Situacao p={p} />
                     </span>
                   </a>

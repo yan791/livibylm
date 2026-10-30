@@ -27,6 +27,7 @@ import { fotoPequena } from '../lib/base'
 import { cn } from '../lib/cn'
 import { Coracao, IconeCabide, IconeSacola, SetaDiagonal } from './icones'
 import { AvisoSaiu, type PropsPainel } from './Sacola'
+import { PrecoPeca } from './Preco'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -180,7 +181,7 @@ export function PainelDesejos({ fechar, irPara }: PropsPainel) {
                   <p className="gaveta-colecao">Coleção {i.colecaoNome}</p>
                   <p className="gaveta-nome">{i.peca.nome}</p>
                   <p className="gaveta-detalhe">
-                    {precoBR(i.peca.preco)}
+                    <PrecoPeca peca={i.peca} />
                     {esgotada && <span className="gaveta-selo">Esgotada</span>}
                   </p>
                   {esgotada ? (

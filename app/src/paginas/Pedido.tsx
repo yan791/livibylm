@@ -273,17 +273,25 @@ export function Pedido({ codigo }: { codigo: string }) {
             ))}
           </ul>
           <dl>
+            {(p.freteCentavos > 0 || !!p.descontoCentavos) && (
+              <div>
+                <dt>Peças</dt>
+                <dd>{reais(p.itensCentavos)}</dd>
+              </div>
+            )}
+            {!!p.descontoCentavos && (
+              <div>
+                <dt>
+                  Cupom {p.cupom} ({p.cupomPercentual}%)
+                </dt>
+                <dd>−{reais(p.descontoCentavos)}</dd>
+              </div>
+            )}
             {p.freteCentavos > 0 && (
-              <>
-                <div>
-                  <dt>Peças</dt>
-                  <dd>{reais(p.itensCentavos)}</dd>
-                </div>
-                <div>
-                  <dt>{p.entrega === 'maceio' ? 'Entrega em Maceió' : 'Frete'}</dt>
-                  <dd>{reais(p.freteCentavos)}</dd>
-                </div>
-              </>
+              <div>
+                <dt>{p.entrega === 'maceio' ? 'Entrega em Maceió' : 'Frete'}</dt>
+                <dd>{reais(p.freteCentavos)}</dd>
+              </div>
             )}
             <div className="pedido-total">
               <dt>Total</dt>

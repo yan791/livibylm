@@ -27,6 +27,7 @@ import type { Aba } from '../lib/lista'
 import { cn } from '../lib/cn'
 import { Coracao, Fechar, IconeCabide, IconeSacola, SetaDiagonal, WhatsApp } from './icones'
 import { Compra } from './Compra'
+import { PrecoPeca } from './Preco'
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -118,7 +119,7 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
                   <p className="gaveta-nome">{i.peca.nome}</p>
                   <p className="gaveta-detalhe">
                     {i.colecaoNome} · {i.cor}
-                    {i.tamanho && ` · ${rotuloTamanho(i.tamanho)}`} · {precoBR(i.peca.preco)}
+                    {i.tamanho && ` · ${rotuloTamanho(i.tamanho)}`} · <PrecoPeca peca={i.peca} />
                   </p>
 
                   {i.esgotado && (

@@ -20,6 +20,7 @@ import { agora } from './seguranca'
 import { conferirDisponivel, gravarPedido, lerPedido, MAX_LINHAS, novoCodigo, semEstoque, situacaoDe, type ItemNovo } from './pedidos'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { criarLinkSenha } from './contas'
+import { comDesconto } from './descontos'
 
 export const painelPedidos = new Hono<Ambiente>()
 
@@ -42,6 +43,9 @@ const pedidoParaPainel = (p: LinhaPedido, itens: LinhaItemPedido[]) => ({
   itensCentavos: p.itens_centavos,
   freteCentavos: p.frete_centavos,
   totalCentavos: p.total_centavos,
+  cupom: p.cupom,
+  cupomPercentual: p.cupom_percentual,
+  descontoCentavos: p.desconto_centavos,
   pagamento: p.pagamento,
   parcelas: p.parcelas,
   pagoCentavos: p.pago_centavos,
@@ -131,7 +135,8 @@ painelPedidos.get('/opcoes', async (c) => {
         id: p.id,
         nome: p.nome,
         colecao: p.colecao_nome,
-        precoCentavos: p.preco_centavos,
+        // a venda fora do site já vem com o preço da loja (com o desconto da peça)
+        precoCentavos: comDesconto(p.preco_centavos, p.desconto),
         foto: (JSON.parse(p.fotos) as string[])[0] ?? '',
         visivel: p.visivel === 1,
         sobEncomenda: p.sob_encomenda === 1,

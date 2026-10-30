@@ -14,7 +14,7 @@ As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations
   - o estoque e os tamanhos. As 9 peças com "APENAS 1 NO M" no catálogo entraram só com essa unidade; as outras 61 entraram com 1 por tamanho, do PP ao GG, provisório. Com as vendas ligadas, vale acertar logo depois de publicar.
   - a altura da modelo e o tamanho que ela veste (vazios em todas).
   - os textos das coleções Sinfonia e Brasil (escritos a partir das fotos) e a ordem das coleções.
-- **Ainda não tem no site:** o preço "de/por" das peças em promoção. Elas aparecem só com o preço atual.
+- **Preço "de/por":** desde a migration 0011, as peças em promoção guardam o preço cheio e o desconto (%), e o site mostra o preço cheio riscado. Entraram assim as 19 peças com o preço de antes lido no catálogo; o Vestido Letícia preto e as Saias Livia parecem em promoção, mas o preço de antes não foi lido: a Livia confere no painel.
 
 ### 2. Domínio `livibylm.com.br`: no ar desde 28/10/2026
 
@@ -49,6 +49,10 @@ O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende
 - **Também com espaço reservado:** as fotos da seção de looks (`app/src/sections/Looks.tsx`) e o logo em arquivo (`site.logo` em `app/src/dados/site.ts`; sem ele, aparece o nome escrito).
 
 ## O que já está pronto e publicado
+
+- **Cupons e desconto por peça** (`app/migrations/0011_cupons_e_descontos.sql`, `app/worker/cupons.ts`, `app/worker/descontos.ts`). Pronto no código; entra no ar com o próximo `npm run publicar`.
+  - **Cupons** (painel > Cupons): código e porcentagem (1% a 90%), ligar e desligar, quantas compras pagas usaram. A cliente digita no resumo da compra; o desconto vale sobre as peças, não sobre a entrega, e o servidor confere de novo ao fechar a compra. O pedido guarda o cupom e a porcentagem da hora.
+  - **Desconto da peça** (painel > Peças > Desconto da peça): em %, o site mostra o preço cheio riscado. O cupom vale em cima do preço com desconto.
 
 - **4.1 Pedidos e reserva.** Tabelas `pedidos`, `pedido_itens` e `pagamentos` (`app/migrations/0003_pedidos.sql`).
   - Uma compra do site segura as peças por 30 minutos.
