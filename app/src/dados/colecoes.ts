@@ -10,6 +10,7 @@
 */
 
 import { API, enderecoFoto } from '../lib/base'
+import { descontoDe } from '../../worker/descontos'
 
 export type Cor = { nome: string; hex: string }
 
@@ -75,6 +76,8 @@ export type Ajustes = {
   trocaDias: number
   /** quem paga o frete de uma troca */
   freteTroca: 'loja' | 'dividido' | 'cliente'
+  /** desconto no Pix, em % (0 = sem): a InfinitePay tira do total quando a cliente paga no Pix */
+  descontoPix: number
 }
 
 async function buscar(): Promise<unknown> {
@@ -130,6 +133,7 @@ function prepararAjustes(dados: unknown): Ajustes {
         : null,
     trocaDias: typeof a.trocaDias === 'number' && a.trocaDias >= 7 ? Math.floor(a.trocaDias) : 7,
     freteTroca: a.freteTroca === 'loja' || a.freteTroca === 'cliente' ? a.freteTroca : 'dividido',
+    descontoPix: typeof a.descontoPix === 'number' && a.descontoPix > 0 && a.descontoPix < 100 ? a.descontoPix : 0,
   }
 }
 
@@ -172,6 +176,16 @@ export const rotuloTamanho = (t: string) => (/^[uú]nico$/i.test(t.trim()) ? 'Ta
 
 /** "em até 3x sem juros" embaixo do preço; vazio quando não há parcelamento */
 export const textoParcelas = () => (ajustes.parcelas > 1 ? `em até ${ajustes.parcelas}x sem juros` : '')
+
+/** o valor no Pix, com o desconto que a InfinitePay dá (a mesma conta, arredondada ao centavo) */
+export const precoNoPix = (reais: number) => {
+  const centavos = Math.round(reais * 100)
+  return (centavos - descontoDe(centavos, ajustes.descontoPix)) / 100
+}
+
+/** "ou R$ 189,05 no Pix (5% de desconto)" embaixo do preço; vazio sem desconto no Pix ou com as vendas pelo site desligadas */
+export const textoPix = (reais: number) =>
+  ajustes.descontoPix > 0 && ajustes.vendasOnline ? `ou ${precoBR(precoNoPix(reais))} no Pix (${ajustes.descontoPix}% de desconto)` : ''
 
 /** prazo da peça sob encomenda, como aparece no site */
 export const textoEncomenda = (peca: Peca) =>

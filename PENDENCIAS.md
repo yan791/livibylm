@@ -6,15 +6,28 @@ Atualizado em 22/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`), 4.3 (compra 
 
 As vendas pelo site já estão ligadas. Falta isto para entregar a loja:
 
+### Próxima publicação: cupons, desconto da peça e Pix, sem mexer no que a Livia já mudou
+
+A loja foi entregue, e a Livia já está acertando o estoque e os ajustes pelo painel. Em 05/11 o site no ar ainda não tem os cupons nem o desconto da peça: a única migration nova é a `0011_cupons_e_descontos.sql`, e ela foi testada sobre um banco com edições como as dela.
+- **O que a 0011 muda:** cria a tabela de cupons e colunas novas (vazias) nos pedidos e nas peças. Nas 17 peças em promoção, troca o preço guardado pelo preço cheio + o desconto (%), e o valor cobrado continua o mesmo. Só muda a peça que ainda está com o preço da promoção: se a Livia mexeu no preço, a peça fica como ela deixou.
+- **O que não muda:** estoque, tamanhos, nomes, textos, fotos, peças escondidas ou apagadas, ajustes, pedidos, contas.
+
+**Yan, dentro de `app`:**
+1. `git pull`.
+2. Cópia do banco, **fora da pasta do projeto** (tem dados das clientes, e o repositório é público): `npx wrangler d1 export livi --remote --output ~/backup-livi-antes-dos-cupons.sql`.
+3. `npx wrangler d1 migrations list livi --remote`: tem que aparecer só a `0011_cupons_e_descontos.sql`. Se aparecer a 0009 ou a 0010, parar e avisar: elas recriam as peças e apagariam o estoque da Livia.
+4. `npm run publicar`. Ele aplica a 0011 e logo depois publica o código. Se parar com erro no `wrangler deploy` (depois da migration), rodar `npx wrangler deploy` na hora: até o código novo subir, o site antigo mostra as peças em promoção com o preço cheio.
+5. Conferir: preço cheio riscado nas peças em promoção, a aba "Cupons" no painel, e o estoque e os ajustes da Livia como estavam.
+
 ### 1. As peças de verdade no banco
 
 As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations/0009_pecas_reais.sql`, nas coleções Lúmina, Velvet, Carmim, Confiança e nas novas Sinfonia e Brasil. A migration apaga as 16 de exemplo. As fotos ficam em `app/public/img/pecas/<coleção>/<peça>/`. Cada cor do WhatsApp virou uma peça, porque o site guarda as fotos por peça.
-- **Yan:** `npm run publicar`, que aplica a migration. Até lá, a loja no ar continua vendendo as peças de exemplo.
+- **Yan:** `npm run publicar`, que aplica a migration. **Feito:** em 05/11 o site no ar mostra 67 peças (a Livia já escondeu ou apagou algumas).
 - **Livia confirma, no painel (Peças):**
   - o estoque e os tamanhos. As 9 peças com "APENAS 1 NO M" no catálogo entraram só com essa unidade; as outras 61 entraram com 1 por tamanho, do PP ao GG, provisório. Com as vendas ligadas, vale acertar logo depois de publicar.
   - a altura da modelo e o tamanho que ela veste (vazios em todas).
   - os textos das coleções Sinfonia e Brasil (escritos a partir das fotos) e a ordem das coleções.
-- **Preço "de/por":** desde a migration 0011, as peças em promoção guardam o preço cheio e o desconto (%), e o site mostra o preço cheio riscado. Entraram assim as 19 peças com o preço de antes lido no catálogo; o Vestido Letícia preto e as Saias Livia parecem em promoção, mas o preço de antes não foi lido: a Livia confere no painel.
+- **Preço "de/por":** desde a migration 0011, as peças em promoção guardam o preço cheio e o desconto (%), e o site mostra o preço cheio riscado. Entraram assim as 17 peças com o preço de antes lido no catálogo; o Vestido Letícia preto e as Saias Livia parecem em promoção, mas o preço de antes não foi lido: a Livia confere no painel.
 
 ### 2. Domínio `livibylm.com.br`: no ar desde 28/10/2026
 
@@ -41,7 +54,16 @@ O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende
 - **sem o domínio:** a conta do Resend criada com o livibylm@gmail.com, e o Yan cadastra a chave (`RESEND_CHAVE`);
 - **com o domínio:** verificar o `livibylm.com.br` no Resend (os registros de DNS entram na Cloudflare) e trocar o remetente (`EMAIL_REMETENTE`) para um endereço da loja. É isso que permite, depois, mandar e-mail também para a cliente sem cair no spam.
 
-### 4. Textos do site
+### 4. Desconto no Pix (5%)
+
+O código está pronto: a página de pagamento da InfinitePay tira 5% do total quando a cliente escolhe Pix (`options.discounts` no link, `app/worker/infinitepay.ts`). O site mostra o valor no Pix embaixo do preço da peça e no total da compra, e a Livia muda a porcentagem em Ajustes > Pagamento (0 tira o desconto).
+- **Só vale com a chave de API da InfinitePay** (`INFINITEPAY_CHAVE`, segredo do Worker): sem ela, a InfinitePay não aceita o desconto e o site não mostra. Em 30/10 o Arthur confirmou que a chave já está cadastrada.
+  1. **Yan:** publicar, como em "Próxima publicação" acima. O desconto no Pix não tem migration: ele usa os ajustes que a Livia já salvou e só acrescenta os 5%.
+  2. **Conferir no painel:** em Ajustes > Pagamento, o campo "Desconto no Pix (%)" com 5 e sem o aviso "Ainda não vale" (o aviso aparece se o Worker não achar a chave).
+  3. **Conferir uma compra pequena paga no Pix:** a página da InfinitePay mostra os 5% a menos, e o painel mostra "A cliente pagou ... (com o desconto do Pix)".
+- O desconto vale sobre tudo o que é cobrado, entrega incluída (é a InfinitePay que calcula). Não dá para tirar o cartão da página de pagamento: só o Pix tem desconto.
+
+### 5. Textos do site
 
 - ~~**A criadora**~~ (`app/src/sections/Depois.tsx`): foto, nome (Livia Moraes, sem acento, como no registro dela) e o texto dela sobre como a marca começou. Feito em 29/10.
 - **Tamanhos:** a tabela de medidas (PP ao G, em cm) já está no "Como comprar" e no "Guia de medidas" da peça (`medidas` em `app/src/dados/site.ts`). Ela não tem GG, mas as 61 peças com estoque provisório entraram com GG: confirmar com a Livia se o GG sai.
@@ -181,7 +203,7 @@ Pedido da Livia: ver só as saias, só as blusas etc., de todas as coleções.
 ## Respostas da Livia
 
 Já respondidas (21/10):
-- sem desconto no Pix;
+- ~~sem desconto no Pix~~: em 30/10, **5% no Pix** (ver "Desconto no Pix" abaixo);
 - sem retirada: não há loja física;
 - reserva de 30 minutos, como está em `RESERVA_MINUTOS` (`app/worker/pedidos.ts`);
 - frete fora de Maceió: tabela fixa por região, com PAC e SEDEX (ver a parte 4.3).

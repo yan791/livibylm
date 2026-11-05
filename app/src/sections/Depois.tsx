@@ -150,7 +150,7 @@ const duvidas: { p: string; r: ReactNode; ph?: boolean }[] = [
   ajustes.vendasOnline
     ? {
         p: 'Pagamento',
-        r: `Pix ou cartão de crédito${ajustes.parcelas > 1 ? `, em até ${ajustes.parcelas}x sem juros` : ''}, numa página segura da InfinitePay.`,
+        r: `Pix${ajustes.descontoPix > 0 ? `, com ${ajustes.descontoPix}% de desconto,` : ''} ou cartão de crédito${ajustes.parcelas > 1 ? `, em até ${ajustes.parcelas}x sem juros` : ''}, numa página segura da InfinitePay.`,
       }
     : { p: 'Pagamento', r: '[Formas de pagamento e parcelamento. Confirmar com a cliente.]', ph: true },
   ajustes.vendasOnline

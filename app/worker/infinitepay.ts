@@ -44,6 +44,12 @@ async function chamar(env: Ambiente, caminho: string, corpo: Record<string, unkn
 
 export type ItemLink = { descricao: string; quantidade: number; precoCentavos: number }
 
+/** a loja cadastrou a chave de API (sem ela, a InfinitePay não aceita as opções do link, como o desconto no Pix) */
+export const temChave = (env: object) => {
+  const chave = (env as { INFINITEPAY_CHAVE?: unknown }).INFINITEPAY_CHAVE
+  return typeof chave === 'string' && chave.length > 0
+}
+
 export type DadosLink = {
   codigo: string
   itens: ItemLink[]
@@ -54,6 +60,8 @@ export type DadosLink = {
   /** sem ela, quem paga preenche nome, e-mail e telefone na página da InfinitePay */
   cliente?: { nome: string; email: string; whatsapp: string }
   endereco?: { cep: string; rua: string; bairro: string; numero: string; complemento: string }
+  /** desconto no Pix, em %: a InfinitePay tira do total quando a cliente escolhe Pix (só com a chave de API) */
+  descontoPix?: number
 }
 
 /** cria a página de pagamento; devolve o endereço dela e o código da fatura (quando vier) */
@@ -73,6 +81,7 @@ export async function criarLink(env: Ambiente, d: DadosLink) {
         complement: d.endereco.complemento,
       },
     }),
+    ...(d.descontoPix && temChave(env) && { options: { discounts: { pix: d.descontoPix } } }),
   })
   // a documentação e as integrações conhecidas usam nomes diferentes para o endereço.
   // Só no PC (INFINITEPAY_API aponta para a InfinitePay de mentira, scripts/infinitepay-falsa.mjs) vale http

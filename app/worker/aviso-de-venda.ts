@@ -59,6 +59,8 @@ function texto(p: LinhaPedido, itens: LinhaItemPedido[], painel: string) {
     ...(p.desconto_centavos ? [`Cupom ${p.cupom} (${p.cupom_percentual}%): -${reais(p.desconto_centavos)}`] : []),
     `Entrega: ${entrega}${destino}${p.frete_centavos ? `: ${reais(p.frete_centavos)}` : ''}`,
     `Total: ${reais(p.total_centavos)}${pagamento ? ` (${pagamento})` : ''}`,
+    // Pix com desconto (a InfinitePay tirou do total) ou cartão com juros do parcelamento
+    ...(p.pago_centavos && p.pago_centavos !== p.total_centavos ? [`Valor pago: ${reais(p.pago_centavos)}`] : []),
     '',
     `Cliente: ${p.nome}${p.whatsapp ? ` · WhatsApp ${telefone(p.whatsapp)}` : ''}`,
     '',

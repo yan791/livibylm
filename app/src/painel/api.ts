@@ -96,6 +96,10 @@ export type Ajustes = {
   trocaDias: number
   /** quem paga o frete de uma troca */
   freteTroca: 'loja' | 'dividido' | 'cliente'
+  /** desconto no Pix, em % (0 = sem) */
+  descontoPix: number
+  /** a loja cadastrou a chave de API da InfinitePay: sem ela, o desconto no Pix não vale */
+  chaveInfinitePay: boolean
 }
 
 /** a última compra de teste (Ajustes): paga, ela libera as vendas pelo site */

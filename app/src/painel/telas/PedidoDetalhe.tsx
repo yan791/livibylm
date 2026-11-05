@@ -299,6 +299,11 @@ function Tela({ inicial, whatsappLoja }: { inicial: Pedido; whatsappLoja: string
                 {reais(p.pagoCentavos)} <small>(com os juros do parcelamento)</small>
               </Dado>
             )}
+            {p.pagoCentavos > 0 && p.pagoCentavos < p.totalCentavos && (
+              <Dado rotulo="A cliente pagou">
+                {reais(p.pagoCentavos)} <small>(com o desconto do Pix)</small>
+              </Dado>
+            )}
           </dl>
           {p.recibo && (
             <a className="link-acao" href={p.recibo} target="_blank" rel="noreferrer">

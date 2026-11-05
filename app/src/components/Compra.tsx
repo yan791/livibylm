@@ -11,7 +11,7 @@
   Com a conta aberta, o endereço e o CPF da última compra já vêm preenchidos.
 */
 import { useEffect, useState, type FormEvent } from 'react'
-import { ajustes, precoBR, rotuloTamanho } from '../dados/colecoes'
+import { ajustes, precoBR, precoNoPix, rotuloTamanho } from '../dados/colecoes'
 import { linkWhatsApp, site } from '../dados/site'
 import { API } from '../lib/base'
 import type { detalhar } from '../lib/sacola'
@@ -471,6 +471,11 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
           <span>Total{escolhida ? '' : ' sem a entrega'}</span>
           <strong>{precoBR(total)}</strong>
         </p>
+        {ajustes.descontoPix > 0 && (
+          <p className="gaveta-pix">
+            No Pix: <strong>{precoBR(precoNoPix(total))}</strong> ({ajustes.descontoPix}% de desconto, na página de pagamento)
+          </p>
+        )}
         {erro && (
           <p className="compra-erro" role="alert">
             {erro}{' '}
@@ -485,7 +490,8 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
           {enviando ? 'Abrindo o pagamento…' : 'Ir para o pagamento'}
         </button>
         <p className="gaveta-nota">
-          Pix ou cartão{ajustes.parcelas > 1 ? ` em até ${ajustes.parcelas}x sem juros` : ''}, na página da InfinitePay. Ao seguir,{' '}
+          Pix{ajustes.descontoPix > 0 ? ` com ${ajustes.descontoPix}% de desconto` : ''} ou cartão
+          {ajustes.parcelas > 1 ? ` em até ${ajustes.parcelas}x sem juros` : ''}, na página da InfinitePay. Ao seguir,{' '}
           {conta ? '' : 'a sua conta é criada e '}as peças ficam separadas para você por 30 minutos.
         </p>
         <p className="gaveta-nota">

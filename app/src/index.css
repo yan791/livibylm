@@ -1784,6 +1784,15 @@ img {
   align-items: baseline;
 }
 
+/* o total no Pix, com o desconto da InfinitePay, embaixo do total */
+.gaveta-pix {
+  margin-top: -4px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  text-align: right;
+  color: var(--chocolate);
+}
+
 .gaveta-total span {
   font-size: 0.7rem;
   letter-spacing: 0.24em;

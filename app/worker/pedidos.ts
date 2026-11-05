@@ -491,6 +491,8 @@ export function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
     itensCentavos: p.itens_centavos,
     freteCentavos: p.frete_centavos,
     totalCentavos: p.total_centavos,
+    /** o que a cliente pagou (menos que o total no Pix com desconto; mais no cartão com juros); 0 = ainda não pagou */
+    pagoCentavos: p.pago_em ? p.pago_centavos : 0,
     cupom: p.cupom,
     cupomPercentual: p.cupom_percentual,
     descontoCentavos: p.desconto_centavos,
@@ -511,7 +513,7 @@ export function pedidoPublico(p: LinhaPedido, itens: LinhaItemPedido[]) {
 export async function abrirPagamento(
   c: Context<Ambiente>,
   codigo: string,
-  d: { itens: ItemLink[]; cliente?: DadosLink['cliente']; endereco?: DadosLink['endereco'] },
+  d: { itens: ItemLink[]; cliente?: DadosLink['cliente']; endereco?: DadosLink['endereco']; descontoPix?: number },
 ) {
   const origem = new URL(c.req.url).origin
   const site = (c.env.SITE_PUBLICO || origem).replace(/\/$/, '')
@@ -614,6 +616,7 @@ compras.post('/', async (c) => {
       ],
       cliente,
       endereco: entrega,
+      descontoPix: ajustes.descontoPix,
     })
     return c.json({ codigo, pagar }, 201)
   } catch {

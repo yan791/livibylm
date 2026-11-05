@@ -31,6 +31,8 @@ type Rascunho = {
   loja: DadosAjustes['loja']
   trocaDias: number
   freteTroca: DadosAjustes['freteTroca']
+  /** desconto no Pix em %, como digitado */
+  descontoPix: string
 }
 
 const PRAZOS_TROCA = [7, 10, 15, 30, 60, 90]
@@ -90,6 +92,7 @@ const rascunhoDe = (a: DadosAjustes): Rascunho => ({
   loja: { ...a.loja, documento: documentoTexto(a.loja.documento) },
   trocaDias: a.trocaDias,
   freteTroca: a.freteTroca,
+  descontoPix: a.descontoPix ? String(a.descontoPix) : '',
 })
 
 export function Ajustes() {
@@ -129,6 +132,8 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
     const documento = semPontuacao(r.loja.documento)
     if (documento && ![11, 14].includes(documento.length)) return setErro('Confira o CPF (11 números) ou o CNPJ (14 caracteres) da loja.')
     if (r.loja.email.trim() && !EMAIL.test(r.loja.email.trim())) return setErro('Confira o e-mail da loja.')
+    const descontoPix = Number(r.descontoPix) || 0
+    if (descontoPix > 30) return setErro('O desconto no Pix vai até 30%.')
     const freteCorreios = {} as TabelaFrete
     for (const { id, nome } of REGIOES) {
       const linha = { pac: null, sedex: null } as Record<Servico, number | null>
@@ -152,6 +157,7 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
         loja: { ...r.loja, documento },
         trocaDias: r.trocaDias,
         freteTroca: r.freteTroca,
+        descontoPix,
       })
       avisar('Ajustes salvos. O site já usa os novos.')
       aoSalvar()
@@ -341,7 +347,7 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
       </section>
 
       <section className="cartao">
-        <h2>Parcelamento</h2>
+        <h2>Pagamento</h2>
         <Campo
           rotulo="Parcelas sem juros"
           dica={
@@ -359,6 +365,27 @@ function Formulario({ dados, aoSalvar }: { dados: DadosAjustes; aoSalvar: () => 
                 </option>
               ))}
             </select>
+          )}
+        </Campo>
+        <Campo
+          rotulo="Desconto no Pix (%)"
+          dica={
+            !dados.chaveInfinitePay
+              ? 'Ainda não vale: para a InfinitePay dar o desconto, a loja precisa criar a chave de API no app da InfinitePay (Checkout > Checkout Integrado) e quem cuida do site cadastrar. Até lá, o site não mostra o desconto.'
+              : Number(r.descontoPix) > 0
+                ? `A InfinitePay tira ${r.descontoPix}% do total quando a cliente paga no Pix. O site mostra o valor no Pix embaixo do preço e no total da compra.`
+                : 'Vazio, sem desconto no Pix.'
+          }
+        >
+          {(i) => (
+            <input
+              id={i}
+              className="campo-curto"
+              inputMode="numeric"
+              value={r.descontoPix}
+              onChange={(e) => campo('descontoPix')(e.target.value.replace(/\D/g, '').slice(0, 2))}
+              placeholder="0"
+            />
           )}
         </Campo>
       </section>

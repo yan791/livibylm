@@ -104,7 +104,7 @@ describe('catálogo do site (/api/loja)', () => {
   it('os ajustes que o site recebe são só os públicos; os dados da loja só quando completos', async () => {
     const { ajustes } = await lerDoSite()
     expect(Object.keys(ajustes).sort()).toEqual(
-      ['correios', 'freteTroca', 'loja', 'parcelas', 'taxaMaceioCentavos', 'trocaDias', 'vendasOnline', 'whatsapp'].sort(),
+      ['correios', 'descontoPix', 'freteTroca', 'loja', 'parcelas', 'taxaMaceioCentavos', 'trocaDias', 'vendasOnline', 'whatsapp'].sort(),
     )
     expect(ajustes.loja).toBeNull()
   })

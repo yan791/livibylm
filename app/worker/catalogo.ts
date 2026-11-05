@@ -21,12 +21,13 @@ export const LIMITE_VISIVEL = 10
 const CACHE_MS = 10_000
 
 type Loja = Awaited<ReturnType<typeof consultar>>
-let guardado: { dados: Loja; ate: number } | null = null
+let guardado: { dados: Loja; ate: number; comChave: boolean } | null = null
 
-export async function lerLoja(db: D1Database) {
-  if (guardado && guardado.ate > Date.now()) return guardado.dados
-  const dados = await consultar(db)
-  guardado = { dados, ate: Date.now() + CACHE_MS }
+/** comChave: a loja tem a chave de API da InfinitePay (o desconto no Pix só vale com ela) */
+export async function lerLoja(db: D1Database, comChave = false) {
+  if (guardado && guardado.ate > Date.now() && guardado.comChave === comChave) return guardado.dados
+  const dados = await consultar(db, comChave)
+  guardado = { dados, ate: Date.now() + CACHE_MS, comChave }
   return dados
 }
 
@@ -34,7 +35,7 @@ export const limparCacheCatalogo = () => {
   guardado = null
 }
 
-async function consultar(db: D1Database) {
+async function consultar(db: D1Database, comChave: boolean) {
   const [colecoes, pecas, estoque, ajustes, reservas] = await db.batch([
     db.prepare('SELECT * FROM colecoes WHERE visivel = 1 ORDER BY ordem, id'),
     db.prepare('SELECT * FROM pecas WHERE visivel = 1 ORDER BY ordem, id'),
@@ -47,7 +48,7 @@ async function consultar(db: D1Database) {
 
   return {
     colecoes: montarColecoes(colecoes.results as LinhaColecao[], pecas.results as LinhaPeca[], linhasEstoque, seguras),
-    ajustes: ajustesPublicos(deLinha((ajustes.results as { valor: string }[])[0]?.valor)),
+    ajustes: ajustesPublicos(deLinha((ajustes.results as { valor: string }[])[0]?.valor), comChave),
   }
 }
 

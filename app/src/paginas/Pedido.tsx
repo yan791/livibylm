@@ -297,6 +297,12 @@ export function Pedido({ codigo }: { codigo: string }) {
               <dt>Total</dt>
               <dd>{reais(p.totalCentavos)}</dd>
             </div>
+            {!!p.pagoCentavos && p.pagoCentavos < p.totalCentavos && (
+              <div>
+                <dt>Pago no Pix, com desconto</dt>
+                <dd>{reais(p.pagoCentavos)}</dd>
+              </div>
+            )}
             {forma && (
               <div>
                 <dt>Pagamento</dt>

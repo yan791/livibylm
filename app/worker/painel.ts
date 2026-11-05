@@ -26,7 +26,19 @@ import {
 } from './seguranca'
 import { apagarFotosSemUso, guardarFoto, guardarPequena, LIMITE_FOTO } from './fotos'
 import { limparCacheCatalogo } from './catalogo'
-import { FRETES_TROCA, lerAjustes, lojaCompleta, numeroWhatsApp, PADRAO, salvarAjustes, type Ajustes, type DadosLoja, type FreteTroca } from './ajustes'
+import {
+  DESCONTO_PIX_MAXIMO,
+  FRETES_TROCA,
+  lerAjustes,
+  lojaCompleta,
+  numeroWhatsApp,
+  PADRAO,
+  salvarAjustes,
+  type Ajustes,
+  type DadosLoja,
+  type FreteTroca,
+} from './ajustes'
+import { temChave } from './infinitepay'
 import { chaveVariante, consultaReservas, estoqueReservado, mapaReservas, type LinhaReserva } from './reservas'
 import { painelPedidos } from './painel-pedidos'
 import { compraTeste, estadoTeste } from './compra-teste'
@@ -691,7 +703,8 @@ async function faltaParaVender(db: D1Database, a: Ajustes) {
   return ''
 }
 
-painel.get('/ajustes', async (c) => c.json(await lerAjustes(c.env.DB)))
+// chaveInfinitePay: sem a chave de API, o desconto no Pix fica guardado, mas não vale
+painel.get('/ajustes', async (c) => c.json({ ...(await lerAjustes(c.env.DB)), chaveInfinitePay: temChave(c.env) }))
 
 painel.put('/ajustes', async (c) => {
   const corpo = await lerCorpo(c)
@@ -708,6 +721,11 @@ painel.put('/ajustes', async (c) => {
     // a lei já dá 7 dias para desistir da compra: a troca não tem prazo menor
     trocaDias: corpo.trocaDias === undefined ? PADRAO.trocaDias : inteiro(corpo.trocaDias, 'Prazo para troca', 7, 90),
     freteTroca: (corpo.freteTroca as FreteTroca | undefined) ?? PADRAO.freteTroca,
+    // o painel antigo não manda: fica o que já estava
+    descontoPix:
+      corpo.descontoPix === undefined
+        ? (await lerAjustes(c.env.DB)).descontoPix
+        : inteiro(corpo.descontoPix, 'O desconto no Pix', 0, DESCONTO_PIX_MAXIMO),
   }
   if (ajustes.vendasOnline) {
     const falta = await faltaParaVender(c.env.DB, ajustes)

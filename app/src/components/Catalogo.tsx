@@ -20,6 +20,7 @@ import {
   rotuloTamanho,
   textoEncomenda,
   textoParcelas,
+  textoPix,
   type Colecao,
   type Peca,
 } from '../dados/colecoes'
@@ -379,6 +380,7 @@ function Detalhe({ colecao, peca, lista }: { colecao: Colecao; peca: Peca; lista
           {esgotada && <span className="cat-selo">Esgotado</span>}
         </p>
         {!esgotada && textoParcelas() && <p className="cat-parcelas">{textoParcelas()}</p>}
+        {!esgotada && textoPix(peca.preco) && <p className="cat-parcelas">{textoPix(peca.preco)}</p>}
         {peca.sobEncomenda && <p className="cat-encomenda">{textoEncomenda(peca)}</p>}
         <p className="cat-desc">{peca.descricao}</p>
 

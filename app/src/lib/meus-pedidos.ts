@@ -86,6 +86,8 @@ export type PedidoPublico = {
   itensCentavos: number
   freteCentavos: number
   totalCentavos: number
+  /** o que ela pagou (menos que o total no Pix com desconto); 0 = ainda não pagou; servidor antigo não manda */
+  pagoCentavos?: number
   /** cupom usado (vazio = sem cupom); servidor antigo não manda */
   cupom?: string
   cupomPercentual?: number

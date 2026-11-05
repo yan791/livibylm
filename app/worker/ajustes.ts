@@ -37,7 +37,15 @@ export type Ajustes = {
   /** dias, contados do recebimento, para pedir troca de tamanho, cor ou peça */
   trocaDias: number
   freteTroca: FreteTroca
+  /**
+    desconto no Pix, em % (0 = sem). Quem dá é a própria InfinitePay, na página de pagamento,
+    e só com a chave de API cadastrada (INFINITEPAY_CHAVE): sem ela, o site não mostra o desconto
+  */
+  descontoPix: number
 }
+
+/** o maior desconto no Pix que o painel aceita */
+export const DESCONTO_PIX_MAXIMO = 30
 
 export const PADRAO: Ajustes = {
   vendasOnline: false,
@@ -48,6 +56,7 @@ export const PADRAO: Ajustes = {
   loja: { nome: '', documento: '', endereco: '', email: '' },
   trocaDias: 7,
   freteTroca: 'dividido',
+  descontoPix: 5,
 }
 
 const CHAVE = 'ajustes'
@@ -73,6 +82,10 @@ export function deLinha(valor: string | null | undefined): Ajustes {
     loja,
     trocaDias: typeof v.trocaDias === 'number' && v.trocaDias >= 7 ? v.trocaDias : PADRAO.trocaDias,
     freteTroca: FRETES_TROCA.includes(v.freteTroca as FreteTroca) ? (v.freteTroca as FreteTroca) : PADRAO.freteTroca,
+    descontoPix:
+      typeof v.descontoPix === 'number' && Number.isInteger(v.descontoPix) && v.descontoPix >= 0 && v.descontoPix <= DESCONTO_PIX_MAXIMO
+        ? v.descontoPix
+        : PADRAO.descontoPix,
   }
 }
 
@@ -108,7 +121,7 @@ export async function salvarAjustes(db: D1Database, a: Ajustes) {
   loja = null enquanto os dados não estiverem completos: o site ainda não mostra
   o rodapé com eles nem os links das páginas de trocas e de privacidade.
 */
-export const ajustesPublicos = (a: Ajustes) => ({
+export const ajustesPublicos = (a: Ajustes, comChave = false) => ({
   whatsapp: a.whatsapp,
   parcelas: a.parcelasSemJuros,
   vendasOnline: a.vendasOnline,
@@ -118,6 +131,8 @@ export const ajustesPublicos = (a: Ajustes) => ({
   loja: lojaCompleta(a.loja) ? { ...a.loja, documento: documentoTexto(a.loja.documento) } : null,
   trocaDias: a.trocaDias,
   freteTroca: a.freteTroca,
+  /** só vale com a chave de API da InfinitePay: sem ela, a página de pagamento não daria o desconto */
+  descontoPix: comChave ? a.descontoPix : 0,
 })
 
 /**
