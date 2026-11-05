@@ -6,18 +6,20 @@ Atualizado em 22/10/2026: partes 4.1, 4.2 e 4.4 (commit `c1443e6`), 4.3 (compra 
 
 As vendas pelo site já estão ligadas. Falta isto para entregar a loja:
 
-### Próxima publicação: cupons, desconto da peça e Pix, sem mexer no que a Livia já mudou
+### Publicar sem mexer no que a Livia já mudou
 
-A loja foi entregue, e a Livia já está acertando o estoque e os ajustes pelo painel. Em 05/11 o site no ar ainda não tem os cupons nem o desconto da peça: a única migration nova é a `0011_cupons_e_descontos.sql`, e ela foi testada sobre um banco com edições como as dela.
-- **O que a 0011 muda:** cria a tabela de cupons e colunas novas (vazias) nos pedidos e nas peças. Nas 17 peças em promoção, troca o preço guardado pelo preço cheio + o desconto (%), e o valor cobrado continua o mesmo. Só muda a peça que ainda está com o preço da promoção: se a Livia mexeu no preço, a peça fica como ela deixou.
-- **O que não muda:** estoque, tamanhos, nomes, textos, fotos, peças escondidas ou apagadas, ajustes, pedidos, contas.
+A loja foi entregue, e a Livia acerta o estoque, os preços e os ajustes pelo painel. Toda migration nova só pode acrescentar ou mudar o que ela ainda não mexeu: cada `UPDATE` exige o valor antigo exato.
+- **Publicado em 05/11:** a `0011_cupons_e_descontos.sql` (cupons, desconto da peça, 17 peças em promoção com o preço cheio riscado) e o desconto no Pix, já com a `INFINITEPAY_CHAVE` cadastrada.
+- **Falta publicar:** a `0012_promocao_leticia_e_livia.sql`. O Vestido Letícia preto (de R$ 379,00 por R$ 189,50) e as Saias Livia vermelha e branca (de R$ 308,00 por R$ 154,00) passam a mostrar o preço cheio riscado, como no catálogo do WhatsApp. O valor cobrado continua o mesmo. Só muda a peça que ainda está com o preço da promoção e sem desconto.
+- **Conferido em 05/11 contra o catálogo do WhatsApp:** com a 0012, as 67 peças do site ficam com o mesmo preço e o mesmo "de/por" do catálogo. A Saia Melodia azul-marinho, a Saia Melodia vinho e a Blusa Melodia bege estão no catálogo, mas foram escondidas ou apagadas no painel: ficam como estão.
+- **O que nunca muda numa publicação:** estoque, tamanhos, nomes, textos, fotos, peças escondidas ou apagadas, ajustes, pedidos, contas.
 
 **Yan, dentro de `app`:**
 1. `git pull`.
-2. Cópia do banco, **fora da pasta do projeto** (tem dados das clientes, e o repositório é público): `npx wrangler d1 export livi --remote --output ~/backup-livi-antes-dos-cupons.sql`.
-3. `npx wrangler d1 migrations list livi --remote`: tem que aparecer só a `0011_cupons_e_descontos.sql`. Se aparecer a 0009 ou a 0010, parar e avisar: elas recriam as peças e apagariam o estoque da Livia.
-4. `npm run publicar`. Ele aplica a 0011 e logo depois publica o código. Se parar com erro no `wrangler deploy` (depois da migration), rodar `npx wrangler deploy` na hora: até o código novo subir, o site antigo mostra as peças em promoção com o preço cheio.
-5. Conferir: preço cheio riscado nas peças em promoção, a aba "Cupons" no painel, e o estoque e os ajustes da Livia como estavam.
+2. Cópia do banco, **fora da pasta do projeto** (tem dados das clientes, e o repositório é público): `npx wrangler d1 export livi --remote --output ~/backup-livi.sql`. Se der "Authentication error", tentar de novo.
+3. `npx wrangler d1 migrations list livi --remote`: tem que aparecer só a migration nova (agora, só a `0012_promocao_leticia_e_livia.sql`). Se aparecer a 0009 ou a 0010, parar e avisar: elas recriam as peças e apagariam o estoque da Livia.
+4. Anotar o ponto de restauração do Time Travel (`npx wrangler d1 time-travel info livi`) e só então `npm run publicar`. Se parar com erro no `wrangler deploy`, depois da migration, rodar `npx wrangler deploy` na hora.
+5. Conferir no site o preço riscado nas três peças, e o estoque e os ajustes da Livia como estavam.
 
 ### 1. As peças de verdade no banco
 
@@ -27,7 +29,7 @@ As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations
   - o estoque e os tamanhos. As 9 peças com "APENAS 1 NO M" no catálogo entraram só com essa unidade; as outras 61 entraram com 1 por tamanho, do PP ao GG, provisório. Com as vendas ligadas, vale acertar logo depois de publicar.
   - a altura da modelo e o tamanho que ela veste (vazios em todas).
   - os textos das coleções Sinfonia e Brasil (escritos a partir das fotos) e a ordem das coleções.
-- **Preço "de/por":** desde a migration 0011, as peças em promoção guardam o preço cheio e o desconto (%), e o site mostra o preço cheio riscado. Entraram assim as 17 peças com o preço de antes lido no catálogo; o Vestido Letícia preto e as Saias Livia parecem em promoção, mas o preço de antes não foi lido: a Livia confere no painel.
+- **Preço "de/por":** desde a migration 0011, as peças em promoção guardam o preço cheio e o desconto (%), e o site mostra o preço cheio riscado. Entraram assim as 17 peças com o preço de antes lido no catálogo (0011) e, em 05/11, o Vestido Letícia preto e as Saias Livia (0012).
 
 ### 2. Domínio `livibylm.com.br`: no ar desde 28/10/2026
 
@@ -57,8 +59,8 @@ O código está pronto (ver "Aviso de venda por e-mail" abaixo) e **não depende
 ### 4. Desconto no Pix (5%)
 
 O código está pronto: a página de pagamento da InfinitePay tira 5% do total quando a cliente escolhe Pix (`options.discounts` no link, `app/worker/infinitepay.ts`). O site mostra o valor no Pix embaixo do preço da peça e no total da compra, e a Livia muda a porcentagem em Ajustes > Pagamento (0 tira o desconto).
-- **Só vale com a chave de API da InfinitePay** (`INFINITEPAY_CHAVE`, segredo do Worker): sem ela, a InfinitePay não aceita o desconto e o site não mostra. Em 30/10 o Arthur confirmou que a chave já está cadastrada.
-  1. **Yan:** publicar, como em "Próxima publicação" acima. O desconto no Pix não tem migration: ele usa os ajustes que a Livia já salvou e só acrescenta os 5%.
+- **Só vale com a chave de API da InfinitePay** (`INFINITEPAY_CHAVE`, segredo do Worker): sem ela, a InfinitePay não aceita o desconto e o site não mostra. A chave foi criada na InfinitePay, mas só entrou no Worker em 05/11 (`npx wrangler secret put INFINITEPAY_CHAVE`): a compra pelo site funcionava antes porque usa só a InfiniteTag (`INFINITEPAY_HANDLE`).
+  1. **Yan:** publicar. **Feito em 05/11:** o site no ar mostra o desconto no Pix com 5%. Ele não tem migration: usa os ajustes que a Livia já salvou e só acrescenta os 5%.
   2. **Conferir no painel:** em Ajustes > Pagamento, o campo "Desconto no Pix (%)" com 5 e sem o aviso "Ainda não vale" (o aviso aparece se o Worker não achar a chave).
   3. **Conferir uma compra pequena paga no Pix:** a página da InfinitePay mostra os 5% a menos, e o painel mostra "A cliente pagou ... (com o desconto do Pix)".
 - O desconto vale sobre tudo o que é cobrado, entrega incluída (é a InfinitePay que calcula). Não dá para tirar o cartão da página de pagamento: só o Pix tem desconto.
@@ -72,7 +74,7 @@ O código está pronto: a página de pagamento da InfinitePay tira 5% do total q
 
 ## O que já está pronto e publicado
 
-- **Cupons e desconto por peça** (`app/migrations/0011_cupons_e_descontos.sql`, `app/worker/cupons.ts`, `app/worker/descontos.ts`). Pronto no código; entra no ar com o próximo `npm run publicar`.
+- **Cupons e desconto por peça** (`app/migrations/0011_cupons_e_descontos.sql`, `app/worker/cupons.ts`, `app/worker/descontos.ts`). No ar desde 05/11.
   - **Cupons** (painel > Cupons): código e porcentagem (1% a 90%), ligar e desligar, quantas compras pagas usaram. A cliente digita no resumo da compra; o desconto vale sobre as peças, não sobre a entrega, e o servidor confere de novo ao fechar a compra. O pedido guarda o cupom e a porcentagem da hora.
   - **Desconto da peça** (painel > Peças > Desconto da peça): em %, o site mostra o preço cheio riscado. O cupom vale em cima do preço com desconto.
 
