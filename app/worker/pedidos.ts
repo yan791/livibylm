@@ -31,7 +31,7 @@ import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type Ite
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
 import { avisarVenda } from './aviso-de-venda'
-import { CODIGO_CUPOM, comDesconto, descontoDe, descontoDoCupom, normalizarCupom } from './descontos'
+import { CODIGO_CUPOM, comDesconto, descontoDoCupom, descontoDoCupomNaPeca, normalizarCupom } from './descontos'
 
 /** quanto tempo as peças ficam seguras esperando o pagamento */
 export const RESERVA_MINUTOS = 30
@@ -48,6 +48,8 @@ export type ItemNovo = {
   tamanho: string
   quantidade: number
   precoCentavos: number
+  /** a peça já está com desconto: o cupom não vale nela */
+  emPromocao?: boolean
   sobEncomenda: boolean
   nome: string
   corNome: string
@@ -451,6 +453,7 @@ async function itensDaSacola(db: D1Database, v: unknown): Promise<ItemNovo[]> {
       tamanho: x.tamanho,
       quantidade: x.qtd,
       precoCentavos: comDesconto(p.preco_centavos, p.desconto),
+      emPromocao: p.desconto > 0,
       sobEncomenda: p.sob_encomenda === 1,
       nome: p.nome,
       corNome: cor.nome,
@@ -581,6 +584,8 @@ compras.post('/', async (c) => {
   const codigoCupom = lerCupom(corpo.cupom)
   const cupom = codigoCupom ? await cupomAtivo(db, codigoCupom) : null
   if (codigoCupom && !cupom) throw falha(409, `O cupom ${codigoCupom} não vale mais. Tire o cupom ou use outro.`)
+  if (cupom && itens.every((i) => i.emPromocao))
+    throw falha(409, `O cupom ${cupom.codigo} não vale para peças que já estão em promoção. Tire o cupom para continuar.`)
 
   const abertos = await db
     .prepare("SELECT COUNT(*) AS n FROM pedidos WHERE whatsapp = ?1 AND situacao = 'aguardando' AND reserva_ate > unixepoch()")
@@ -606,12 +611,15 @@ compras.post('/', async (c) => {
   try {
     const pagar = await abrirPagamento(c, codigo, {
       itens: [
-        // com cupom, cada peça já vai com o desconto: a soma bate com o total do pedido
-        ...itens.map((i) => ({
-          descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}${cupom ? ` · cupom ${cupom.codigo}` : ''}`,
-          quantidade: i.quantidade,
-          precoCentavos: i.precoCentavos - (cupom ? descontoDe(i.precoCentavos, cupom.percentual) : 0),
-        })),
+        // com cupom, cada peça já vai com o desconto (menos as que estão em promoção): a soma bate com o total do pedido
+        ...itens.map((i) => {
+          const doCupom = cupom ? descontoDoCupomNaPeca(i, cupom.percentual) : 0
+          return {
+            descricao: `${i.nome} · ${i.corNome} · ${i.tamanho}${doCupom ? ` · cupom ${cupom!.codigo}` : ''}`,
+            quantidade: i.quantidade,
+            precoCentavos: i.precoCentavos - doCupom,
+          }
+        }),
         ...(entrega.freteCentavos > 0 ? [{ descricao: NOME_ENTREGA[entrega.entrega], quantidade: 1, precoCentavos: entrega.freteCentavos }] : []),
       ],
       cliente,

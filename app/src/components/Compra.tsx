@@ -30,9 +30,19 @@ type Opcao = { tipo: TipoEntrega; nome: string; centavos: number }
 type Frete = { estado: 'consultando' } | { estado: 'pronto'; opcoes: Opcao[] } | { estado: 'erro'; mensagem: string }
 type Cupom = { codigo: string; percentual: number }
 
-/** quanto o cupom tira das peças, a mesma conta do servidor (worker/descontos.ts) */
+/** quanto o cupom tira das peças, a mesma conta do servidor (worker/descontos.ts): peça em promoção fica de fora */
 const descontoCupom = (itens: Item[], cupom: Cupom | null) =>
-  cupom ? descontoDoCupom(itens.map((i) => ({ precoCentavos: Math.round(i.peca.preco * 100), quantidade: i.qtd })), cupom.percentual) / 100 : 0
+  cupom
+    ? descontoDoCupom(
+        itens.map((i) => ({ precoCentavos: Math.round(i.peca.preco * 100), quantidade: i.qtd, emPromocao: i.peca.desconto > 0 })),
+        cupom.percentual,
+      ) / 100
+    : 0
+
+const SEM_CUPOM_NA_PROMOCAO = 'O cupom não vale para peças que já estão em promoção.'
+
+/** "A", "A e B", "A, B e C" */
+const juntarNomes = (nomes: string[]) => (nomes.length < 2 ? (nomes[0] ?? '') : `${nomes.slice(0, -1).join(', ')} e ${nomes[nomes.length - 1]}`)
 
 const correios = (t: TipoEntrega | null) => t === 'pac' || t === 'sedex'
 
@@ -157,11 +167,15 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
   const opcoes = frete?.estado === 'pronto' ? frete.opcoes : []
   const escolhida = opcoes.find((o) => o.tipo === tipo)
   const desconto = descontoCupom(itens, cupom)
+  // peças já com desconto: o cupom não vale nelas, e o resumo diz quais são
+  const emPromocao = [...new Set(itens.filter((i) => i.peca.desconto > 0).map((i) => i.peca.nome))]
+  const tudoEmPromocao = itens.length > 0 && itens.every((i) => i.peca.desconto > 0)
   const total = totalPecas(itens) - desconto + (escolhida ? escolhida.centavos / 100 : 0)
 
   const aplicarCupom = async () => {
     const codigo = normalizarCupom(textoCupom)
     if (!codigo) return setErroCupom('Digite o cupom.')
+    if (tudoEmPromocao) return setErroCupom(SEM_CUPOM_NA_PROMOCAO)
     setConferindo(true)
     setErroCupom('')
     try {
@@ -405,7 +419,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
                 <span>{precoBR(i.peca.preco * i.qtd)}</span>
               </li>
             ))}
-            {cupom && (
+            {cupom && desconto > 0 && (
               <li className="compra-resumo-desconto">
                 <span>
                   Cupom {cupom.codigo} ({cupom.percentual}% nas peças)
@@ -426,6 +440,13 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
               <button type="button" className="conta-link" onClick={tirarCupom}>
                 Tirar o cupom
               </button>
+              {emPromocao.length > 0 && (
+                <span className="compra-cupom-fora">
+                  {tudoEmPromocao
+                    ? SEM_CUPOM_NA_PROMOCAO
+                    : `Esta promoção não se aplica ${emPromocao.length === 1 ? 'à peça' : 'às peças'} ${juntarNomes(emPromocao)}, que já ${emPromocao.length === 1 ? 'está' : 'estão'} com desconto.`}
+                </span>
+              )}
             </p>
           ) : (
             <div className="compra-cupom">

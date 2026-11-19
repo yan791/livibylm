@@ -4,6 +4,7 @@
   então no painel não há nada para marcar: é só o nome começar pelo tipo.
   Um tipo novo ("Top Aurora") vira um filtro novo sozinho, na ordem em que
   aparece no catálogo. A página é /pecas/<tipo>, com ?tamanho=M opcional.
+  Além dos tipos, há o Sale (/pecas/sale): as peças com desconto, de qualquer tipo.
 */
 import { colecoes, disponivel, pecaEsgotada, type Colecao, type Peca } from './colecoes'
 
@@ -56,7 +57,13 @@ export const tipos: Tipo[] = (() => {
   return [...porTipo.values()].map((t) => ({ ...t, itens: emOrdem(t.itens) }))
 })()
 
-export const acharTipo = (slug?: string) => tipos.find((t) => t.slug === slug)
+/** as peças com desconto, de todos os tipos (vazio quando nenhuma está em promoção) */
+export const sale: Tipo = { slug: 'sale', nome: 'Sale', itens: todas.filter((i) => i.peca.desconto > 0) }
+
+/** o maior desconto entre as peças do Sale, em % ("até 50% off") */
+export const maiorDesconto = Math.max(0, ...sale.itens.map((i) => i.peca.desconto))
+
+export const acharTipo = (slug?: string) => (slug === sale.slug && sale.itens.length ? sale : tipos.find((t) => t.slug === slug))
 
 const ORDEM_TAMANHOS = ['PP', 'P', 'M', 'G', 'GG', 'XG', 'XGG', 'EG', 'EGG']
 const unico = (t: string) => /^[uú]nico$/i.test(t.trim())

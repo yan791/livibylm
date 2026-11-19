@@ -10,16 +10,17 @@ As vendas pelo site já estão ligadas. Falta isto para entregar a loja:
 
 A loja foi entregue, e a Livia acerta o estoque, os preços e os ajustes pelo painel. Toda migration nova só pode acrescentar ou mudar o que ela ainda não mexeu: cada `UPDATE` exige o valor antigo exato.
 - **Publicado em 05/11:** a `0011_cupons_e_descontos.sql` (cupons, desconto da peça, 17 peças em promoção com o preço cheio riscado) e o desconto no Pix, já com a `INFINITEPAY_CHAVE` cadastrada.
-- **Falta publicar:** a `0012_promocao_leticia_e_livia.sql`. O Vestido Letícia preto (de R$ 379,00 por R$ 189,50) e as Saias Livia vermelha e branca (de R$ 308,00 por R$ 154,00) passam a mostrar o preço cheio riscado, como no catálogo do WhatsApp. O valor cobrado continua o mesmo. Só muda a peça que ainda está com o preço da promoção e sem desconto.
+- **Publicado:** a `0012_promocao_leticia_e_livia.sql` (conferido no site em 19/11: Vestido Letícia preto e Saias Livia com o preço cheio riscado, 20 peças em promoção).
+- **Falta publicar (19/11, sem migration):** o **Sale** (cartão na seção "Já sabe o que procura?" e filtro em /pecas/sale, só com as peças com desconto) e a regra do cupom: **o cupom não vale em peça que já está com desconto**. Numa sacola com peças em promoção e sem promoção, o cupom só desconta as sem promoção, e o resumo diz quais ficaram de fora; com todas em promoção, o cupom é recusado. Como não tem migration, o passo 3 abaixo deve mostrar "No migrations to apply".
 - **Conferido em 05/11 contra o catálogo do WhatsApp:** com a 0012, as 67 peças do site ficam com o mesmo preço e o mesmo "de/por" do catálogo. A Saia Melodia azul-marinho, a Saia Melodia vinho e a Blusa Melodia bege estão no catálogo, mas foram escondidas ou apagadas no painel: ficam como estão.
 - **O que nunca muda numa publicação:** estoque, tamanhos, nomes, textos, fotos, peças escondidas ou apagadas, ajustes, pedidos, contas.
 
 **Yan, dentro de `app`:**
 1. `git pull`.
 2. Cópia do banco, **fora da pasta do projeto** (tem dados das clientes, e o repositório é público): `npx wrangler d1 export livi --remote --output ~/backup-livi.sql`. Se der "Authentication error", tentar de novo.
-3. `npx wrangler d1 migrations list livi --remote`: tem que aparecer só a migration nova (agora, só a `0012_promocao_leticia_e_livia.sql`). Se aparecer a 0009 ou a 0010, parar e avisar: elas recriam as peças e apagariam o estoque da Livia.
+3. `npx wrangler d1 migrations list livi --remote`: tem que aparecer só a migration nova, ou nenhuma (agora, nenhuma). Se aparecer a 0009 ou a 0010, parar e avisar: elas recriam as peças e apagariam o estoque da Livia.
 4. Anotar o ponto de restauração do Time Travel (`npx wrangler d1 time-travel info livi`) e só então `npm run publicar`. Se parar com erro no `wrangler deploy`, depois da migration, rodar `npx wrangler deploy` na hora.
-5. Conferir no site o preço riscado nas três peças, e o estoque e os ajustes da Livia como estavam.
+5. Conferir no site o cartão Sale na página inicial e o filtro Sale em Peças, e o estoque e os ajustes da Livia como estavam.
 
 ### 1. As peças de verdade no banco
 

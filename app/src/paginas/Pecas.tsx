@@ -14,6 +14,7 @@ import {
   nomeDoFiltro,
   pecasDoFiltro,
   rotuloCurto,
+  sale,
   tamanhosDe,
   tipos,
   todas,
@@ -93,7 +94,11 @@ export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
     if (el && el.getBoundingClientRect().top < alto) rolarPara(el, { deslocamento: -alto })
   }
 
-  const opcoes = [{ slug: undefined, nome: 'Todas', n: todas.length }, ...tipos.map((t) => ({ slug: t.slug, nome: t.nome, n: t.itens.length }))]
+  const opcoes = [
+    { slug: undefined, nome: 'Todas', n: todas.length },
+    ...(sale.itens.length ? [{ slug: sale.slug, nome: sale.nome, n: sale.itens.length }] : []),
+    ...tipos.map((t) => ({ slug: t.slug, nome: t.nome, n: t.itens.length })),
+  ]
 
   return (
     <main className="pecas">
@@ -104,7 +109,7 @@ export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
         <AnimatePresence mode="wait" initial={false}>
           <motion.h1
             key={nome}
-            className="pecas-titulo"
+            className={cn('pecas-titulo', atual === sale && 'pecas-titulo-sale')}
             initial={{ opacity: 0, y: '0.25em', filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: '0em', filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: '-0.15em', filter: 'blur(6px)' }}
@@ -125,7 +130,7 @@ export function Pecas({ tipo, tamanho }: { tipo?: string; tamanho?: string }) {
                 <a
                   key={o.nome}
                   href={comBase(enderecoPecas({ tipo: o.slug, tamanho: filtro.tamanho }))}
-                  className={cn(ativo && 'ativo')}
+                  className={cn(ativo && 'ativo', o.slug === sale.slug && 'pecas-tipo-sale')}
                   aria-current={ativo ? 'page' : undefined}
                   onClick={(e) => {
                     e.preventDefault()

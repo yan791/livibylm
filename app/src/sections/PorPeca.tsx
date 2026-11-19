@@ -2,12 +2,13 @@
   Logo depois das coleções: as peças por tipo (vestidos, blusas, saias...).
   Quem já sabe o que procura vai direto para a página de peças daquele tipo,
   com as peças de todas as coleções. Cada cartão troca devagar entre fotos de
-  peças diferentes do tipo, só enquanto aparece na tela.
+  peças diferentes do tipo, só enquanto aparece na tela. O primeiro cartão é o
+  Sale, com as peças em promoção, quando alguma peça está com desconto.
 */
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'motion/react'
 import { pecaEsgotada } from '../dados/colecoes'
-import { enderecoPecas, tipos, todas, type Tipo } from '../dados/tipos'
+import { enderecoPecas, maiorDesconto, sale, tipos, todas, type Tipo } from '../dados/tipos'
 import { navegar } from '../lib/rota'
 import { comBase, fotoPequena } from '../lib/base'
 import { cn } from '../lib/cn'
@@ -42,6 +43,7 @@ const abrir = (endereco: string) => (e: React.MouseEvent) => {
 
 export function PorPeca() {
   if (!tipos.length) return null
+  const cartoes = sale.itens.length ? [sale, ...tipos] : tipos
   return (
     <section className="porpeca" aria-labelledby="porpeca-titulo">
       <div className="porpeca-cabeca">
@@ -58,8 +60,8 @@ export function PorPeca() {
         </Ima>
       </div>
 
-      <ul className="porpeca-lista" style={{ '--n': tipos.length } as React.CSSProperties}>
-        {tipos.map((t, i) => (
+      <ul className="porpeca-lista" style={{ '--n': cartoes.length } as React.CSSProperties}>
+        {cartoes.map((t, i) => (
           <motion.li
             key={t.slug}
             initial={{ opacity: 0, y: 36 }}
@@ -92,8 +94,16 @@ function Cartao({ tipo, ordem }: { tipo: Tipo; ordem: number }) {
   }, [visivel, fotos.length, ordem])
 
   const endereco = enderecoPecas({ tipo: tipo.slug })
+  const ehSale = tipo === sale
+  const rotulo = ehSale ? `Ver o sale, peças com até ${maiorDesconto}% de desconto` : `Ver ${tipo.nome.toLowerCase()}`
   return (
-    <a ref={ref} className="porpeca-cartao" href={comBase(endereco)} onClick={abrir(endereco)} aria-label={`Ver ${tipo.nome.toLowerCase()}: ${tipo.itens.length} peças`}>
+    <a
+      ref={ref}
+      className={cn('porpeca-cartao', ehSale && 'porpeca-sale')}
+      href={comBase(endereco)}
+      onClick={abrir(endereco)}
+      aria-label={`${rotulo}: ${tipo.itens.length} peças`}
+    >
       <span className="porpeca-fotos">
         {fotos.length ? (
           fotos.map((f, k) => <img key={f} src={fotoPequena(f)} alt="" loading="lazy" draggable={false} className={cn(k === atual && 'ativa')} />)
@@ -101,6 +111,11 @@ function Cartao({ tipo, ordem }: { tipo: Tipo; ordem: number }) {
           <Espaco rotulo="Fotos em breve" />
         )}
       </span>
+      {ehSale && maiorDesconto > 0 && (
+        <span className="porpeca-sale-selo" aria-hidden="true">
+          até {maiorDesconto}% off
+        </span>
+      )}
       <span className="porpeca-texto">
         <span className="porpeca-nome">{tipo.nome}</span>
         <span className="porpeca-qtd">{tipo.itens.length === 1 ? '1 peça' : `${tipo.itens.length} peças`}</span>

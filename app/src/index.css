@@ -4790,6 +4790,13 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   line-height: 1.45;
 }
 
+.compra-cupom-fora {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--taupe);
+}
+
 .compra-resumo-desconto {
   color: var(--bordo);
 }
@@ -5638,6 +5645,40 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   }
 }
 
+/* o cartão do Sale: tom bordô por cima da foto, o nome em caixa alta e o selo do desconto */
+.porpeca-sale {
+  outline: 1px solid rgb(184 137 63 / 0.55);
+  outline-offset: -7px;
+}
+
+.porpeca-sale::after {
+  background:
+    linear-gradient(to top, rgb(79 15 16 / 0.84), rgb(126 16 28 / 0.22) 50%, rgb(126 16 28 / 0.06) 100%);
+}
+
+.porpeca-sale .porpeca-nome {
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.porpeca-sale-selo {
+  position: absolute;
+  z-index: 2;
+  top: clamp(14px, 1.6vw, 22px);
+  left: clamp(14px, 1.6vw, 22px);
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: var(--creme);
+  color: var(--bordo);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 20px -10px rgb(30 10 0 / 0.6);
+}
+
 /* ---------- página /pecas ---------- */
 
 .pecas {
@@ -5742,6 +5783,39 @@ html[data-movimento='reduzido'] .lk-bloco-info {
 .pecas-tipo-nome,
 .pecas-tipos sup {
   position: relative;
+}
+
+/* o filtro Sale: bordô, em caixa alta, com o fundo bordô quando escolhido */
+.pecas-tipos a.pecas-tipo-sale {
+  border-color: rgb(126 16 28 / 0.45);
+  color: var(--bordo);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.pecas-tipos a.pecas-tipo-sale:hover,
+.pecas-tipos a.pecas-tipo-sale.ativo {
+  border-color: var(--bordo);
+}
+
+.pecas-tipos a.pecas-tipo-sale.ativo {
+  color: var(--creme);
+}
+
+.pecas-tipo-sale .pecas-tipo-fundo {
+  background: var(--bordo);
+}
+
+.pecas-tipo-sale .pecas-tipo-nome {
+  text-transform: uppercase;
+}
+
+.pecas-titulo-sale {
+  color: var(--bordo);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .pecas-tipos sup {

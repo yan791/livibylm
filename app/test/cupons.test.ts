@@ -179,17 +179,42 @@ describe('desconto da peça', () => {
     expect(await pecaNoSite()).toMatchObject({ desconto: 30 })
   })
 
-  it('a compra cobra o preço com desconto, e o cupom vale em cima dele', async () => {
+  it('a compra cobra o preço com desconto, e o cupom não vale na peça em promoção', async () => {
     const id = await criarPeca({ M: 5 })
     const token = await entrar()
     await salvarPeca(token, id, (p) => void Object.assign(p, { desconto: 30 }))
     await criarCupom(token, 'LIVI10', 10)
     infinitePay()
-    const { codigo } = (await (await comprar(await criarConta(), [item({ qtd: 2 })], 'LIVI10')).json()) as { codigo: string }
-    // 100,00 com 30% = 70,00; o cupom tira 10% de 70,00 = 7,00 por unidade
-    expect(await pedidoDe(codigo)).toMatchObject({ itens_centavos: 14_000, desconto_centavos: 1400, total_centavos: 14_100 })
-    const precoItem = await env.DB.prepare('SELECT preco_centavos FROM pedido_itens').first<number>('preco_centavos')
-    expect(precoItem).toBe(7000)
+    // só peças em promoção: o cupom é recusado e nada fica reservado
+    const r = await comprar(await criarConta(), [item({ qtd: 2 })], 'LIVI10')
+    expect(r.status).toBe(409)
+    expect(((await r.json()) as { erro: string }).erro).toContain('LIVI10')
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM pedidos').first<number>('n')).toBe(0)
+    // sem cupom, cobra o preço com desconto: 100,00 com 30% = 70,00
+    const { codigo } = (await (await comprar(await criarConta(), [item({ qtd: 2 })], undefined, '198.51.100.30')).json()) as { codigo: string }
+    expect(await pedidoDe(codigo)).toMatchObject({ itens_centavos: 14_000, desconto_centavos: 0, total_centavos: 15_500 })
+    expect(await env.DB.prepare('SELECT preco_centavos FROM pedido_itens').first<number>('preco_centavos')).toBe(7000)
+  })
+
+  it('com peças em promoção e sem promoção, o cupom só desconta as sem promoção', async () => {
+    const promo = await criarPeca({ M: 5 })
+    await criarPeca({ M: 5 }, 'vestido-cheio')
+    const token = await entrar()
+    await salvarPeca(token, promo, (p) => void Object.assign(p, { desconto: 30 }))
+    await criarCupom(token, 'LIVI10', 10)
+    const chamadas = infinitePay()
+    const r = await comprar(await criarConta(), [item({ qtd: 2 }), item({ peca: 'vestido-cheio' })], 'LIVI10')
+    expect(r.status).toBe(201)
+    const { codigo } = (await r.json()) as { codigo: string }
+    // 2 x 70,00 (promoção, sem cupom) + 100,00 com 10% do cupom = 230,00, mais 15,00 de entrega
+    expect(await pedidoDe(codigo)).toMatchObject({ itens_centavos: 24_000, desconto_centavos: 1000, total_centavos: 24_500, cupom: 'LIVI10' })
+    const link = chamadas.find((c) => c.url.endsWith('/links'))!.corpo as { items: { price: number; quantity: number; description: string }[] }
+    expect(link.items).toEqual([
+      { description: 'Vestido Teste · Preto · M', price: 7000, quantity: 2 },
+      { description: 'Vestido Teste · Preto · M · cupom LIVI10', price: 9000, quantity: 1 },
+      { description: 'Entrega em Maceió', price: 1500, quantity: 1 },
+    ])
+    expect(link.items.reduce((s, i) => s + i.price * i.quantity, 0)).toBe(24_500)
   })
 
   it('a venda fora do site já vem com o preço com desconto', async () => {

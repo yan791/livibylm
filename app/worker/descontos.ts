@@ -2,6 +2,7 @@
   Descontos da loja, em dois lugares:
   - na peça (desconto, em %): o site mostra o preço cheio riscado e cobra o preço com desconto;
   - no cupom (percentual): a cliente digita ao fechar a compra, e o desconto vale sobre as peças, não sobre a entrega.
+  Os dois nunca somam: o cupom não vale nas peças que já estão com desconto.
   As contas ficam aqui, em centavos. O site (src/) usa as mesmas funções para mostrar o que o servidor vai cobrar.
 */
 
@@ -11,9 +12,14 @@ export const descontoDe = (centavos: number, percentual: number) => Math.round((
 /** o preço depois do desconto da peça */
 export const comDesconto = (centavos: number, percentual: number) => centavos - descontoDe(centavos, percentual)
 
-/** quanto o cupom tira das peças: o desconto de cada unidade, somado */
-export const descontoDoCupom = (itens: { precoCentavos: number; quantidade: number }[], percentual: number) =>
-  itens.reduce((s, i) => s + descontoDe(i.precoCentavos, percentual) * i.quantidade, 0)
+type ItemComCupom = { precoCentavos: number; quantidade: number; emPromocao?: boolean }
+
+/** quanto o cupom tira de uma unidade da peça (nada se a peça já está com desconto) */
+export const descontoDoCupomNaPeca = (i: ItemComCupom, percentual: number) => (i.emPromocao ? 0 : descontoDe(i.precoCentavos, percentual))
+
+/** quanto o cupom tira das peças: o desconto de cada unidade, somado (as peças em promoção ficam de fora) */
+export const descontoDoCupom = (itens: ItemComCupom[], percentual: number) =>
+  itens.reduce((s, i) => s + descontoDoCupomNaPeca(i, percentual) * i.quantidade, 0)
 
 /** o maior desconto aceito, na peça e no cupom (100% deixaria a compra de graça, e a InfinitePay não cobra zero) */
 export const DESCONTO_MAXIMO = 90
