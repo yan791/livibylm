@@ -121,13 +121,13 @@ export async function salvarAjustes(db: D1Database, a: Ajustes) {
   loja = null enquanto os dados não estiverem completos: o site ainda não mostra
   o rodapé com eles nem os links das páginas de trocas e de privacidade.
 */
-export const ajustesPublicos = (a: Ajustes, comChave = false) => ({
+export const ajustesPublicos = (a: Ajustes, comChave = false, comCotacao = false) => ({
   whatsapp: a.whatsapp,
   parcelas: a.parcelasSemJuros,
   vendasOnline: a.vendasOnline,
   taxaMaceioCentavos: a.taxaMaceioCentavos,
-  /** há algum preço de PAC ou SEDEX na tabela */
-  correios: Object.values(a.freteCorreios).some((r) => r.pac !== null || r.sedex !== null),
+  /** envia pelos Correios: com a cotação da SuperFrete, ou com algum preço de PAC ou SEDEX na tabela */
+  correios: comCotacao || Object.values(a.freteCorreios).some((r) => r.pac !== null || r.sedex !== null),
   loja: lojaCompleta(a.loja) ? { ...a.loja, documento: documentoTexto(a.loja.documento) } : null,
   trocaDias: a.trocaDias,
   freteTroca: a.freteTroca,

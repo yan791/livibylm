@@ -4753,6 +4753,16 @@ html[data-movimento='reduzido'] .lk-bloco-info {
   font-variant-numeric: tabular-nums;
 }
 
+.compra-opcao-nome {
+  display: grid;
+  gap: 2px;
+}
+
+.compra-opcao-nome small {
+  font-size: 0.78rem;
+  color: var(--taupe);
+}
+
 .compra-prazo {
   font-size: 0.78rem;
   line-height: 1.4;
@@ -5658,7 +5668,9 @@ html[data-movimento='reduzido'] .lk-bloco-info {
 
 .porpeca-sale .porpeca-nome {
   font-style: normal;
-  font-weight: 500;
+  font-weight: 600;
+  /* o Bodoni de texto (contraste menor): a perna fina do A some em caixa alta no de título */
+  font-variation-settings: 'opsz' 11;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
@@ -5813,6 +5825,8 @@ html[data-movimento='reduzido'] .lk-bloco-info {
 }
 
 .pecas-titulo-sale {
+  font-weight: 600;
+  font-variation-settings: 'opsz' 11;
   color: var(--bordo);
   letter-spacing: 0.08em;
   text-transform: uppercase;

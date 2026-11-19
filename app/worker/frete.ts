@@ -1,7 +1,8 @@
 /*
   Frete. Maceió tem uma taxa única (Ajustes). O resto do Brasil vai pelos
-  Correios, PAC ou SEDEX, com um preço por região que a loja cadastra em
-  Ajustes; a região sai do CEP. A loja posta ela mesma: o pedido pago aparece
+  Correios, PAC ou SEDEX, com o preço e o prazo cotados na SuperFrete pelo CEP
+  (worker/superfrete.ts). Sem a SuperFrete, vale o preço por região que a loja
+  cadastra em Ajustes; a região sai do CEP. A loja posta ela mesma: o pedido pago aparece
   no painel com o endereço, e o rastreio entra quando ela marca como enviado.
   A tela de Ajustes do painel também usa este arquivo, então nada aqui depende do Worker.
 */
@@ -103,11 +104,20 @@ export function regiaoDoCep(cep: string): Regiao | null {
   return uf === 'AL' ? 'al' : REGIAO_DA_UF[uf]
 }
 
-export type OpcaoEntrega = { tipo: TipoEntrega; nome: string; centavos: number }
+/** dias: prazo de entrega dos Correios em dias úteis, depois da postagem (só na cotação da SuperFrete) */
+export type OpcaoEntrega = { tipo: TipoEntrega; nome: string; centavos: number; dias?: number }
 
-/** o que a cliente pode escolher para esse CEP, com o preço; vazio se a loja não entrega lá */
-export function opcoesDeEntrega(cep: string, taxaMaceioCentavos: number, tabela: TabelaFrete): OpcaoEntrega[] {
+/** preço e prazo cotados para o CEP (worker/superfrete.ts) */
+export type CotacaoCorreios = { tipo: Servico; centavos: number; dias: number }
+
+/**
+  O que a cliente pode escolher para esse CEP, com o preço; vazio se a loja não entrega lá.
+  Com a cotação da SuperFrete, os Correios saem dela; sem, da tabela por região.
+*/
+export function opcoesDeEntrega(cep: string, taxaMaceioCentavos: number, tabela: TabelaFrete, cotacoes?: CotacaoCorreios[] | null): OpcaoEntrega[] {
   if (deMaceio(cep)) return [{ tipo: 'maceio', nome: NOME_ENTREGA.maceio, centavos: taxaMaceioCentavos }]
+  if (!ufDoCep(cep)) return []
+  if (cotacoes?.length) return cotacoes.map((c) => ({ tipo: c.tipo, nome: NOME_ENTREGA[c.tipo], centavos: c.centavos, dias: c.dias }))
   const regiao = regiaoDoCep(cep)
   if (!regiao) return []
   return (['pac', 'sedex'] as const).flatMap((s) => {

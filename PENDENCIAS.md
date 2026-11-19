@@ -22,6 +22,19 @@ A loja foi entregue, e a Livia acerta o estoque, os preços e os ajustes pelo pa
 4. Anotar o ponto de restauração do Time Travel (`npx wrangler d1 time-travel info livi`) e só então `npm run publicar`. Se parar com erro no `wrangler deploy`, depois da migration, rodar `npx wrangler deploy` na hora.
 5. Conferir no site o cartão Sale na página inicial e o filtro Sale em Peças, e o estoque e os ajustes da Livia como estavam.
 
+### Frete pelo CEP com a SuperFrete
+
+A Livia reclamou que uma tabela por região não serve: o frete muda muito de cidade para cidade. Agora, fora de Maceió, a sacola pergunta à SuperFrete o preço e o prazo do **PAC e do SEDEX** para o CEP e o número de peças, e mostra cada opção com o valor e "chega em até X dias úteis" (o prazo dos Correios mais os 3 dias úteis para postar). O servidor refaz a cotação ao criar o pedido, então o navegador nunca escolhe o preço. Maceió continua com a taxa única.
+- **Sem o token**, ou com a SuperFrete fora do ar, vale a tabela por região dos Ajustes, como antes; sem tabela, a cliente é mandada para o WhatsApp.
+- **O pacote:** 300 g e 28 × 20 × 4 cm por peça (`PACOTE_POR_PECA` em `app/worker/superfrete.ts`); a SuperFrete monta a caixa para várias. A origem é um CEP do Centro de Maceió (o preço dos Correios é o mesmo para a cidade toda).
+- **O preço cotado é o da etiqueta comprada na SuperFrete.** A Livia compra a etiqueta lá (com saldo por Pix ou cartão), imprime, cola e entrega na agência sem pagar nada no balcão. Pagando no balcão, sai mais caro que o frete que a cliente pagou.
+
+**Para ligar:**
+1. A Livia cria a conta em superfrete.com (com o CPF dela) e coloca saldo.
+2. Gera o token em web.superfrete.com, Integrações, "Integrar em Desenvolvedores". O token não vai para o chat, nem para o repositório, nem para mensagens.
+3. Yan, dentro de `app`: `npx wrangler secret put SUPERFRETE_TOKEN` e cola o token. Não precisa publicar de novo para o segredo valer, mas o código novo precisa estar publicado.
+4. Conferir no site: CEP de outra cidade na sacola mostra PAC e SEDEX com o preço e os dias.
+
 ### 1. As peças de verdade no banco
 
 As 70 peças do catálogo da LIVÍ no WhatsApp (26/10) estão em `app/migrations/0009_pecas_reais.sql`, nas coleções Lúmina, Velvet, Carmim, Confiança e nas novas Sinfonia e Brasil. A migration apaga as 16 de exemplo. As fotos ficam em `app/public/img/pecas/<coleção>/<peça>/`. Cada cor do WhatsApp virou uma peça, porque o site guarda as fotos por peça.

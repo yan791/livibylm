@@ -18,6 +18,8 @@ export const site = {
   whatsapp: ajustes.whatsapp || '5582998115324',
   /** política de envio da Livia: quando o pedido sai, contado da aprovação do pagamento */
   prazoPostagem: 'até 3 dias úteis',
+  /** o mesmo prazo, em dias úteis: soma com o prazo dos Correios na sacola ("chega em até 9 dias úteis") */
+  diasPostagem: 3,
   /** arquivo do logo. Enquanto for null, aparece um espaço reservado. */
   logo: null as string | null,
 

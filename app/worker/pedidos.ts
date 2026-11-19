@@ -30,6 +30,7 @@ import { limparCacheCatalogo } from './catalogo'
 import { conferirPagamento, criarLink, ErroInfinitePay, type DadosLink, type ItemLink } from './infinitepay'
 import { chaveVariante, consultaReservas, mapaReservas, type LinhaReserva } from './reservas'
 import { deMaceio, ehTipoEntrega, NOME_ENTREGA, opcoesDeEntrega, ufDoCep } from './frete'
+import { cotarCorreios } from './superfrete'
 import { avisarVenda } from './aviso-de-venda'
 import { CODIGO_CUPOM, comDesconto, descontoDoCupom, descontoDoCupomNaPeca, normalizarCupom } from './descontos'
 
@@ -385,8 +386,11 @@ function lerCpf(v: unknown) {
   return cpf
 }
 
-/** entrega e frete: Maceió (taxa única) ou Correios, PAC ou SEDEX, pela tabela por região dos Ajustes (worker/frete.ts) */
-function lerEntrega(v: unknown, ajustes: Ajustes) {
+/**
+  Entrega e frete: Maceió (taxa única) ou Correios, PAC ou SEDEX, pela cotação da SuperFrete
+  para esse CEP e esse número de peças, ou pela tabela por região dos Ajustes (worker/frete.ts)
+*/
+async function lerEntrega(v: unknown, ajustes: Ajustes, env: object, pecas: number) {
   const o = objeto(v)
   const tipo = o.tipo
   if (!ehTipoEntrega(tipo)) throw falha(400, 'Escolha a forma de entrega.')
@@ -395,8 +399,9 @@ function lerEntrega(v: unknown, ajustes: Ajustes) {
   // o estado sai do CEP, nunca do que o navegador mandou
   const uf = ufDoCep(cep)
   if (!uf) throw falha(400, 'Confira o CEP: ele não parece ser do Brasil.')
-  // o preço sai da tabela de agora, nunca do que o navegador mandou
-  const opcao = opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios).find((x) => x.tipo === tipo)
+  // o preço sai da cotação ou da tabela de agora, nunca do que o navegador mandou
+  const cotacoes = tipo === 'maceio' || deMaceio(cep) ? null : await cotarCorreios(env, cep, pecas)
+  const opcao = opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios, cotacoes).find((x) => x.tipo === tipo)
   if (!opcao)
     throw falha(
       400,
@@ -419,6 +424,10 @@ function lerEntrega(v: unknown, ajustes: Ajustes) {
     freteCentavos: opcao.centavos,
   }
 }
+
+/** quantas peças a sacola leva, para a cotação do frete (as peças em si são conferidas em itensDaSacola) */
+const pecasDaSacola = (v: unknown) =>
+  Array.isArray(v) ? v.reduce<number>((s, x) => s + (x && typeof x === 'object' && Number.isInteger((x as { qtd?: unknown }).qtd) ? Number((x as { qtd: number }).qtd) : 1), 0) : 1
 
 /** a sacola do site: peça (endereço), cor (nome) e tamanho, com os preços do banco */
 async function itensDaSacola(db: D1Database, v: unknown): Promise<ItemNovo[]> {
@@ -546,7 +555,10 @@ compras.get('/frete', async (c) => {
   if ((await usou(c.env.DB, chave, 900)) >= FRETES_POR_IP) throw falha(429, 'Muitas consultas seguidas. Espere um pouco e tente de novo.')
   await contar(c.env.DB, chave, 900)
   const ajustes = await lerAjustes(c.env.DB)
-  return c.json({ uf, opcoes: opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios) })
+  // o pacote depende de quantas peças vão: a sacola manda o número (o pedido refaz a conta com as peças de verdade)
+  const pecas = Number(c.req.query('pecas') ?? 1)
+  const cotacoes = deMaceio(cep) ? null : await cotarCorreios(c.env, cep, pecas)
+  return c.json({ uf, opcoes: opcoesDeEntrega(cep, ajustes.taxaMaceioCentavos, ajustes.freteCorreios, cotacoes) })
 })
 
 /** confere o cupom antes de fechar a compra, para a sacola mostrar o desconto (quem cobra é o POST /) */
@@ -577,7 +589,7 @@ compras.post('/', async (c) => {
 
   const corpo = await lerCorpo(c)
   const cliente = { nome: conta.nome, whatsapp: conta.whatsapp, email: conta.email, cpf: lerCpf(corpo.cliente) }
-  const entrega = lerEntrega(corpo.entrega, ajustes)
+  const entrega = await lerEntrega(corpo.entrega, ajustes, c.env, pecasDaSacola(corpo.itens))
   if (entrega.entrega !== 'maceio' && !cliente.cpf)
     throw falha(400, 'Para enviar pelos Correios, preencha o CPF: ele vai na declaração de conteúdo do pacote.')
   const itens = await conferirDisponivel(db, await itensDaSacola(db, corpo.itens))

@@ -15,6 +15,7 @@ import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { lerLoja } from './catalogo'
 import { temChave } from './infinitepay'
+import { temCotacao } from './superfrete'
 import { painel } from './painel'
 import { avisoDePagamento, compras } from './pedidos'
 import { contas } from './contas'
@@ -50,12 +51,12 @@ app.use('/api/*', async (c, next) => {
 // dados públicos: qualquer site pode ler (o do GitHub Pages lê daqui)
 app.get('/api/loja', async (c) => {
   c.header('Access-Control-Allow-Origin', '*')
-  return c.json(await lerLoja(c.env.DB, temChave(c.env)))
+  return c.json(await lerLoja(c.env.DB, temChave(c.env), temCotacao(c.env)))
 })
 // só o catálogo, para páginas publicadas antes dos ajustes (pode sair depois que o GitHub Pages atualizar)
 app.get('/api/catalogo', async (c) => {
   c.header('Access-Control-Allow-Origin', '*')
-  return c.json((await lerLoja(c.env.DB, temChave(c.env))).colecoes)
+  return c.json((await lerLoja(c.env.DB, temChave(c.env), temCotacao(c.env))).colecoes)
 })
 app.route('/api/painel', painel)
 app.route('/api/pedidos', compras)
@@ -87,7 +88,7 @@ app.get('*', async (c) => {
   if (!r.headers.get('content-type')?.includes('text/html')) return r
   let dados: string
   try {
-    dados = JSON.stringify(await lerLoja(c.env.DB, temChave(c.env)))
+    dados = JSON.stringify(await lerLoja(c.env.DB, temChave(c.env), temCotacao(c.env)))
   } catch (e) {
     // sem o banco, o site abre mesmo assim e avisa a visitante para tentar de novo
     console.error('catálogo indisponível', e)

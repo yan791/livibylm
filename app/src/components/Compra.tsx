@@ -26,7 +26,8 @@ import { descontoDoCupom, normalizarCupom } from '../../worker/descontos'
 
 type Item = ReturnType<typeof detalhar>[number]
 type TipoEntrega = 'maceio' | 'pac' | 'sedex'
-type Opcao = { tipo: TipoEntrega; nome: string; centavos: number }
+/** dias: prazo dos Correios em dias úteis depois da postagem (só quando a loja cota na SuperFrete) */
+type Opcao = { tipo: TipoEntrega; nome: string; centavos: number; dias?: number }
 type Frete = { estado: 'consultando' } | { estado: 'pronto'; opcoes: Opcao[] } | { estado: 'erro'; mensagem: string }
 type Cupom = { codigo: string; percentual: number }
 
@@ -49,9 +50,10 @@ const correios = (t: TipoEntrega | null) => t === 'pac' || t === 'sedex'
 /** "57020000" -> "57020-000" enquanto ela digita */
 const comHifen = (digitos: string) => (digitos.length > 5 ? `${digitos.slice(0, 5)}-${digitos.slice(5, 8)}` : digitos)
 
-async function consultarFrete(cep: string): Promise<Frete> {
+/** o frete depende do CEP e de quantas peças vão no pacote */
+async function consultarFrete(cep: string, pecas: number): Promise<Frete> {
   try {
-    const r = await fetch(`${API}/api/pedidos/frete?cep=${cep}`)
+    const r = await fetch(`${API}/api/pedidos/frete?cep=${cep}&pecas=${pecas}`)
     const dados = (await r.json()) as { opcoes?: Opcao[]; erro?: string }
     return r.ok ? { estado: 'pronto', opcoes: dados.opcoes ?? [] } : { estado: 'erro', mensagem: dados.erro ?? 'Confira o CEP.' }
   } catch {
@@ -208,7 +210,8 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
     setDados((d) => (d.cpf ? d : { ...d, cpf: ultima.cpf }))
   }, [ultima])
 
-  // CEP completo: pergunta a entrega à loja e o endereço ao ViaCEP, ao mesmo tempo
+  // CEP completo: pergunta a entrega à loja e o endereço ao ViaCEP, ao mesmo tempo (e de novo se mudar o número de peças)
+  const pecas = itens.reduce((s, i) => s + i.qtd, 0)
   useEffect(() => {
     if (digitos.length !== 8) {
       setFrete(null)
@@ -216,7 +219,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
     }
     let valendo = true
     setFrete({ estado: 'consultando' })
-    void Promise.all([consultarFrete(digitos), buscarEndereco(digitos)]).then(([f, e]) => {
+    void Promise.all([consultarFrete(digitos, pecas), buscarEndereco(digitos)]).then(([f, e]) => {
       if (!valendo) return
       setFrete(f)
       const lista = f.estado === 'pronto' ? f.opcoes : []
@@ -226,7 +229,7 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
     return () => {
       valendo = false
     }
-  }, [digitos])
+  }, [digitos, pecas])
 
   const campo = (k: keyof typeof dados) => (v: string) => setDados((x) => ({ ...x, [k]: v }))
   const campoEndereco = (k: keyof typeof endereco) => (v: string) => setEndereco((x) => ({ ...x, [k]: v }))
@@ -372,13 +375,18 @@ function Formulario({ itens, voltar, whatsapp = '', entrar }: { itens: Item[]; v
                 {opcoes.map((o) => (
                   <label key={o.tipo} className={cn('compra-opcao', tipo === o.tipo && 'ativa')}>
                     <input type="radio" name="entrega" checked={tipo === o.tipo} onChange={() => setTipo(o.tipo)} />
-                    <span>{o.nome}</span>
+                    <span className="compra-opcao-nome">
+                      {o.nome}
+                      {o.dias !== undefined && <small>Chega em até {o.dias + site.diasPostagem} dias úteis</small>}
+                    </span>
                     <strong>{precoBR(o.centavos / 100)}</strong>
                   </label>
                 ))}
               </div>
               <p className="compra-prazo">
-                O pedido sai em {site.prazoPostagem} depois da aprovação do pagamento. O prazo de entrega depende da forma escolhida.
+                {opcoes.some((o) => o.dias !== undefined)
+                  ? `Prazo contado da aprovação do pagamento: o pedido sai em ${site.prazoPostagem}, e o resto é o prazo dos Correios.`
+                  : `O pedido sai em ${site.prazoPostagem} depois da aprovação do pagamento. O prazo de entrega depende da forma escolhida.`}
               </p>
             </>
           )}
