@@ -49,6 +49,8 @@ export const site = {
     { rotulo: 'Coleções', href: '#colecoes' },
     // página com as peças de todas as coleções, por tipo (paginas/Pecas.tsx)
     { rotulo: 'Peças', href: '/pecas' },
+    // as peças com desconto (o filtro Sale de paginas/Pecas.tsx); some do menu quando nenhuma está em promoção
+    ...(colecoes.some((c) => c.pecas.some((p) => p.desconto > 0)) ? [{ rotulo: 'Sale', href: '/pecas/sale', sale: true }] : []),
     { rotulo: 'Sobre', href: '#sobre' },
     { rotulo: 'Contato', href: '#contato' },
   ],

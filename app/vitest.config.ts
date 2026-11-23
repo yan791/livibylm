@@ -19,6 +19,9 @@ export default defineConfig(async () => {
             SENHA_PEPPER: 'pepper-so-dos-testes-com-mais-de-32-caracteres',
             // compras com as vendas desligadas, só em localhost (como no "npm run api")
             TESTE_VENDAS: 'sim',
+            // sem a SuperFrete de verdade, mesmo com o token no .dev.vars: o teste que precisa liga um token de mentira
+            SUPERFRETE_TOKEN: '',
+            SUPERFRETE_API: '',
           },
         },
       }),

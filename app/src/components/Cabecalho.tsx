@@ -126,6 +126,7 @@ export function Cabecalho({ rota }: { rota: Rota }) {
                 <motion.a
                   key={m.href}
                   href={hrefDoMenu(m.href)}
+                  className={m.sale ? 'menu-sale' : undefined}
                   onClick={clicar(m.href)}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}

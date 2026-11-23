@@ -61,7 +61,11 @@ export function PainelSacola({ fechar, irPara }: PropsPainel) {
         <AvisoSaiu n={sairamDaSacola} onde="na sua sacola" />
         <IconeSacola className="gaveta-vazia-icone" />
         <p className="gaveta-vazia-titulo">Sua sacola está vazia</p>
-        <p>Abra uma peça, escolha o tamanho e toque em “Adicionar à sacola”. Depois é só enviar tudo pelo WhatsApp.</p>
+        <p>
+          {ajustes.vendasOnline
+            ? 'Abra uma peça, escolha o tamanho e toque em “Adicionar à sacola”. Depois é só finalizar a compra aqui mesmo no site.'
+            : 'Abra uma peça, escolha o tamanho e toque em “Adicionar à sacola”. Depois é só enviar tudo pelo WhatsApp.'}
+        </p>
         {desejos > 0 ? (
           <button type="button" className="pilula" onClick={() => irPara('desejos')}>
             <Coracao className="ico" /> Ver meus desejos ({desejos})

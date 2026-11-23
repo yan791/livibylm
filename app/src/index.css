@@ -410,6 +410,19 @@ img {
   color: var(--bordo);
 }
 
+/* "Sale" no menu: o mesmo título do filtro Sale (versalete, opsz baixo para o A não afinar) */
+.menu-tela-links a.menu-sale {
+  font-weight: 600;
+  font-variation-settings: 'opsz' 11;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bordo);
+}
+
+.menu-tela-links a.menu-sale:hover {
+  color: var(--vinho);
+}
+
 .menu-tela-links .num {
   font-family: var(--sans);
   font-size: 0.75rem;
@@ -590,9 +603,10 @@ img {
   top: calc(38 * var(--u));
   display: flex;
   justify-content: center;
-  gap: calc(24 * var(--u));
+  gap: calc(20 * var(--u));
   pointer-events: none;
-  translate: calc(-26 * var(--u)) 0;
+  /* puxado para a esquerda: com o Sale são seis itens, e o último não pode encostar no WhatsApp */
+  translate: calc(-70 * var(--u)) 0;
 }
 
 .ap-menu a {
